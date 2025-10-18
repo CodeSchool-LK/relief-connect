@@ -106,6 +106,12 @@ jobs:
             NEXT_PUBLIC_API_URL=https://prod-api.pasindusampath.com
             EOF
             
+            # Create network if it doesn't exist
+            if ! docker network ls | grep -q npm_network; then
+              echo "Creating npm_network..."
+              docker network create npm_network
+            fi
+            
             # Stop and remove PRODUCTION containers (including orphans)
             echo "Stopping PRODUCTION containers..."
             docker-compose -f docker-compose.prod.yml down --remove-orphans || true

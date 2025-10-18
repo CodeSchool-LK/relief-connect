@@ -106,6 +106,12 @@ jobs:
             NEXT_PUBLIC_API_URL=https://staging-api.pasindusampath.com
             EOF
             
+            # Create network if it doesn't exist
+            if ! docker network ls | grep -q npm_network; then
+              echo "Creating npm_network..."
+              docker network create npm_network
+            fi
+            
             # Stop and remove STAGING containers (including orphans)
             echo "Stopping STAGING containers..."
             docker-compose -f docker-compose.staging.yml down --remove-orphans || true

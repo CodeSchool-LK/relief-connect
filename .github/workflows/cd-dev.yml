@@ -91,8 +91,8 @@ jobs:
             cat > apps/api/.env.dev << 'EOF'
             NODE_ENV=development
             PORT=3010
-            DB_HOST=host.docker.internal
-            DB_PORT=5432
+            DB_HOST=${{ secrets.DEV_DB_HOST }}
+            DB_PORT=${{ secrets.DEV_DB_PORT }}
             DB_NAME=${{ secrets.DEV_DB_NAME }}
             DB_USER=${{ secrets.DEV_DB_USER }}
             DB_PASSWORD=${{ secrets.DEV_DB_PASSWORD }}

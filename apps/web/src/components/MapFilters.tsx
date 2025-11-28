@@ -1,6 +1,5 @@
 import React from 'react';
 import {
-  HelpRequestCategory,
   Urgency,
   CampType,
   CampNeed,
@@ -44,26 +43,6 @@ const MapFilters: React.FC<MapFiltersProps> = ({
 
       {type === 'all' || type === 'individuals' ? (
         <>
-          <div className={styles.filterGroup}>
-            <label>Category:</label>
-            <select
-              value={helpRequestFilters.category || ''}
-              onChange={(e) =>
-                onHelpRequestFiltersChange({
-                  ...helpRequestFilters,
-                  category: e.target.value ? (e.target.value as HelpRequestCategory) : undefined,
-                })
-              }
-            >
-              <option value="">All Categories</option>
-              {Object.values(HelpRequestCategory).map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
-                </option>
-              ))}
-            </select>
-          </div>
-
           <div className={styles.filterGroup}>
             <label>Urgency:</label>
             <select

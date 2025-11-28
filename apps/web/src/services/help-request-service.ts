@@ -32,7 +32,6 @@ class HelpRequestService {
   ): Promise<IApiResponse<HelpRequestResponseDto[]>> {
     try {
       const params: Record<string, string> = {};
-      if (filters?.category) params.category = filters.category;
       if (filters?.urgency) params.urgency = filters.urgency;
       if (filters?.district) params.district = filters.district;
 

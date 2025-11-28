@@ -150,9 +150,15 @@ export default function EmergencyRequestForm({
     try {
       const totalPeople =
         formData.elders + formData.children + (formData.requestType === 'family' ? 1 : 0)
-      const rationItemsList = Object.entries(formData.rationItems)
+      
+      // Convert ration items object to array of selected item IDs
+      const selectedRationItemIds = Object.entries(formData.rationItems)
         .filter(([_, selected]) => selected === true)
-        .map(([id]) => {
+        .map(([id]) => id)
+
+      // Create human-readable list for shortNote (for backward compatibility)
+      const rationItemsList = selectedRationItemIds
+        .map((id) => {
           const item = RATION_ITEMS.find((i) => i.id === id)
           return item ? item.label : ''
         })
@@ -187,6 +193,8 @@ export default function EmergencyRequestForm({
         elders: formData.elders > 0 ? formData.elders : undefined,
         children: formData.children > 0 ? formData.children : undefined,
         pets: formData.pets > 0 ? formData.pets : undefined,
+        // Ration items as structured array
+        rationItems: selectedRationItemIds.length > 0 ? selectedRationItemIds : undefined,
       }
 
       const response = await onSubmit(helpRequestData)

@@ -19,5 +19,7 @@ export interface ICreateHelpRequest {
   elders?: number; // Number of elders/adults
   children?: number; // Number of children
   pets?: number; // Number of pets
+  // Ration items
+  rationItems?: string[]; // Array of selected ration item IDs (e.g., ['dry_rations', 'bottled_water'])
 }
 

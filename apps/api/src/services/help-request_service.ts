@@ -128,6 +128,7 @@ class HelpRequestService {
         elders: createHelpRequestDto.elders,
         children: createHelpRequestDto.children,
         pets: createHelpRequestDto.pets,
+        rationItems: createHelpRequestDto.rationItems,
       });
 
       const helpRequest = await this.helpRequestDao.create(trimmedDto, userId);

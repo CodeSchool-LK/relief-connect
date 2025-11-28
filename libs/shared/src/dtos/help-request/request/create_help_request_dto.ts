@@ -1,4 +1,4 @@
-import { IsNumber, IsString, IsNotEmpty, IsOptional, IsEnum, Length, Min, Max } from 'class-validator';
+import { IsNumber, IsString, IsNotEmpty, IsOptional, IsEnum, Length, Min, Max, IsArray, ArrayMinSize } from 'class-validator';
 import { BaseDto } from '../../common/base_dto';
 import { IBodyDto } from '../../../interfaces';
 import { ICreateHelpRequest } from '../../../interfaces/help-request/ICreateHelpRequest';
@@ -72,6 +72,11 @@ export class CreateHelpRequestDto extends BaseDto implements IBodyDto, ICreateHe
   @Min(0, { message: 'Pets must be 0 or greater' })
   pets?: number;
 
+  @IsArray({ message: 'Ration items must be an array' })
+  @IsOptional()
+  @IsString({ each: true, message: 'Each ration item must be a string' })
+  rationItems?: string[];
+
   constructor(data?: Partial<ICreateHelpRequest>) {
     super();
     if (data) {
@@ -88,6 +93,7 @@ export class CreateHelpRequestDto extends BaseDto implements IBodyDto, ICreateHe
       this.elders = data.elders;
       this.children = data.children;
       this.pets = data.pets;
+      this.rationItems = data.rationItems;
     }
   }
 }

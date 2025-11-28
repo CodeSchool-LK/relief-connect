@@ -25,6 +25,7 @@ export default class HelpRequestModel extends Model<IHelpRequest> implements IHe
   public static readonly HELP_REQUEST_ELDERS = 'elders';
   public static readonly HELP_REQUEST_CHILDREN = 'children';
   public static readonly HELP_REQUEST_PETS = 'pets';
+  public static readonly HELP_REQUEST_RATION_ITEMS = 'rationItems';
   public static readonly HELP_REQUEST_STATUS = 'status';
   public static readonly HELP_REQUEST_CREATED_AT = 'createdAt';
   public static readonly HELP_REQUEST_UPDATED_AT = 'updatedAt';
@@ -144,6 +145,13 @@ export default class HelpRequestModel extends Model<IHelpRequest> implements IHe
     field: HelpRequestModel.HELP_REQUEST_PETS,
   })
   pets?: number;
+
+  @Column({
+    type: DataType.ARRAY(DataType.STRING),
+    allowNull: true,
+    field: HelpRequestModel.HELP_REQUEST_RATION_ITEMS,
+  })
+  rationItems?: string[];
 
   @Column({
     type: DataType.STRING(20),

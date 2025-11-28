@@ -20,6 +20,7 @@ export class HelpRequestResponseDto implements IHelpRequest {
   elders?: number;
   children?: number;
   pets?: number;
+  rationItems?: string[];
   status?: HelpRequestStatus;
   createdAt?: Date;
   updatedAt?: Date;
@@ -40,6 +41,7 @@ export class HelpRequestResponseDto implements IHelpRequest {
     this.elders = helpRequest.elders;
     this.children = helpRequest.children;
     this.pets = helpRequest.pets;
+    this.rationItems = helpRequest.rationItems;
     this.status = helpRequest.status || HelpRequestStatus.OPEN;
     this.createdAt = helpRequest.createdAt;
     this.updatedAt = helpRequest.updatedAt;

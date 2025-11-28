@@ -92,6 +92,7 @@ class HelpRequestDao {
         [HelpRequestModel.HELP_REQUEST_ELDERS]: createHelpRequestDto.elders,
         [HelpRequestModel.HELP_REQUEST_CHILDREN]: createHelpRequestDto.children,
         [HelpRequestModel.HELP_REQUEST_PETS]: createHelpRequestDto.pets,
+        [HelpRequestModel.HELP_REQUEST_RATION_ITEMS]: createHelpRequestDto.rationItems,
         [HelpRequestModel.HELP_REQUEST_STATUS]: HelpRequestStatus.OPEN,
       });
       return helpRequest.toJSON() as IHelpRequest;

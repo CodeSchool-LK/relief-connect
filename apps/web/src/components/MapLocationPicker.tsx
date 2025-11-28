@@ -343,8 +343,8 @@ const MapLocationPickerInternal: React.FC<MapLocationPickerProps> = ({
                           <p className="font-medium mb-1">Chrome/Edge:</p>
                           <ol className="list-decimal list-inside space-y-1 text-gray-700">
                             <li>Click the lock icon (🔒) or info icon (i) in the address bar</li>
-                            <li>Find "Location" in the permissions list</li>
-                            <li>Change it from "Block" to "Allow"</li>
+                            <li>Find &quot;Location&quot; in the permissions list</li>
+                            <li>Change it from &quot;Block&quot; to &quot;Allow&quot;</li>
                             <li>Refresh the page and try again</li>
                           </ol>
                         </div>
@@ -352,9 +352,9 @@ const MapLocationPickerInternal: React.FC<MapLocationPickerProps> = ({
                           <p className="font-medium mb-1">Firefox:</p>
                           <ol className="list-decimal list-inside space-y-1 text-gray-700">
                             <li>Click the lock icon in the address bar</li>
-                            <li>Click "More Information"</li>
-                            <li>Go to the "Permissions" tab</li>
-                            <li>Find "Access your location" and click "Allow"</li>
+                            <li>Click &quot;More Information&quot;</li>
+                            <li>Go to the &quot;Permissions&quot; tab</li>
+                            <li>Find &quot;Access your location&quot; and click &quot;Allow&quot;</li>
                             <li>Refresh the page and try again</li>
                           </ol>
                         </div>
@@ -362,7 +362,7 @@ const MapLocationPickerInternal: React.FC<MapLocationPickerProps> = ({
                           <p className="font-medium mb-1">Safari:</p>
                           <ol className="list-decimal list-inside space-y-1 text-gray-700">
                             <li>Go to Safari → Settings → Websites → Location Services</li>
-                            <li>Find this website and set it to "Allow"</li>
+                            <li>Find this website and set it to &quot;Allow&quot;</li>
                             <li>Refresh the page and try again</li>
                           </ol>
                         </div>

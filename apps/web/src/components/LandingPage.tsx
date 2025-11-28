@@ -876,7 +876,7 @@ export default function LandingPage() {
                               <div className="text-lg font-bold text-blue-700">{peopleCount}</div>
                               <div className="text-xs text-gray-600">People</div>
                             </div>
-                            {parseInt(kidsCount) > 0 && (
+                            {Number(kidsCount) > 0 && (
                               <div className="bg-purple-50 rounded-lg p-3 text-center">
                                 <div className="flex items-center justify-center gap-1 mb-1">
                                   <Users className="h-4 w-4 text-purple-600" />
@@ -885,7 +885,7 @@ export default function LandingPage() {
                                 <div className="text-xs text-gray-600">Kids</div>
                               </div>
                             )}
-                            {parseInt(eldersCount) > 0 && (
+                            {Number(eldersCount) > 0 && (
                               <div className="bg-orange-50 rounded-lg p-3 text-center">
                                 <div className="flex items-center justify-center gap-1 mb-1">
                                   <Users className="h-4 w-4 text-orange-600" />

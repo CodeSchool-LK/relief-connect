@@ -176,7 +176,7 @@ export default function MyRequestsPage() {
                   id: req.id,
                   title: name,
                   location: req.approxArea || 'Unknown',
-                  category: req.category,
+                  category: HelpRequestCategory.OTHER, // Category not available in DTO, using default
                   urgency: req.urgency,
                   status: (req.status?.toLowerCase() as VictimRequest['status']) || 'pending',
                   createdDate: req.createdAt ? new Date(req.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],

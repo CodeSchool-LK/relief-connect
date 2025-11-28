@@ -1,11 +1,14 @@
 import { IsString, IsNotEmpty, IsOptional, Length } from 'class-validator';
 import { BaseDto } from '../../common/base_dto';
 import { IBodyDto } from '../../../interfaces';
+import { ICreateItemRequest } from '../../../interfaces/item/ICreateItemRequest';
 
 /**
  * DTO for creating a new item
+ * Backend DTO with validation decorators
+ * Frontend should use ICreateItemRequest interface instead
  */
-export class CreateItemDto extends BaseDto implements IBodyDto {
+export class CreateItemDto extends BaseDto implements IBodyDto, ICreateItemRequest {
   @IsString({ message: 'Name must be a string' })
   @IsNotEmpty({ message: 'Name is required' })
   @Length(1, 255, { message: 'Name must be between 1 and 255 characters' })

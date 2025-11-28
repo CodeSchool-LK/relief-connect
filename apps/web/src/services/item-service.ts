@@ -1,7 +1,6 @@
 import apiClient from './api-client';
-import { IApiResponse } from '@nx-mono-repo-deployment-test/shared/src/interfaces';
+import { IApiResponse, ICreateItemRequest, IUpdateItemRequest } from '@nx-mono-repo-deployment-test/shared/src/interfaces';
 import { ItemResponseDto } from '@nx-mono-repo-deployment-test/shared/src/dtos/item/response/item_response_dto';
-import { CreateItemDto } from '@nx-mono-repo-deployment-test/shared/src/dtos/item/request/create_item_dto';
 
 /**
  * Item Service
@@ -63,7 +62,7 @@ class ItemService {
    * Create a new item
    */
   public async createItem(
-    createItemDto: CreateItemDto
+    createItemDto: ICreateItemRequest
   ): Promise<IApiResponse<ItemResponseDto>> {
     try {
       const response = await apiClient.post<IApiResponse<ItemResponseDto>>(
@@ -85,7 +84,7 @@ class ItemService {
    */
   public async updateItem(
     id: number,
-    updateData: Partial<CreateItemDto>
+    updateData: IUpdateItemRequest
   ): Promise<IApiResponse<ItemResponseDto>> {
     try {
       const response = await apiClient.put<IApiResponse<ItemResponseDto>>(

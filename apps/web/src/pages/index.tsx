@@ -4,7 +4,7 @@ import ItemList from '../components/ItemList';
 import AddItemForm from '../components/AddItemForm';
 import { itemService } from '../services';
 import { ItemResponseDto } from '@nx-mono-repo-deployment-test/shared/src/dtos/item/response/item_response_dto';
-import { CreateItemDto } from '@nx-mono-repo-deployment-test/shared/src/dtos/item/request/create_item_dto';
+import { ICreateItemRequest } from '@nx-mono-repo-deployment-test/shared/src/interfaces';
 import styles from '../styles/Home.module.css';
 
 export default function Home() {
@@ -37,7 +37,7 @@ export default function Home() {
 
   const handleAddItem = async (name: string, description: string): Promise<void> => {
     try {
-      const createItemDto = new CreateItemDto({ name, description });
+      const createItemDto: ICreateItemRequest = { name, description };
       const response = await itemService.createItem(createItemDto);
       
       if (response.success) {

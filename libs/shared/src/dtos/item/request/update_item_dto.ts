@@ -1,11 +1,14 @@
 import { IsString, IsOptional, IsInt, Length, ValidateIf } from 'class-validator';
 import { BaseDto } from '../../common/base_dto';
 import { IBodyDto } from '../../../interfaces';
+import { IUpdateItemRequest } from '../../../interfaces/item/IUpdateItemRequest';
 
 /**
  * DTO for updating an existing item
+ * Backend DTO with validation decorators
+ * Frontend should use IUpdateItemRequest interface instead
  */
-export class UpdateItemDto extends BaseDto implements IBodyDto {
+export class UpdateItemDto extends BaseDto implements IBodyDto, IUpdateItemRequest {
   @IsString({ message: 'Name must be a string' })
   @IsOptional()
   @Length(1, 255, { message: 'Name must be between 1 and 255 characters' })

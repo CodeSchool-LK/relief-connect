@@ -142,6 +142,13 @@ class AuthService {
       }
 
       // Get user from database
+      if (!decoded.id) {
+        return {
+          success: false,
+          error: 'Invalid token payload',
+        };
+      }
+      
       const user = await this.userDao.findById(decoded.id);
 
       if (!user) {

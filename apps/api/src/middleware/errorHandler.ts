@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { ValidationError } from 'class-validator';
+import { appConfig } from '../config';
 
 /**
  * Custom error class for application errors

@@ -15,7 +15,8 @@
     "declarationMap": true,
     "sourceMap": true,
     "experimentalDecorators": true,
-    "emitDecoratorMetadata": true
+    "emitDecoratorMetadata": true,
+    "composite": false
   },
   "include": ["src/**/*.ts"],
   "exclude": [

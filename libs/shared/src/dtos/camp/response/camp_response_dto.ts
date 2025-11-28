@@ -1,4 +1,5 @@
 import { ICamp } from '../../../interfaces/camp/ICamp';
+import { CampType, PeopleRange, CampNeed, ContactType } from '../../../enums';
 
 /**
  * DTO for camp response
@@ -7,12 +8,12 @@ export class CampResponseDto implements ICamp {
   id: number;
   lat: number;
   lng: number;
-  campType: string;
+  campType: CampType;
   name: string;
-  peopleRange: string;
-  needs: string[];
+  peopleRange: PeopleRange;
+  needs: CampNeed[];
   shortNote: string;
-  contactType: string;
+  contactType: ContactType;
   contact?: string;
   createdAt?: Date;
   updatedAt?: Date;

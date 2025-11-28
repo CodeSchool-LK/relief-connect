@@ -1,5 +1,5 @@
 import { IHelpRequest } from '../../../interfaces/help-request/IHelpRequest';
-import { HelpRequestStatus } from '../../../enums';
+import { HelpRequestStatus, HelpRequestCategory, Urgency, ContactType } from '../../../enums';
 
 /**
  * DTO for help request response
@@ -8,11 +8,11 @@ export class HelpRequestResponseDto implements IHelpRequest {
   id: number;
   lat: number;
   lng: number;
-  category: string;
-  urgency: string;
+  category: HelpRequestCategory;
+  urgency: Urgency;
   shortNote: string;
   approxArea: string;
-  contactType: string;
+  contactType: ContactType;
   contact?: string;
   status?: HelpRequestStatus;
   createdAt?: Date;

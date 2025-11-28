@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { UserService } from '../services';
-import { CreateUserDto, LoginResponseDto } from '@nx-mono-repo-deployment-test/shared/src/dtos';
+import { CreateUserDto, LoginResponseDto, UserResponseDto } from '@nx-mono-repo-deployment-test/shared/src/dtos';
 
 /**
  * Controller for User endpoints
@@ -31,6 +31,26 @@ class UserController {
       } else {
         res.sendError(result.error || 'Failed to register user', 400);
       }
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * GET /api/users/me
+   * Get current authenticated user's profile
+   * Requires authentication middleware
+   * Note: req.user is set by authenticate middleware
+   */
+  getCurrentUser = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      // req.user is guaranteed to exist because authenticate middleware runs before this
+      if (!req.user) {
+        res.sendError('User not authenticated', 401);
+        return;
+      }
+
+      res.sendSuccess(new UserResponseDto(req.user), 'User profile retrieved successfully', 200);
     } catch (error) {
       next(error);
     }

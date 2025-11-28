@@ -1,7 +1,7 @@
 import { BaseRouter } from '../common/base_router';
 import { UserController } from '../../controllers';
 import { UserService } from '../../services';
-import { ValidationMiddleware } from '../../middleware';
+import { ValidationMiddleware, authenticate } from '../../middleware';
 import { CreateUserDto } from '@nx-mono-repo-deployment-test/shared/src/dtos/user/request';
 
 // Route path constants
@@ -12,7 +12,8 @@ const USER_BASE_PATH = '/users'; // Full path: /api/users (api prefix added by R
  * Handles all user-related routes with proper validation and controller binding
  * 
  * Routes:
- * - POST   /api/users/register - Register a new user
+ * - POST   /api/users/register - Register a new user (no auth required)
+ * - GET    /api/users/me       - Get current user profile (requires auth)
  * - GET    /api/users/:id      - Get user by ID
  */
 export class UserRouter extends BaseRouter {
@@ -41,11 +42,18 @@ export class UserRouter extends BaseRouter {
   protected initializeRoutes(): void {
     const controller = this.getUserController();
 
-    // POST /api/users/register - Register a new user
+    // POST /api/users/register - Register a new user (no auth required)
     this.router.post(
       '/register',
       ValidationMiddleware.body(CreateUserDto),
       controller.registerUser
+    );
+
+    // GET /api/users/me - Get current authenticated user's profile (requires auth)
+    this.router.get(
+      '/me',
+      authenticate, // Authentication middleware - verifies token and sets req.user
+      controller.getCurrentUser
     );
 
     // // GET /api/users/:id - Get user by ID
@@ -71,6 +79,7 @@ export class UserRouter extends BaseRouter {
     // Note: Full paths will be /api/users (api prefix added by RouterManager)
     return [
       { path: `${USER_BASE_PATH}/register`, methods: ['POST'] },
+      { path: `${USER_BASE_PATH}/me`, methods: ['GET'] },
       { path: `${USER_BASE_PATH}/:id`, methods: ['GET'] }
     ];
   }

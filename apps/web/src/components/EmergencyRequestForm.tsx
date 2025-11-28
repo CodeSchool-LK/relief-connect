@@ -38,19 +38,29 @@ interface FormData {
   pets: number
   gpsLocation: { lat: number; lng: number }
   notes: string
-  rationItems: Record<string, number>
+  rationItems: Record<string, boolean>
+  specialNeeds: string
   urgent: boolean
 }
 
 const RATION_ITEMS = [
-  { id: 'food', label: 'Food & Water', icon: '🍞' },
-  { id: 'torch', label: 'Torch', icon: '🔦' },
-  { id: 'candle', label: 'Candle', icon: '🕯️' },
-  { id: 'matches', label: 'Matches', icon: '🔥' },
-  { id: 'tissues', label: 'Tissues', icon: '🧻' },
-  { id: 'canned', label: 'Canned Foods', icon: '🥫' },
-  { id: 'noodles', label: 'Noodles', icon: '🍜' },
-  { id: 'diary', label: 'Diary', icon: '📔' },
+  { id: 'dry_rations', label: 'Dry rations (rice, dhal, canned food)', icon: '🍚' },
+  { id: 'ready_meals', label: 'Ready‑to‑eat meals', icon: '🍱' },
+  { id: 'milk_powder', label: 'Milk powder / baby food', icon: '🥛' },
+  { id: 'bottled_water', label: 'Bottled water', icon: '💧' },
+  { id: 'first_aid', label: 'First aid kit', icon: '🩹' },
+  { id: 'medicines', label: 'Basic medicines (Panadol / ORS)', icon: '💊' },
+  { id: 'mosquito_repellent', label: 'Mosquito repellent', icon: '🦟' },
+  { id: 'hygiene', label: 'Soap / toothpaste / toothbrush', icon: '🧴' },
+  { id: 'sanitary_pads', label: 'Sanitary pads', icon: '🩹' },
+  { id: 'baby_diapers', label: 'Baby diapers', icon: '👶' },
+  { id: 'disinfectant', label: 'Disinfectant / cleaning liquid', icon: '🧽' },
+  { id: 'clothes', label: 'Clothes', icon: '👕' },
+  { id: 'blankets', label: 'Blankets', icon: '🛏️' },
+  { id: 'towels', label: 'Towels', icon: '🧺' },
+  { id: 'temporary_shelters', label: 'Temporary shelters', icon: '⛺' },
+  { id: 'polythene_sheets', label: 'Polythene sheets', icon: '📦' },
+  { id: 'flashlights', label: 'Flashlights', icon: '🔦' },
 ]
 
 export default function EmergencyRequestForm({
@@ -71,6 +81,7 @@ export default function EmergencyRequestForm({
     gpsLocation: { lat: 7.8731, lng: 80.7718 },
     notes: '',
     rationItems: {},
+    specialNeeds: '',
     urgent: false,
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -81,12 +92,12 @@ export default function EmergencyRequestForm({
     setFormData({ ...formData, gpsLocation: { lat, lng } })
   }
 
-  const updateRationItem = (itemId: string, delta: number) => {
+  const toggleRationItem = (itemId: string) => {
     setFormData({
       ...formData,
       rationItems: {
         ...formData.rationItems,
-        [itemId]: Math.max(0, (formData.rationItems[itemId] || 0) + delta),
+        [itemId]: !formData.rationItems[itemId],
       },
     })
   }
@@ -109,7 +120,7 @@ export default function EmergencyRequestForm({
     }
     if (currentStep === 2) {
       // Check if at least one ration item is selected
-      const hasItems = Object.values(formData.rationItems).some((count) => count > 0)
+      const hasItems = Object.values(formData.rationItems).some((selected) => selected === true)
       if (!hasItems) {
         setError('Please select at least one item')
         return
@@ -140,25 +151,32 @@ export default function EmergencyRequestForm({
       const totalPeople =
         formData.elders + formData.children + (formData.requestType === 'family' ? 1 : 0)
       const rationItemsList = Object.entries(formData.rationItems)
-        .filter(([_, count]) => count > 0)
-        .map(([id, count]) => {
+        .filter(([_, selected]) => selected === true)
+        .map(([id]) => {
           const item = RATION_ITEMS.find((i) => i.id === id)
-          return item ? `${item.label} (${count})` : ''
+          return item ? item.label : ''
         })
         .filter(Boolean)
         .join(', ')
+
+      const specialNeedsText = formData.specialNeeds.trim()
+        ? ` Special Needs: ${formData.specialNeeds}`
+        : ''
 
       const helpRequestData: ICreateHelpRequest = {
         lat: formData.gpsLocation.lat,
         lng: formData.gpsLocation.lng,
         category:
-          formData.rationItems.food || formData.rationItems.water
+          formData.rationItems.dry_rations ||
+          formData.rationItems.ready_meals ||
+          formData.rationItems.milk_powder ||
+          formData.rationItems.bottled_water
             ? HelpRequestCategory.FOOD_WATER
             : HelpRequestCategory.OTHER,
         urgency: formData.urgent ? Urgency.HIGH : Urgency.MEDIUM,
         shortNote:
           formData.notes ||
-          `Name: ${formData.name}, People: ${totalPeople}${formData.children > 0 ? `, Kids: ${formData.children}` : ''}${formData.elders > 0 ? `, Elders: ${formData.elders}` : ''}${formData.pets > 0 ? `, Pets: ${formData.pets}` : ''}. Items: ${rationItemsList}`,
+          `Name: ${formData.name}, People: ${totalPeople}${formData.children > 0 ? `, Kids: ${formData.children}` : ''}${formData.elders > 0 ? `, Elders: ${formData.elders}` : ''}${formData.pets > 0 ? `, Pets: ${formData.pets}` : ''}. Items: ${rationItemsList}${specialNeedsText}`,
         approxArea: `${formData.gpsLocation.lat}, ${formData.gpsLocation.lng}`,
         contactType: ContactType.PHONE,
         contact: formData.contactNumber,
@@ -484,43 +502,47 @@ export default function EmergencyRequestForm({
               <CardDescription>{t('selectItemsYouNeed')}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
-              {RATION_ITEMS.map((item) => {
-                const count = formData.rationItems[item.id] || 0
-                return (
-                  <Card key={item.id} className="bg-gray-50">
-                    <CardContent className="pt-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <span className="text-2xl">{item.icon}</span>
-                          <div>
-                            <Label className="text-base font-medium">{item.label}</Label>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="icon"
-                            onClick={() => updateRationItem(item.id, -1)}
-                            disabled={count === 0}
-                          >
-                            <Minus className="h-4 w-4" />
-                          </Button>
-                          <span className="text-lg font-semibold w-8 text-center">{count}</span>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="icon"
-                            onClick={() => updateRationItem(item.id, 1)}
-                          >
-                            <Plus className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )
-              })}
+              <div className="grid grid-cols-1 gap-3 max-h-[400px] overflow-y-auto">
+                {RATION_ITEMS.map((item) => {
+                  const isSelected = formData.rationItems[item.id] || false
+                  return (
+                    <div
+                      key={item.id}
+                      className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                        isSelected
+                          ? 'bg-blue-50 border-blue-500'
+                          : 'bg-gray-50 border-gray-200 hover:border-gray-300'
+                      }`}
+                      onClick={() => toggleRationItem(item.id)}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => toggleRationItem(item.id)}
+                        className="w-5 h-5 cursor-pointer"
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                      <span className="text-2xl">{item.icon}</span>
+                      <Label className="text-base font-medium cursor-pointer flex-1">
+                        {item.label}
+                      </Label>
+                    </div>
+                  )
+                })}
+              </div>
+
+              <div className="pt-4 border-t">
+                <Label htmlFor="specialNeeds" className="text-base font-semibold mb-2 block">
+                  Special Needs (Optional)
+                </Label>
+                <textarea
+                  id="specialNeeds"
+                  value={formData.specialNeeds}
+                  onChange={(e) => setFormData({ ...formData, specialNeeds: e.target.value })}
+                  placeholder="Please specify any special requirements or additional needs..."
+                  className="w-full min-h-[100px] p-3 border border-gray-300 rounded-md resize-y"
+                />
+              </div>
 
               <div className="space-y-2 pt-2">
                 <div className="flex items-center gap-2">
@@ -559,10 +581,10 @@ export default function EmergencyRequestForm({
     const totalPeople =
       formData.elders + formData.children + (formData.requestType === 'family' ? 1 : 0)
     const selectedItems = Object.entries(formData.rationItems)
-      .filter(([_, count]) => count > 0)
-      .map(([id, count]) => {
+      .filter(([_, selected]) => selected === true)
+      .map(([id]) => {
         const item = RATION_ITEMS.find((i) => i.id === id)
-        return item ? `${item.label} (${count})` : ''
+        return item ? item.label : ''
       })
       .filter(Boolean)
 
@@ -633,19 +655,34 @@ export default function EmergencyRequestForm({
               <div className="space-y-2">
                 <div className="text-sm font-medium text-gray-600">Help needed:</div>
                 <div className="space-y-1 pl-4 text-sm">
-                  {selectedItems.includes('Food & Water') && <div>• Requested food & water</div>}
-                  {selectedItems.length > 0 && <div>• Req items ({selectedItems.join(', ')})</div>}
+                  {selectedItems.length > 0 && (
+                    <div>
+                      <div className="font-medium mb-1">Selected Items:</div>
+                      <ul className="list-disc list-inside space-y-1">
+                        {selectedItems.map((item, index) => (
+                          <li key={index}>{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {formData.specialNeeds.trim() && (
+                    <div>
+                      <div className="font-medium mb-1">Special Needs:</div>
+                      <div className="text-gray-700">{formData.specialNeeds}</div>
+                    </div>
+                  )}
                   {formData.children > 0 && <div>• Kids count ({formData.children} kids)</div>}
                   {formData.elders > 0 && <div>• Adults count ({formData.elders} adults)</div>}
                   <div>
-                    • Location ({formData.gpsLocation.lat}, {formData.gpsLocation.lng})
+                    • Location ({formData.gpsLocation.lat.toFixed(4)},{' '}
+                    {formData.gpsLocation.lng.toFixed(4)})
                   </div>
                   {formData.urgent && <div>• Urgent (Medical emergency)</div>}
                   {formData.contactNumber && <div>• Contact number ({formData.contactNumber})</div>}
                   {formData.notes ? (
-                    <div>• Add notes ({formData.notes})</div>
+                    <div>• Additional notes: {formData.notes}</div>
                   ) : (
-                    <div>• Add notes (No description)</div>
+                    <div>• Additional notes: (No description)</div>
                   )}
                 </div>
               </div>

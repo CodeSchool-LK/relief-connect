@@ -62,6 +62,12 @@ class ApiClient {
 
       return await response.json();
     } catch (error) {
+      if (error instanceof TypeError && error.message === 'Failed to fetch') {
+        throw new Error(
+          `Unable to connect to the API server at ${this.baseUrl}. ` +
+          `Please make sure the API server is running on port 3000.`
+        );
+      }
       if (error instanceof Error) {
         throw error;
       }

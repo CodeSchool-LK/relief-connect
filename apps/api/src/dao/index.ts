@@ -4,8 +4,6 @@
 export { default as ItemDao } from './item_dao';
 export { default as HelpRequestDao } from './help-request_dao';
 export { default as CampDao } from './camp_dao';
-
-// Add more DAOs as you create them
-// export { default as UserDao } from './UserDao';
-// export { default as AuthDao } from './AuthDao';
+export { default as UserDao } from './user_dao';
+export { default as RefreshTokenDao } from './refresh-token_dao';
 

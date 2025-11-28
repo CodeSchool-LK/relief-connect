@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { ValidationError } from 'class-validator';
+import { appConfig } from '../config';
 
 /**
  * Custom error class for application errors
@@ -54,7 +55,7 @@ export function errorHandler(
     res.status(503).json({
       success: false,
       error: 'Database connection error',
-      details: process.env.NODE_ENV === 'development' ? err.message : undefined,
+      details: appConfig.environment.isDevelopment ? err.message : undefined,
     });
     return;
   }
@@ -78,8 +79,8 @@ export function errorHandler(
   res.status(500).json({
     success: false,
     error: 'Internal server error',
-    message: process.env.NODE_ENV === 'development' ? err.message : undefined,
-    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
+    message: appConfig.environment.isDevelopment ? err.message : undefined,
+    stack: appConfig.environment.isDevelopment ? err.stack : undefined,
   });
 }
 

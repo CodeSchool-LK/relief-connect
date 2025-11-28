@@ -9,4 +9,6 @@ export * from './item/ICreateItemRequest';
 export * from './item/IUpdateItemRequest';
 export * from './help-request';
 export * from './camp';
+export * from './user';
+export * from './auth';
 

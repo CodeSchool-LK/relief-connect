@@ -5,6 +5,7 @@ import { HelpRequestCategory, Urgency, ContactType, HelpRequestStatus } from '..
  */
 export interface IHelpRequest {
   id?: number;
+  userId?: number; // User who created this help request
   lat: number;
   lng: number;
   category: HelpRequestCategory;

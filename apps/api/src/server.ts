@@ -7,7 +7,7 @@ import { Server as HttpServer } from 'http';
 import Database from './database';
 import { RouterManager } from './routes';
 import { normalizeResponse, errorHandler } from './middleware';
-import { getCurrentEnvironment, getEnvironmentDisplayName, isDevelopment } from './enums';
+import { appConfig } from './config';
 
 /**
  * Server class - Handles application lifecycle
@@ -41,12 +41,8 @@ class Server {
     this.app.use(helmet());
     
     // CORS configuration - allow frontend domains
-    const allowedOrigins = process.env.CORS_ORIGIN 
-      ? process.env.CORS_ORIGIN.split(',') 
-      : ['*'];
-    
     this.app.use(cors({
-      origin: allowedOrigins,
+      origin: appConfig.server.corsOrigin,
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization']
@@ -109,7 +105,7 @@ class Server {
       await this.database.connect();
       
       // Sync database models (only alter in development)
-      const shouldAlter = isDevelopment();
+      const shouldAlter = appConfig.environment.isDevelopment;
       await this.database.sync(false, shouldAlter);
 
       // Setup application
@@ -121,7 +117,7 @@ class Server {
       await new Promise<void>((resolve, reject) => {
         this.server = this.app.listen(port, () => {
           console.log(`✓ API Server is running on port ${port} `);
-          console.log(`✓ Environment: ${getEnvironmentDisplayName(getCurrentEnvironment())}`);
+          console.log(`✓ Environment: ${appConfig.environment.displayName}`);
           resolve();
         });
 

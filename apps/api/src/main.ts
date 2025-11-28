@@ -1,12 +1,18 @@
 import 'reflect-metadata'; // Required for decorators - MUST BE FIRST!
-import dotenv from 'dotenv';
+// Load environment variables and config (must be imported first)
+import { appConfig, validateConfig } from './config';
 import Server from './server';
 
-// Load environment variables
-dotenv.config();
+// Validate configuration
+try {
+  validateConfig();
+} catch (error) {
+  console.error('Configuration validation failed:', error);
+  process.exit(1);
+}
 
-// Get port from environment or use default
-const port = parseInt(process.env.PORT || '3000', 10);
+// Get port from config
+const port = appConfig.server.port;
 
 // Get server instance
 const server = Server.getInstance();

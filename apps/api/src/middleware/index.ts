@@ -9,5 +9,6 @@ export {
   ValidatedRequest 
 } from './validation';
 export { normalizeResponse } from './responseHandler';
+export { authenticate, optionalAuthenticate } from './authentication';
 export { errorHandler, AppError } from './errorHandler';
 

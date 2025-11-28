@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import Database from '../database';
 import { IHealthResponse, IReadyResponse } from '@nx-mono-repo-deployment-test/shared';
+import { appConfig } from '../config';
 
 /**
  * Controller for Health Check endpoints
@@ -27,7 +28,7 @@ class HealthController {
         status: isDbConnected ? 'healthy' : 'unhealthy',
         timestamp: new Date().toISOString(),
         uptime: process.uptime(),
-        environment: process.env.NODE_ENV || 'development',
+        environment: appConfig.environment.displayName.toLowerCase(),
         database: {
           connected: isDbConnected,
           type: 'PostgreSQL',
@@ -44,12 +45,12 @@ class HealthController {
         status: 'unhealthy',
         timestamp: new Date().toISOString(),
         uptime: process.uptime(),
-        environment: process.env.NODE_ENV || 'development',
+        environment: appConfig.environment.displayName.toLowerCase(),
         database: {
           connected: false,
           type: 'PostgreSQL',
         },
-        error: process.env.NODE_ENV === 'development' ? String(error) : undefined,
+        error: appConfig.environment.isDevelopment ? String(error) : undefined,
       });
     }
   }
@@ -84,7 +85,7 @@ class HealthController {
       res.status(503).json({
         status: 'not ready',
         timestamp: new Date().toISOString(),
-        reason: process.env.NODE_ENV === 'development' ? String(error) : 'Service unavailable',
+        reason: appConfig.environment.isDevelopment ? String(error) : 'Service unavailable',
       });
     }
   }

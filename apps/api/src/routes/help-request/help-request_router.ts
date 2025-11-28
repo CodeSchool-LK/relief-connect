@@ -1,7 +1,7 @@
 import { BaseRouter } from '../common/base_router';
 import { HelpRequestController } from '../../controllers';
 import { HelpRequestService } from '../../services';
-import { ValidationMiddleware } from '../../middleware';
+import { ValidationMiddleware, authenticate } from '../../middleware';
 import { CreateHelpRequestDto } from '@nx-mono-repo-deployment-test/shared/src/dtos/help-request/request';
 
 // Route path constants
@@ -13,7 +13,7 @@ const HELP_REQUEST_BASE_PATH = '/help-requests'; // Full path: /api/help-request
  * 
  * Routes:
  * - GET    /api/help-requests     - Get all help requests (with optional filters)
- * - POST   /api/help-requests     - Create new help request
+ * - POST   /api/help-requests     - Create new help request (requires authentication)
  */
 export class HelpRequestRouter extends BaseRouter {
   private helpRequestController!: HelpRequestController;
@@ -47,9 +47,10 @@ export class HelpRequestRouter extends BaseRouter {
       controller.getHelpRequests
     );
 
-    // POST /api/help-requests - Create new help request
+    // POST /api/help-requests - Create new help request (requires authentication)
     this.router.post(
       '/',
+      authenticate, // Authentication middleware - verifies token and sets req.user
       ValidationMiddleware.body(CreateHelpRequestDto),
       controller.createHelpRequest
     );

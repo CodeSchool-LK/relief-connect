@@ -6,7 +6,7 @@ import { HelpRequestCategory, Urgency } from '@nx-mono-repo-deployment-test/shar
 /**
  * Controller for HelpRequest endpoints
  * Handles HTTP requests and responses
- * Public endpoints - no authentication required
+ * GET endpoints are public, POST requires authentication
  */
 class HelpRequestController {
   private helpRequestService: HelpRequestService;
@@ -54,13 +54,19 @@ class HelpRequestController {
   /**
    * POST /api/help-requests
    * Create a new help request
+   * Requires authentication - tracks which user created the request
    * Note: Body validation is handled by middleware
+   * Note: req.user is set by authenticate middleware
    */
   createHelpRequest = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       // Body is already validated and transformed to CreateHelpRequestDto by middleware
       const createHelpRequestDto = req.body as CreateHelpRequestDto;
-      const result = await this.helpRequestService.createHelpRequest(createHelpRequestDto);
+      
+      // Get user ID from authenticated user (set by authenticate middleware)
+      const userId = req.user?.id;
+
+      const result = await this.helpRequestService.createHelpRequest(createHelpRequestDto, userId);
 
       if (result.success && result.data) {
         res.sendSuccess(result.data, result.message || 'Help request created successfully', 201);

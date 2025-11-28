@@ -9,4 +9,5 @@
 
 export * from './help-request.enum';
 export * from './camp.enum';
+export * from './user.enum';
 

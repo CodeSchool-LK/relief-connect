@@ -1,6 +1,7 @@
-import { Table, Column, Model, DataType, CreatedAt, UpdatedAt, PrimaryKey, AutoIncrement } from 'sequelize-typescript';
+import { Table, Column, Model, DataType, CreatedAt, UpdatedAt, PrimaryKey, AutoIncrement, ForeignKey, BelongsTo } from 'sequelize-typescript';
 import { IHelpRequest } from '@nx-mono-repo-deployment-test/shared/src/interfaces/help-request/IHelpRequest';
 import { HelpRequestStatus, HelpRequestCategory, Urgency, ContactType } from '@nx-mono-repo-deployment-test/shared/src/enums';
+import UserModel from './user.model';
 
 @Table({
   tableName: HelpRequestModel.TABLE_NAME,
@@ -10,6 +11,7 @@ import { HelpRequestStatus, HelpRequestCategory, Urgency, ContactType } from '@n
 export default class HelpRequestModel extends Model<IHelpRequest> implements IHelpRequest {
   public static readonly TABLE_NAME = 'help_requests';
   public static readonly HELP_REQUEST_ID = 'id';
+  public static readonly HELP_REQUEST_USER_ID = 'userId';
   public static readonly HELP_REQUEST_LAT = 'lat';
   public static readonly HELP_REQUEST_LNG = 'lng';
   public static readonly HELP_REQUEST_CATEGORY = 'category';
@@ -32,6 +34,17 @@ export default class HelpRequestModel extends Model<IHelpRequest> implements IHe
     field: HelpRequestModel.HELP_REQUEST_ID,
   })
   id!: number;
+
+  @ForeignKey(() => UserModel)
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: true,
+    field: HelpRequestModel.HELP_REQUEST_USER_ID,
+  })
+  userId?: number;
+
+  @BelongsTo(() => UserModel)
+  user?: UserModel;
 
   @Column({
     type: DataType.DECIMAL(10, 8),

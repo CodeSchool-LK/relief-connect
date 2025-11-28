@@ -3,6 +3,8 @@ import { ItemRouter } from './item/item_router';
 import { HealthRouter } from './health/health_router';
 import { HelpRequestRouter } from './help-request/help-request_router';
 import { CampRouter } from './camp/camp_router';
+import { UserRouter } from './user/user_router';
+import { AuthRouter } from './auth/auth_router';
 
 // Interface for router-like objects
 interface RouterLike {
@@ -35,6 +37,8 @@ export class RouterManager {
   private healthRouter: HealthRouter;
   private helpRequestRouter: HelpRequestRouter;
   private campRouter: CampRouter;
+  private userRouter: UserRouter;
+  private authRouter: AuthRouter;
 
   private constructor() {
     this.mainRouter = Router();
@@ -42,6 +46,8 @@ export class RouterManager {
     this.healthRouter = new HealthRouter();
     this.helpRequestRouter = new HelpRequestRouter();
     this.campRouter = new CampRouter();
+    this.userRouter = new UserRouter();
+    this.authRouter = new AuthRouter();
     this.configureRoutes();
   }
 
@@ -74,6 +80,8 @@ export class RouterManager {
     this.mainRouter.use(`${API_PREFIX}${this.itemRouter.getBasePath()}`, this.itemRouter.getRouter());
     this.mainRouter.use(`${API_PREFIX}${this.helpRequestRouter.getBasePath()}`, this.helpRequestRouter.getRouter());
     this.mainRouter.use(`${API_PREFIX}${this.campRouter.getBasePath()}`, this.campRouter.getRouter());
+    this.mainRouter.use(`${API_PREFIX}${this.userRouter.getBasePath()}`, this.userRouter.getRouter());
+    this.mainRouter.use(`${API_PREFIX}${this.authRouter.getBasePath()}`, this.authRouter.getRouter());
   }
 
   /**
@@ -101,6 +109,14 @@ export class RouterManager {
 
   public getCampRouter(): CampRouter {
     return this.campRouter;
+  }
+
+  public getUserRouter(): UserRouter {
+    return this.userRouter;
+  }
+
+  public getAuthRouter(): AuthRouter {
+    return this.authRouter;
   }
 
   /**
@@ -161,6 +177,16 @@ export class RouterManager {
     routes.push(...this.campRouter.getRouteInfo().map(route => ({
       ...route,
       path: `${API_PREFIX}${route.path}` // Add API prefix to camp routes
+    })));
+    
+    routes.push(...this.userRouter.getRouteInfo().map(route => ({
+      ...route,
+      path: `${API_PREFIX}${route.path}` // Add API prefix to user routes
+    })));
+    
+    routes.push(...this.authRouter.getRouteInfo().map(route => ({
+      ...route,
+      path: `${API_PREFIX}${route.path}` // Add API prefix to auth routes
     })));
     
     return routes;

@@ -80,8 +80,10 @@ class HelpRequestService {
 
   /**
    * Create a new help request
+   * @param createHelpRequestDto - Help request data
+   * @param userId - Optional user ID to track who created the request
    */
-  public async createHelpRequest(createHelpRequestDto: CreateHelpRequestDto): Promise<IApiResponse<HelpRequestResponseDto>> {
+  public async createHelpRequest(createHelpRequestDto: CreateHelpRequestDto, userId?: number): Promise<IApiResponse<HelpRequestResponseDto>> {
     try {
       // Validate coordinates
       if (createHelpRequestDto.lat < -90 || createHelpRequestDto.lat > 90) {
@@ -123,7 +125,7 @@ class HelpRequestService {
         contact: createHelpRequestDto.contact?.trim(),
       });
 
-      const helpRequest = await this.helpRequestDao.create(trimmedDto);
+      const helpRequest = await this.helpRequestDao.create(trimmedDto, userId);
 
       return {
         success: true,

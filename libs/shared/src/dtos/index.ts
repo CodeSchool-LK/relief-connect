@@ -23,6 +23,8 @@ export * from './params';
 export * from './item';
 export * from './help-request';
 export * from './camp';
+export * from './user';
+export * from './auth';
 
 // Re-export commonly used types for convenience
 export { BaseDto, ValidationFailedError } from './common/base_dto';
@@ -30,4 +32,6 @@ export { IdParamDto } from './params';
 export { CreateItemDto, UpdateItemDto, ItemResponseDto } from './item';
 export { CreateHelpRequestDto, HelpRequestResponseDto } from './help-request';
 export { CreateCampDto, CampResponseDto } from './camp';
+export { CreateUserDto, UserResponseDto } from './user';
+export { LoginDto, LoginResponseDto, RefreshTokenDto } from './auth';
 

@@ -75,9 +75,10 @@ class HelpRequestDao {
     }
   }
 
-  public async create(createHelpRequestDto: CreateHelpRequestDto): Promise<IHelpRequest> {
+  public async create(createHelpRequestDto: CreateHelpRequestDto, userId?: number): Promise<IHelpRequest> {
     try {
       const helpRequest = await HelpRequestModel.create({
+        [HelpRequestModel.HELP_REQUEST_USER_ID]: userId,
         [HelpRequestModel.HELP_REQUEST_LAT]: createHelpRequestDto.lat,
         [HelpRequestModel.HELP_REQUEST_LNG]: createHelpRequestDto.lng,
         [HelpRequestModel.HELP_REQUEST_CATEGORY]: createHelpRequestDto.category,

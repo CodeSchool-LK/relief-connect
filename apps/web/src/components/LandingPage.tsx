@@ -45,6 +45,7 @@ import {
   DISTRICT_COORDINATES,
   getMockCoordinates,
 } from '../data/sri-lanka-locations'
+import apiClient from '../services/api-client'
 
 type ViewMode = 'initial' | 'need-help' | 'can-help'
 
@@ -131,6 +132,7 @@ export default function LandingPage() {
   const [userInfo, setUserInfo] = useState<{ name?: string; identifier?: string } | null>(null)
   const [identifier, setIdentifier] = useState('')
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [showIdentifierPrompt, setShowIdentifierPrompt] = useState(true)
   const [helpRequests, setHelpRequests] = useState<HelpRequestResponseDto[]>([])
   const [searchQuery, setSearchQuery] = useState('')
@@ -148,38 +150,32 @@ export default function LandingPage() {
   }>({})
   const [selectedRequest, setSelectedRequest] = useState<HelpRequestResponseDto | null>(null)
 
-  // Check for token in URL and localStorage
+  // Check for existing authentication
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const { token } = router.query
-      if (token) {
-        // Token in URL - store it and set user as logged in
-        const userData = {
-          identifier: token as string,
-          name: token as string,
-        }
-        localStorage.setItem('donor_user', JSON.stringify({ ...userData, loggedIn: true }))
-        setUserInfo(userData)
-        setShowIdentifierPrompt(false)
-        // Remove token from URL
-        router.replace('/', undefined, { shallow: true })
-      } else {
-        // Check localStorage
-        const donorUser = localStorage.getItem('donor_user')
-        if (donorUser) {
-          try {
-            const user = JSON.parse(donorUser)
-            if (user.loggedIn && user.identifier) {
-              setUserInfo({
-                name: user.name || user.identifier,
-                identifier: user.identifier || user.phone || user.email,
-              })
-              setShowIdentifierPrompt(false)
-            }
-          } catch (e) {
-            // Invalid data
+      // Check if user has access token (from API registration)
+      const accessToken = localStorage.getItem('accessToken')
+      const donorUser = localStorage.getItem('donor_user')
+      
+      if (accessToken && donorUser) {
+        try {
+          const user = JSON.parse(donorUser)
+          if (user.loggedIn && user.identifier) {
+            setUserInfo({
+              name: user.name || user.identifier,
+              identifier: user.identifier,
+            })
+            setShowIdentifierPrompt(false)
           }
+        } catch (e) {
+          // Invalid data, clear it
+          localStorage.removeItem('donor_user')
+          apiClient.clearTokens()
         }
+      } else if (!accessToken && donorUser) {
+        // Old format without tokens, clear it
+        localStorage.removeItem('donor_user')
+        setShowIdentifierPrompt(true)
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -219,31 +215,137 @@ export default function LandingPage() {
 
   const handleIdentifierSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    if (!identifier.trim()) return
-
-    setLoading(true)
-    await new Promise((resolve) => setTimeout(resolve, 500))
-
-    // Generate token (in real app, this would come from API)
-    const token = identifier.replace(/[^a-zA-Z0-9]/g, '') + Date.now()
-    const userData = {
-      name: identifier,
-      identifier: identifier,
-      loggedIn: true,
+    const trimmedIdentifier = identifier.trim()
+    
+    // Frontend validation
+    if (!trimmedIdentifier) {
+      setError('Please enter a username, email, or phone number')
+      return
     }
 
-    localStorage.setItem('donor_user', JSON.stringify(userData))
-    setUserInfo(userData)
-    setShowIdentifierPrompt(false)
-    setIdentifier('')
+    if (trimmedIdentifier.length < 3) {
+      setError('Username must be at least 3 characters long')
+      return
+    }
 
-    // Add token to URL
-    router.push(`/?token=${token}`, undefined, { shallow: true })
-    setLoading(false)
+    if (trimmedIdentifier.length > 50) {
+      setError('Username must be less than 50 characters')
+      return
+    }
+
+    setLoading(true)
+    setError(null)
+
+    try {
+      console.log('[LandingPage] Starting registration for username:', trimmedIdentifier)
+      console.log('[LandingPage] API URL:', process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000')
+      
+      // Call the registration API
+      const response = await apiClient.post<{
+        success: boolean
+        data?: {
+          user: {
+            id: number
+            username: string
+            role: string
+            status: string
+            createdAt: string
+            updatedAt: string
+          }
+          accessToken: string
+          refreshToken: string
+        }
+        message?: string
+        error?: string
+        details?: Array<{
+          field: string
+          constraints: Record<string, string>
+        }>
+      }>('/api/users/register', { username: trimmedIdentifier }, true)
+
+      console.log('[LandingPage] Registration response:', response)
+
+      if (response.success && response.data) {
+        console.log('[LandingPage] Registration successful! User ID:', response.data.user.id)
+        console.log('[LandingPage] Storing tokens and user info...')
+        
+        // Store tokens using apiClient
+        apiClient.setTokens(response.data.accessToken, response.data.refreshToken)
+        console.log('[LandingPage] Tokens stored successfully')
+
+        // Store user info
+        const userData = {
+          name: response.data.user.username,
+          identifier: response.data.user.username,
+          loggedIn: true,
+        }
+        localStorage.setItem('donor_user', JSON.stringify(userData))
+        console.log('[LandingPage] User info stored:', userData)
+        
+        setUserInfo(userData)
+        setShowIdentifierPrompt(false)
+        setIdentifier('')
+
+        // Clear any URL tokens
+        router.replace('/', undefined, { shallow: true })
+        console.log('[LandingPage] Registration complete, redirecting...')
+      } else {
+        console.error('[LandingPage] Registration failed - response not successful:', response)
+        // Handle validation errors
+        let errorMessage = response.error || 'Registration failed. Please try again.'
+        if (response.details && Array.isArray(response.details) && response.details.length > 0) {
+          const firstError = response.details[0]
+          const constraintMessages = Object.values(firstError.constraints || {})
+          if (constraintMessages.length > 0) {
+            errorMessage = constraintMessages[0]
+          }
+        }
+        setError(errorMessage)
+      }
+    } catch (err) {
+      console.error('[LandingPage] Registration error caught:', err)
+      console.error('[LandingPage] Error type:', err instanceof Error ? err.constructor.name : typeof err)
+      console.error('[LandingPage] Error message:', err instanceof Error ? err.message : String(err))
+      
+      // Try to extract error details from the error
+      let errorMessage = 'Failed to register. Please check your connection and try again.'
+      
+      if (err instanceof Error) {
+        errorMessage = err.message
+        
+        // Check if it's a validation error with details
+        const errorObj = err as Error & { details?: unknown }
+        if (errorObj.details) {
+          try {
+            const details = Array.isArray(errorObj.details) ? errorObj.details : [errorObj.details]
+            if (details.length > 0) {
+              const firstDetail = details[0] as {
+                field?: string
+                constraints?: Record<string, string>
+              }
+              if (firstDetail?.constraints) {
+                const constraintMessages = Object.values(firstDetail.constraints)
+                if (constraintMessages.length > 0) {
+                  errorMessage = constraintMessages[0]
+                }
+              }
+            }
+          } catch (parseErr) {
+            // If parsing fails, use the original error message
+            console.error('Error parsing error details:', parseErr)
+          }
+        }
+      }
+      
+      setError(errorMessage)
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleLogout = () => {
     localStorage.removeItem('donor_user')
+    apiClient.clearTokens()
     setUserInfo(null)
     setShowIdentifierPrompt(true)
     setIdentifier('')
@@ -424,6 +526,15 @@ export default function LandingPage() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleIdentifierSubmit} className="space-y-4">
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                  <div className="font-semibold mb-1">Error:</div>
+                  <div>{error}</div>
+                  <div className="mt-2 text-xs text-red-600">
+                    API URL: {process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}
+                  </div>
+                </div>
+              )}
               <div className="space-y-2">
                 <Label htmlFor="identifier">{t('emailOrPhoneNumber')}</Label>
                 <div className="relative">
@@ -433,10 +544,14 @@ export default function LandingPage() {
                     type="text"
                     placeholder={t('enterYourEmailOrPhone')}
                     value={identifier}
-                    onChange={(e) => setIdentifier(e.target.value)}
+                    onChange={(e) => {
+                      setIdentifier(e.target.value)
+                      setError(null)
+                    }}
                     className="pl-10 h-12"
                     required
                     autoFocus
+                    disabled={loading}
                   />
                 </div>
                 <p className="text-xs text-gray-500">{t('willBeUsedToIdentify')}</p>

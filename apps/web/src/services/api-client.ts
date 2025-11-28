@@ -6,6 +6,11 @@
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
+// Log API URL on module load (for debugging)
+if (typeof window !== 'undefined') {
+  console.log('[API Client] Initialized with API URL:', API_URL);
+}
+
 // Storage keys for tokens
 const ACCESS_TOKEN_KEY = 'accessToken';
 const REFRESH_TOKEN_KEY = 'refreshToken';
@@ -187,10 +192,20 @@ class ApiClient {
     }
 
     try {
+      console.log(`[API Client] Making ${fetchOptions.method || 'GET'} request to:`, url);
+      console.log('[API Client] Request options:', {
+        method: fetchOptions.method || 'GET',
+        headers: defaultHeaders,
+        body: fetchOptions.body,
+      });
+
       const response = await fetch(url, {
         ...fetchOptions,
         headers: defaultHeaders,
       });
+
+      console.log('[API Client] Response status:', response.status, response.statusText);
+      console.log('[API Client] Response headers:', Object.fromEntries(response.headers.entries()));
 
       // Handle 401 Unauthorized - try to refresh token
       if (response.status === 401 && !skipAuth && retryCount === 0) {
@@ -209,23 +224,52 @@ class ApiClient {
       }
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({
-          error: `HTTP error! status: ${response.status}`,
-        }));
-        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-      }
-
-      return await response.json();
-    } catch (error) {
-      if (error instanceof TypeError && error.message === 'Failed to fetch') {
-        throw new Error(
-          `Unable to connect to the API server at ${this.baseUrl}. ` +
-          `Please make sure the API server is running on port 3000.`
-        );
-      }
-      if (error instanceof Error) {
+        // Try to get error response body
+        let errorData;
+        try {
+          const text = await response.text();
+          console.error('[API Client] Error response body:', text);
+          errorData = text ? JSON.parse(text) : { error: `HTTP error! status: ${response.status}` };
+        } catch (parseError) {
+          errorData = {
+            error: `HTTP error! status: ${response.status} ${response.statusText}`,
+          };
+        }
+        
+        console.error('[API Client] Error data:', errorData);
+        
+        // Create error with full details
+        const error = new Error(errorData.error || `HTTP error! status: ${response.status}`) as Error & {
+          details?: unknown;
+          status?: number;
+        };
+        error.details = errorData.details;
+        error.status = response.status;
         throw error;
       }
+
+      const responseData = await response.json();
+      console.log('[API Client] Response data:', responseData);
+      return responseData;
+    } catch (error) {
+      console.error('[API Client] Request failed:', error);
+      
+      if (error instanceof TypeError && error.message === 'Failed to fetch') {
+        const errorMessage = `Unable to connect to the API server at ${this.baseUrl}. ` +
+          `Please make sure the API server is running. ` +
+          `Full URL attempted: ${url}`;
+        console.error('[API Client] Connection error:', errorMessage);
+        throw new Error(errorMessage);
+      }
+      if (error instanceof Error) {
+        console.error('[API Client] Error details:', {
+          message: error.message,
+          name: error.name,
+          stack: error.stack,
+        });
+        throw error;
+      }
+      console.error('[API Client] Unexpected error:', error);
       throw new Error('An unexpected error occurred');
     }
   }

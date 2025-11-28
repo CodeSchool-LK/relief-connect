@@ -1,0 +1,68 @@
+.filters {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.filters h3 {
+  margin: 0 0 1rem 0;
+  color: #333;
+  font-size: 1.25rem;
+}
+
+.filterGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.filterGroup label {
+  font-weight: 600;
+  color: #333;
+  font-size: 0.95rem;
+}
+
+.filterGroup select,
+.filterGroup input[type="text"] {
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-family: inherit;
+  transition: border-color 0.2s;
+}
+
+.filterGroup select:focus,
+.filterGroup input[type="text"]:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+.checkboxes {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: normal;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.checkboxLabel input[type="checkbox"] {
+  width: auto;
+  margin: 0;
+  cursor: pointer;
+}
+
+@media (min-width: 768px) {
+  .filters {
+    position: sticky;
+    top: 1rem;
+  }
+}
+

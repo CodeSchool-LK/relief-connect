@@ -1,0 +1,78 @@
+.locationPicker {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.locationControls {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.gpsButton {
+  padding: 0.75rem 1.5rem;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+.gpsButton:hover:not(:disabled) {
+  background: #5568d3;
+  transform: translateY(-1px);
+}
+
+.gpsButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.error {
+  color: #d32f2f;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.coordinates {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.coordinateInput {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.coordinateInput label {
+  font-weight: 600;
+  color: #333;
+  font-size: 0.95rem;
+}
+
+.coordinateInput input {
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-family: inherit;
+  transition: border-color 0.2s;
+}
+
+.coordinateInput input:focus {
+  outline: none;
+  border-color: #667eea;
+}
+
+@media (min-width: 768px) {
+  .coordinates {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+

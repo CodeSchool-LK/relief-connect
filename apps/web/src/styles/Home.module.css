@@ -1,108 +1,75 @@
 .container {
   min-height: 100vh;
-  padding: 0 0.5rem;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
+  padding: 1rem;
 }
 
 .main {
-  padding: 3rem 0;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
   max-width: 1200px;
-  width: 100%;
+  margin: 0 auto;
+  padding: 2rem 1rem;
 }
 
 .title {
-  margin: 0 0 1rem;
-  line-height: 1.15;
-  font-size: 3rem;
+  font-size: 2rem;
+  font-weight: bold;
   text-align: center;
-  color: white;
-}
-
-.highlight {
-  color: #ffd700;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
-}
-
-.description {
-  text-align: center;
-  line-height: 1.5;
-  font-size: 1.25rem;
-  color: rgba(255, 255, 255, 0.9);
-  margin-bottom: 2rem;
-}
-
-.grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-  gap: 2rem;
-  width: 100%;
-  max-width: 900px;
-  margin-bottom: 2rem;
-}
-
-.card {
-  background: white;
-  border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-.card h2 {
-  margin-top: 0;
-  margin-bottom: 1rem;
   color: #333;
-  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
 }
 
-.error {
-  color: #e74c3c;
-  font-weight: 500;
+.subtitle {
+  font-size: 1.1rem;
+  text-align: center;
+  color: #666;
+  margin-bottom: 2rem;
 }
 
-.features {
+.actionButtons {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: 1fr;
   gap: 1.5rem;
-  width: 100%;
-  max-width: 900px;
   margin-top: 2rem;
 }
 
-.feature {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
+.actionButton {
+  background: white;
   border-radius: 12px;
-  padding: 1.5rem;
+  padding: 2rem;
   text-align: center;
-  color: white;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+  display: block;
+  cursor: pointer;
 }
 
-.feature h3 {
-  margin: 0 0 0.5rem;
+.actionButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.buttonIcon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.actionButton h2 {
   font-size: 1.5rem;
+  color: #333;
+  margin: 0.5rem 0;
 }
 
-.feature p {
+.actionButton p {
+  color: #666;
   margin: 0;
-  opacity: 0.9;
+  font-size: 0.95rem;
 }
 
-@media (max-width: 768px) {
+@media (min-width: 768px) {
   .title {
-    font-size: 2rem;
+    font-size: 2.5rem;
   }
 
-  .grid {
-    grid-template-columns: 1fr;
+  .actionButtons {
+    grid-template-columns: repeat(3, 1fr);
   }
 }
-

@@ -1,0 +1,51 @@
+.mapContainer {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.popup {
+  min-width: 200px;
+  max-width: 300px;
+}
+
+.popup h4 {
+  margin: 0 0 0.5rem 0;
+  color: #333;
+  font-size: 1.1rem;
+}
+
+.popup p {
+  margin: 0.25rem 0;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.contactButtons {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.contactButton {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  background: #667eea;
+  color: white;
+  border-radius: 6px;
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: background-color 0.2s;
+}
+
+.contactButton:hover {
+  background: #5568d3;
+}
+
+@media (min-width: 768px) {
+  .popup {
+    min-width: 250px;
+    max-width: 350px;
+  }
+}
+

@@ -6,6 +6,8 @@
  */
 import { sequelize } from '../config';
 import ItemModel from './item.model';
+import HelpRequestModel from './help-request.model';
+import CampModel from './camp.model';
 
 /**
  * Initialize model associations here
@@ -18,6 +20,8 @@ export const initializeAssociations = (): void => {
 
 // Export individual models (constants are accessible via ItemModel.TABLE_NAME, etc.)
 export { default as ItemModel } from './item.model';
+export { default as HelpRequestModel } from './help-request.model';
+export { default as CampModel } from './camp.model';
 
 // Export sequelize instance
 export { sequelize };
@@ -25,6 +29,8 @@ export { sequelize };
 // Export all models object
 export const models = {
   Item: ItemModel,
+  HelpRequest: HelpRequestModel,
+  Camp: CampModel,
   // Add more models here
 };
 

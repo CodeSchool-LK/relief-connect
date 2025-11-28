@@ -2,5 +2,6 @@
  * Services barrel export
  */
 export { default as apiClient } from './api-client';
-export { default as itemService } from './item-service';
+export { default as helpRequestService } from './help-request-service';
+export { default as campService } from './camp-service';
 

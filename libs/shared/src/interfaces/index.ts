@@ -7,4 +7,6 @@ export * from './IHealthResponse';
 export * from './IValidatable';
 export * from './item/ICreateItemRequest';
 export * from './item/IUpdateItemRequest';
+export * from './help-request';
+export * from './camp';
 

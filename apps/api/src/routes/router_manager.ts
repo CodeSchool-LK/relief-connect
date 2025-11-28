@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import { ItemRouter } from './item/item_router';
 import { HealthRouter } from './health/health_router';
+import { HelpRequestRouter } from './help-request/help-request_router';
+import { CampRouter } from './camp/camp_router';
 
 // Interface for router-like objects
 interface RouterLike {
@@ -31,11 +33,15 @@ export class RouterManager {
   private mainRouter: Router;
   private itemRouter: ItemRouter;
   private healthRouter: HealthRouter;
+  private helpRequestRouter: HelpRequestRouter;
+  private campRouter: CampRouter;
 
   private constructor() {
     this.mainRouter = Router();
     this.itemRouter = new ItemRouter();
     this.healthRouter = new HealthRouter();
+    this.helpRequestRouter = new HelpRequestRouter();
+    this.campRouter = new CampRouter();
     this.configureRoutes();
   }
 
@@ -66,6 +72,8 @@ export class RouterManager {
     
     // API routes (with /api prefix) - all API routes get the prefix automatically
     this.mainRouter.use(`${API_PREFIX}${this.itemRouter.getBasePath()}`, this.itemRouter.getRouter());
+    this.mainRouter.use(`${API_PREFIX}${this.helpRequestRouter.getBasePath()}`, this.helpRequestRouter.getRouter());
+    this.mainRouter.use(`${API_PREFIX}${this.campRouter.getBasePath()}`, this.campRouter.getRouter());
   }
 
   /**
@@ -85,6 +93,14 @@ export class RouterManager {
 
   public getHealthRouter(): HealthRouter {
     return this.healthRouter;
+  }
+
+  public getHelpRequestRouter(): HelpRequestRouter {
+    return this.helpRequestRouter;
+  }
+
+  public getCampRouter(): CampRouter {
+    return this.campRouter;
   }
 
   /**
@@ -135,6 +151,16 @@ export class RouterManager {
     routes.push(...this.itemRouter.getRouteInfo().map(route => ({
       ...route,
       path: `${API_PREFIX}${route.path}` // Add API prefix to item routes
+    })));
+    
+    routes.push(...this.helpRequestRouter.getRouteInfo().map(route => ({
+      ...route,
+      path: `${API_PREFIX}${route.path}` // Add API prefix to help request routes
+    })));
+    
+    routes.push(...this.campRouter.getRouteInfo().map(route => ({
+      ...route,
+      path: `${API_PREFIX}${route.path}` // Add API prefix to camp routes
     })));
     
     return routes;

@@ -6,11 +6,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from 'apps/
 import { Button } from 'apps/web/src/components/ui/button'
 import { Input } from 'apps/web/src/components/ui/input'
 import { Label } from 'apps/web/src/components/ui/label'
-import { ArrowLeft, User, Phone } from 'lucide-react'
+import { ArrowLeft, User } from 'lucide-react'
+import apiClient from '../services/api-client'
 
 export default function LoginPage() {
   const router = useRouter()
-  const [phone, setPhone] = useState('')
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -18,40 +20,113 @@ export default function LoginPage() {
     e.preventDefault()
     setError(null)
 
-    if (!phone.trim()) {
-      setError('Please enter your phone number')
+    const trimmedUsername = username.trim()
+    if (!trimmedUsername) {
+      setError('Please enter your username, email, or phone number')
+      return
+    }
+
+    if (trimmedUsername.length < 3) {
+      setError('Username must be at least 3 characters long')
       return
     }
 
     setLoading(true)
 
-    // Mock login - check if user exists in localStorage
-    await new Promise((resolve) => setTimeout(resolve, 500))
+    try {
+      console.log('Logging in with username:', trimmedUsername)
+      
+      // Call the login API
+      const response = await apiClient.post<{
+        success: boolean
+        data?: {
+          user: {
+            id: number
+            username: string
+            role: string
+            status: string
+            createdAt: string
+            updatedAt: string
+          }
+          accessToken: string
+          refreshToken: string
+        }
+        message?: string
+        error?: string
+        details?: Array<{
+          field: string
+          constraints: Record<string, string>
+        }>
+      }>('/api/auth/login', { 
+        username: trimmedUsername,
+        ...(password.trim() && { password: password.trim() })
+      }, true)
 
-    // Check if user exists (in real app, this would call an API)
-    const existingUsers = localStorage.getItem('donor_users')
-    const users = existingUsers ? JSON.parse(existingUsers) : []
-    
-    const user = users.find((u: any) => u.phone === phone)
-    
-    if (!user) {
-      setError('Phone number not found. Please register first.')
+      console.log('Login response:', response)
+
+      if (response.success && response.data) {
+        // Store tokens using apiClient.setTokens()
+        apiClient.setTokens(response.data.accessToken, response.data.refreshToken)
+
+        // Store user info
+        const userData = {
+          name: response.data.user.username,
+          identifier: response.data.user.username,
+          loggedIn: true,
+        }
+        localStorage.setItem('donor_user', JSON.stringify(userData))
+        
+        setLoading(false)
+        router.push('/requests')
+      } else {
+        // Handle validation errors
+        let errorMessage = response.error || 'Login failed. Please try again.'
+        if (response.details && Array.isArray(response.details) && response.details.length > 0) {
+          const firstError = response.details[0]
+          const constraintMessages = Object.values(firstError.constraints || {})
+          if (constraintMessages.length > 0) {
+            errorMessage = constraintMessages[0]
+          }
+        }
+        setError(errorMessage)
+        setLoading(false)
+      }
+    } catch (err) {
+      console.error('Login error:', err)
+      
+      // Try to extract error details from the error
+      let errorMessage = 'Failed to login. Please check your connection and try again.'
+      
+      if (err instanceof Error) {
+        errorMessage = err.message
+        
+        // Check if it's a validation error with details
+        const errorObj = err as Error & { details?: unknown }
+        if (errorObj.details) {
+          try {
+            const details = Array.isArray(errorObj.details) ? errorObj.details : [errorObj.details]
+            if (details.length > 0) {
+              const firstDetail = details[0] as {
+                field?: string
+                constraints?: Record<string, string>
+              }
+              if (firstDetail?.constraints) {
+                const constraintMessages = Object.values(firstDetail.constraints)
+                if (constraintMessages.length > 0) {
+                  errorMessage = constraintMessages[0]
+                }
+              }
+            }
+          } catch (parseErr) {
+            // If parsing fails, use the original error message
+            console.error('Error parsing error details:', parseErr)
+          }
+        }
+      }
+      
+      setError(errorMessage)
       setLoading(false)
-      return
     }
-
-    // Store logged in user info
-    localStorage.setItem(
-      'donor_user',
-      JSON.stringify({
-        name: user.name,
-        phone: user.phone,
-        loggedIn: true,
-      })
-    )
-
-    setLoading(false)
-    router.push('/requests')
   }
 
   return (
@@ -78,25 +153,49 @@ export default function LoginPage() {
               </div>
               <CardTitle className="text-2xl font-bold">Login as Donor</CardTitle>
               <CardDescription className="text-base mt-2">
-                Enter your phone number to access the requests
+                Enter your username, email, or phone number to login
               </CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="phone">Phone Number</Label>
+                  <Label htmlFor="username">Username, Email, or Phone</Label>
                   <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                     <Input
-                      id="phone"
-                      type="tel"
-                      placeholder="Enter your phone number"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
+                      id="username"
+                      type="text"
+                      placeholder="Enter your username, email, or phone"
+                      value={username}
+                      onChange={(e) => {
+                        setUsername(e.target.value)
+                        setError(null)
+                      }}
                       className="pl-10"
                       required
+                      disabled={loading}
+                      autoFocus
                     />
                   </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password (Optional)</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="Enter password if you have one"
+                    value={password}
+                    onChange={(e) => {
+                      setPassword(e.target.value)
+                      setError(null)
+                    }}
+                    className="pl-10"
+                    disabled={loading}
+                  />
+                  <p className="text-xs text-gray-500">
+                    If you registered without a password, leave this empty
+                  </p>
                 </div>
 
                 {error && (

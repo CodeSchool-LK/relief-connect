@@ -157,8 +157,24 @@ const dummyVictimRequests: VictimRequest[] = [
 export default function MyRequestsPage() {
   const router = useRouter()
   const { t } = useTranslation('common')
-  const [activeTab, setActiveTab] = useState<RequestType>('donor')
+  const { tab } = router.query
+  const [activeTab, setActiveTab] = useState<RequestType>(
+    (tab as RequestType) || 'donor'
+  )
   const [userInfo, setUserInfo] = useState<{ name?: string; identifier?: string } | null>(null)
+  const [donorRequests, setDonorRequests] = useState<DonorRequest[]>(() => {
+    // Load donation statuses from localStorage
+    if (typeof window !== 'undefined') {
+      const donationStatuses = JSON.parse(
+        localStorage.getItem('donation_statuses') || '{}'
+      )
+      return dummyDonorRequests.map((request) => ({
+        ...request,
+        status: (donationStatuses[request.id] as DonorRequest['status']) || request.status,
+      }))
+    }
+    return dummyDonorRequests
+  })
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -182,6 +198,28 @@ export default function MyRequestsPage() {
       }
     }
   }, [router])
+
+  useEffect(() => {
+    if (tab && (tab === 'donor' || tab === 'victim')) {
+      setActiveTab(tab as RequestType)
+    }
+  }, [tab])
+
+  const handleMarkAsCompleted = (donationId: number) => {
+    const updatedRequests = donorRequests.map((request) =>
+      request.id === donationId ? { ...request, status: 'completed' as const } : request
+    )
+    setDonorRequests(updatedRequests)
+    
+    // Store in localStorage to sync with request details page
+    if (typeof window !== 'undefined') {
+      const donationStatuses = JSON.parse(
+        localStorage.getItem('donation_statuses') || '{}'
+      )
+      donationStatuses[donationId] = 'completed'
+      localStorage.setItem('donation_statuses', JSON.stringify(donationStatuses))
+    }
+  }
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -288,7 +326,7 @@ export default function MyRequestsPage() {
           {/* Donor Requests Tab */}
           {activeTab === 'donor' && (
             <div className="space-y-4">
-              {dummyDonorRequests.length === 0 ? (
+              {donorRequests.length === 0 ? (
                 <Card>
                   <CardContent className="py-12 text-center">
                     <Package className="h-12 w-12 mx-auto mb-4 text-gray-400" />
@@ -300,7 +338,7 @@ export default function MyRequestsPage() {
                 </Card>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {dummyDonorRequests.map((request) => (
+                  {donorRequests.map((request) => (
                     <Card
                       key={request.id}
                       className="transition-all hover:shadow-lg overflow-hidden border-2"
@@ -347,81 +385,24 @@ export default function MyRequestsPage() {
                               <span>{t('donated')}: {request.donatedDate}</span>
                             </div>
                           </div>
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <Button className="w-full mt-4">{t('seeDetails')}</Button>
-                            </DialogTrigger>
-                            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                              <DialogHeader>
-                                <DialogTitle className="text-2xl">{t('donationDetails')}</DialogTitle>
-                                <DialogDescription>{t('informationAboutYourDonation')}</DialogDescription>
-                              </DialogHeader>
-                              <div className="space-y-4 mt-4">
-                                <div className="grid grid-cols-2 gap-4">
-                                  <div>
-                                    <Label className="text-sm font-semibold text-gray-600">
-                                      {t('requestTitle')}
-                                    </Label>
-                                    <p className="text-base">{request.requestTitle}</p>
-                                  </div>
-                                  <div>
-                                    <Label className="text-sm font-semibold text-gray-600">
-                                      {t('status')}
-                                    </Label>
-                                    <p className="text-base capitalize">{request.status}</p>
-                                  </div>
-                                  <div>
-                                    <Label className="text-sm font-semibold text-gray-600">
-                                      {t('location')}
-                                    </Label>
-                                    <p className="text-base">{request.location}</p>
-                                  </div>
-                                  <div>
-                                    <Label className="text-sm font-semibold text-gray-600">
-                                      {t('category')}
-                                    </Label>
-                                    <p className="text-base">{request.category}</p>
-                                  </div>
-                                  <div>
-                                    <Label className="text-sm font-semibold text-gray-600">
-                                      {t('donatedDate')}
-                                    </Label>
-                                    <p className="text-base">{request.donatedDate}</p>
-                                  </div>
-                                  <div>
-                                    <Label className="text-sm font-semibold text-gray-600">
-                                      {t('urgency')}
-                                    </Label>
-                                    <p className="text-base">{request.urgency}</p>
-                                  </div>
-                                </div>
-                                <div>
-                                  <Label className="text-sm font-semibold text-gray-600">
-                                    {t('donatedItems')}
-                                  </Label>
-                                  <div className="mt-2 p-4 bg-gray-50 rounded-lg">
-                                    <p className="text-sm">{request.donatedItems}</p>
-                                  </div>
-                                </div>
-                                <div>
-                                  <Label className="text-sm font-semibold text-gray-600">
-                                    {t('requestDetails')}
-                                  </Label>
-                                  <div className="mt-2 p-4 bg-gray-50 rounded-lg">
-                                    <p className="text-sm whitespace-pre-wrap">{request.shortNote}</p>
-                                  </div>
-                                </div>
-                                <div>
-                                  <Label className="text-sm font-semibold text-gray-600">
-                                    {t('contactInformation')}
-                                  </Label>
-                                  <p className="text-base">
-                                    {request.contactType}: {request.contact}
-                                  </p>
-                                </div>
-                              </div>
-                            </DialogContent>
-                          </Dialog>
+<div className="flex flex-col gap-2 mt-4">
+                            <Button
+                              className="w-full"
+                              onClick={() => router.push(`/request/${request.requestId}`)}
+                            >
+                              {t('seeDetails')}
+                            </Button>
+                            {request.status !== 'completed' && (
+                              <Button
+                                variant="outline"
+                                className="w-full border-green-300 text-green-700 hover:bg-green-50"
+                                onClick={() => handleMarkAsCompleted(request.id)}
+                              >
+                                <CheckCircle className="h-4 w-4 mr-2" />
+                                {t('markAsCompleted')}
+                              </Button>
+                            )}
+                          </div>
                         </div>
                       </CardContent>
                     </Card>
@@ -497,89 +478,12 @@ export default function MyRequestsPage() {
                               <span>{t('created')}: {request.createdDate}</span>
                             </div>
                           </div>
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <Button className="w-full mt-4">{t('seeDetails')}</Button>
-                            </DialogTrigger>
-                            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                              <DialogHeader>
-                                <DialogTitle className="text-2xl">{t('helpRequestDetails')}</DialogTitle>
-                                <DialogDescription>
-                                  {t('informationAboutYourRequest')}
-                                </DialogDescription>
-                              </DialogHeader>
-                              <div className="space-y-4 mt-4">
-                                <div className="grid grid-cols-2 gap-4">
-                                  <div>
-                                    <Label className="text-sm font-semibold text-gray-600">
-                                      {t('title')}
-                                    </Label>
-                                    <p className="text-base">{request.title}</p>
-                                  </div>
-                                  <div>
-                                    <Label className="text-sm font-semibold text-gray-600">
-                                      {t('status')}
-                                    </Label>
-                                    <p className="text-base capitalize">{request.status}</p>
-                                  </div>
-                                  <div>
-                                    <Label className="text-sm font-semibold text-gray-600">
-                                      {t('location')}
-                                    </Label>
-                                    <p className="text-base">{request.location}</p>
-                                  </div>
-                                  <div>
-                                    <Label className="text-sm font-semibold text-gray-600">
-                                      {t('category')}
-                                    </Label>
-                                    <p className="text-base">{request.category}</p>
-                                  </div>
-                                  <div>
-                                    <Label className="text-sm font-semibold text-gray-600">
-                                      {t('createdDate')}
-                                    </Label>
-                                    <p className="text-base">{request.createdDate}</p>
-                                  </div>
-                                  <div>
-                                    <Label className="text-sm font-semibold text-gray-600">
-                                      {t('urgency')}
-                                    </Label>
-                                    <p className="text-base">{request.urgency}</p>
-                                  </div>
-                                </div>
-                                <div>
-                                  <Label className="text-sm font-semibold text-gray-600">
-                                    {t('peopleCount')}
-                                  </Label>
-                                  <p className="text-base">{request.peopleCount} {t('people')}</p>
-                                </div>
-                                <div>
-                                  <Label className="text-sm font-semibold text-gray-600">
-                                    {t('requiredItems')}
-                                  </Label>
-                                  <div className="mt-2 p-4 bg-gray-50 rounded-lg">
-                                    <p className="text-sm">{request.items}</p>
-                                  </div>
-                                </div>
-                                <div>
-                                  <Label className="text-sm font-semibold text-gray-600">
-                                    {t('fullDetails')}
-                                  </Label>
-                                  <div className="mt-2 p-4 bg-gray-50 rounded-lg">
-                                    <p className="text-sm whitespace-pre-wrap">{request.shortNote}</p>
-                                  </div>
-                                </div>
-                                <div>
-                                  <Label className="text-sm font-semibold text-gray-600">
-                                    {t('contactInformation')}
-                                  </Label>
-                                  <p className="text-base">
-                                    {request.contactType}: {request.contact}
-                                  </p>
-                                </div>
-                              </div>
-                            </DialogContent>
-                          </Dialog>
+<Button
+                            className="w-full mt-4"
+                            onClick={() => router.push(`/request/${request.id}`)}
+                          >
+                            {t('seeDetails')}
+                          </Button>
                         </div>
                       </CardContent>
                     </Card>

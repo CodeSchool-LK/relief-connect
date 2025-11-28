@@ -32,7 +32,7 @@ type FormStep = 1 | 2 | 3
 interface FormData {
   name: string
   contactNumber: string
-  isIndividual: boolean
+  requestType: 'family' | 'camp'
   elders: number
   children: number
   pets: number
@@ -64,7 +64,7 @@ export default function EmergencyRequestForm({
   const [formData, setFormData] = useState<FormData>({
     name: '',
     contactNumber: '',
-    isIndividual: true,
+    requestType: 'family',
     elders: 0,
     children: 0,
     pets: 0,
@@ -137,7 +137,8 @@ export default function EmergencyRequestForm({
     setError(null)
 
     try {
-      const totalPeople = formData.elders + formData.children + (formData.isIndividual ? 1 : 0)
+      const totalPeople =
+        formData.elders + formData.children + (formData.requestType === 'family' ? 1 : 0)
       const rationItemsList = Object.entries(formData.rationItems)
         .filter(([_, count]) => count > 0)
         .map(([id, count]) => {
@@ -150,18 +151,21 @@ export default function EmergencyRequestForm({
       const helpRequestData: ICreateHelpRequest = {
         lat: formData.gpsLocation.lat,
         lng: formData.gpsLocation.lng,
-        category: formData.rationItems.food || formData.rationItems.water
-          ? HelpRequestCategory.FOOD_WATER
-          : HelpRequestCategory.OTHER,
+        category:
+          formData.rationItems.food || formData.rationItems.water
+            ? HelpRequestCategory.FOOD_WATER
+            : HelpRequestCategory.OTHER,
         urgency: formData.urgent ? Urgency.HIGH : Urgency.MEDIUM,
-        shortNote: formData.notes || `Name: ${formData.name}, People: ${totalPeople}${formData.children > 0 ? `, Kids: ${formData.children}` : ''}${formData.elders > 0 ? `, Elders: ${formData.elders}` : ''}${formData.pets > 0 ? `, Pets: ${formData.pets}` : ''}. Items: ${rationItemsList}`,
+        shortNote:
+          formData.notes ||
+          `Name: ${formData.name}, People: ${totalPeople}${formData.children > 0 ? `, Kids: ${formData.children}` : ''}${formData.elders > 0 ? `, Elders: ${formData.elders}` : ''}${formData.pets > 0 ? `, Pets: ${formData.pets}` : ''}. Items: ${rationItemsList}`,
         approxArea: `${formData.gpsLocation.lat}, ${formData.gpsLocation.lng}`,
         contactType: ContactType.PHONE,
         contact: formData.contactNumber,
       }
 
       const response = await onSubmit(helpRequestData)
-      
+
       if (response.success && response.data?.id) {
         setRequestId(response.data.id.toString())
         setCurrentStep(3)
@@ -189,7 +193,9 @@ export default function EmergencyRequestForm({
           {/* Progress Indicator */}
           <div className="mb-6">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-gray-600">{t('step')} 1 {t('of')} 3</span>
+              <span className="text-sm font-medium text-gray-600">
+                {t('step')} 1 {t('of')} 3
+              </span>
               <span className="text-sm text-gray-500">33%</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2">
@@ -231,16 +237,16 @@ export default function EmergencyRequestForm({
                 <div className="flex gap-2">
                   <Button
                     type="button"
-                    variant={formData.isIndividual ? 'default' : 'outline'}
-                    onClick={() => setFormData({ ...formData, isIndividual: true })}
+                    variant={formData.requestType === 'family' ? 'default' : 'outline'}
+                    onClick={() => setFormData({ ...formData, requestType: 'family' })}
                     className="flex-1"
                   >
                     {t('individual')}
                   </Button>
                   <Button
                     type="button"
-                    variant={!formData.isIndividual ? 'default' : 'outline'}
-                    onClick={() => setFormData({ ...formData, isIndividual: false })}
+                    variant={formData.requestType === 'camp' ? 'default' : 'outline'}
+                    onClick={() => setFormData({ ...formData, requestType: 'camp' })}
                     className="flex-1"
                   >
                     {t('multiplePeople')}
@@ -248,7 +254,7 @@ export default function EmergencyRequestForm({
                 </div>
               </div>
 
-              {!formData.isIndividual && (
+              {formData.requestType === 'camp' && (
                 <Card className="bg-gray-50">
                   <CardContent className="pt-4 space-y-3">
                     <div className="flex items-center justify-between">
@@ -261,12 +267,16 @@ export default function EmergencyRequestForm({
                           type="button"
                           variant="outline"
                           size="icon"
-                          onClick={() => setFormData({ ...formData, elders: Math.max(0, formData.elders - 1) })}
+                          onClick={() =>
+                            setFormData({ ...formData, elders: Math.max(0, formData.elders - 1) })
+                          }
                           disabled={formData.elders === 0}
                         >
                           <Minus className="h-4 w-4" />
                         </Button>
-                        <span className="text-lg font-semibold w-8 text-center">{formData.elders}</span>
+                        <span className="text-lg font-semibold w-8 text-center">
+                          {formData.elders}
+                        </span>
                         <Button
                           type="button"
                           variant="outline"
@@ -288,17 +298,26 @@ export default function EmergencyRequestForm({
                           type="button"
                           variant="outline"
                           size="icon"
-                          onClick={() => setFormData({ ...formData, children: Math.max(0, formData.children - 1) })}
+                          onClick={() =>
+                            setFormData({
+                              ...formData,
+                              children: Math.max(0, formData.children - 1),
+                            })
+                          }
                           disabled={formData.children === 0}
                         >
                           <Minus className="h-4 w-4" />
                         </Button>
-                        <span className="text-lg font-semibold w-8 text-center">{formData.children}</span>
+                        <span className="text-lg font-semibold w-8 text-center">
+                          {formData.children}
+                        </span>
                         <Button
                           type="button"
                           variant="outline"
                           size="icon"
-                          onClick={() => setFormData({ ...formData, children: formData.children + 1 })}
+                          onClick={() =>
+                            setFormData({ ...formData, children: formData.children + 1 })
+                          }
                         >
                           <Plus className="h-4 w-4" />
                         </Button>
@@ -315,12 +334,16 @@ export default function EmergencyRequestForm({
                           type="button"
                           variant="outline"
                           size="icon"
-                          onClick={() => setFormData({ ...formData, pets: Math.max(0, formData.pets - 1) })}
+                          onClick={() =>
+                            setFormData({ ...formData, pets: Math.max(0, formData.pets - 1) })
+                          }
                           disabled={formData.pets === 0}
                         >
                           <Minus className="h-4 w-4" />
                         </Button>
-                        <span className="text-lg font-semibold w-8 text-center">{formData.pets}</span>
+                        <span className="text-lg font-semibold w-8 text-center">
+                          {formData.pets}
+                        </span>
                         <Button
                           type="button"
                           variant="outline"
@@ -339,7 +362,9 @@ export default function EmergencyRequestForm({
                 <Label>{t('gpsLocation')} *</Label>
                 <div className="grid grid-cols-2 gap-2">
                   <div className="space-y-1">
-                    <Label htmlFor="latitude" className="text-xs">{t('latitude')}</Label>
+                    <Label htmlFor="latitude" className="text-xs">
+                      {t('latitude')}
+                    </Label>
                     <Input
                       id="latitude"
                       type="number"
@@ -348,14 +373,19 @@ export default function EmergencyRequestForm({
                       onChange={(e) =>
                         setFormData({
                           ...formData,
-                          gpsLocation: { ...formData.gpsLocation, lat: parseFloat(e.target.value) || 0 },
+                          gpsLocation: {
+                            ...formData.gpsLocation,
+                            lat: parseFloat(e.target.value) || 0,
+                          },
                         })
                       }
                       placeholder="7.8731"
                     />
                   </div>
                   <div className="space-y-1">
-                    <Label htmlFor="longitude" className="text-xs">{t('longitude')}</Label>
+                    <Label htmlFor="longitude" className="text-xs">
+                      {t('longitude')}
+                    </Label>
                     <Input
                       id="longitude"
                       type="number"
@@ -364,7 +394,10 @@ export default function EmergencyRequestForm({
                       onChange={(e) =>
                         setFormData({
                           ...formData,
-                          gpsLocation: { ...formData.gpsLocation, lng: parseFloat(e.target.value) || 0 },
+                          gpsLocation: {
+                            ...formData.gpsLocation,
+                            lng: parseFloat(e.target.value) || 0,
+                          },
                         })
                       }
                       placeholder="80.7718"
@@ -393,13 +426,13 @@ export default function EmergencyRequestForm({
                   <MapPin className="mr-2 h-4 w-4" />
                   {t('getCurrentLocation')}
                 </Button>
-                <p className="text-xs text-gray-500">
-                  {t('orEnterCoordinatesManually')}
-                </p>
+                <p className="text-xs text-gray-500">{t('orEnterCoordinatesManually')}</p>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="notes">{t('notes')} ({t('optional')})</Label>
+                <Label htmlFor="notes">
+                  {t('notes')} ({t('optional')})
+                </Label>
                 <Textarea
                   id="notes"
                   value={formData.notes}
@@ -435,7 +468,9 @@ export default function EmergencyRequestForm({
           {/* Progress Indicator */}
           <div className="mb-6">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-gray-600">{t('step')} 2 {t('of')} 3</span>
+              <span className="text-sm font-medium text-gray-600">
+                {t('step')} 2 {t('of')} 3
+              </span>
               <span className="text-sm text-gray-500">67%</span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2">
@@ -521,7 +556,8 @@ export default function EmergencyRequestForm({
 
   // Step 3: Confirmation & Success
   if (currentStep === 3) {
-    const totalPeople = formData.elders + formData.children + (formData.isIndividual ? 1 : 0)
+    const totalPeople =
+      formData.elders + formData.children + (formData.requestType === 'family' ? 1 : 0)
     const selectedItems = Object.entries(formData.rationItems)
       .filter(([_, count]) => count > 0)
       .map(([id, count]) => {
@@ -537,16 +573,16 @@ export default function EmergencyRequestForm({
           <div className="max-w-md mx-auto">
             <Card className="shadow-lg">
               <CardHeader>
-                <CardTitle className="text-xl font-bold text-center">Donation Request Form Submit</CardTitle>
+                <CardTitle className="text-xl font-bold text-center">
+                  Donation Request Form Submit
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="text-center space-y-4">
                   <div className="text-5xl">✅</div>
-                  <div className="text-xl font-bold text-green-600">
-                    Form submission Success
-                  </div>
+                  <div className="text-xl font-bold text-green-600">Form submission Success</div>
                   <div className="text-base text-gray-700">
-                    Your form submitted successfully. Hope you'll get help soon.
+                    Your form submitted successfully. Hope you&apos;ll get help soon.
                   </div>
                   <div className="text-base font-medium text-gray-900">
                     Emergency Support: <span className="text-primary">117</span>
@@ -562,11 +598,7 @@ export default function EmergencyRequestForm({
                   >
                     {t('goToYourRequest')}
                   </Button>
-                  <Button
-                    type="button"
-                    onClick={() => router.push('/help')}
-                    className="w-full"
-                  >
+                  <Button type="button" onClick={() => router.push('/')} className="w-full">
                     {t('seeAllRequests')}
                   </Button>
                 </div>
@@ -602,16 +634,14 @@ export default function EmergencyRequestForm({
                 <div className="text-sm font-medium text-gray-600">Help needed:</div>
                 <div className="space-y-1 pl-4 text-sm">
                   {selectedItems.includes('Food & Water') && <div>• Requested food & water</div>}
-                  {selectedItems.length > 0 && (
-                    <div>• Req items ({selectedItems.join(', ')})</div>
-                  )}
+                  {selectedItems.length > 0 && <div>• Req items ({selectedItems.join(', ')})</div>}
                   {formData.children > 0 && <div>• Kids count ({formData.children} kids)</div>}
                   {formData.elders > 0 && <div>• Adults count ({formData.elders} adults)</div>}
-                  <div>• Location ({formData.gpsLocation.lat}, {formData.gpsLocation.lng})</div>
+                  <div>
+                    • Location ({formData.gpsLocation.lat}, {formData.gpsLocation.lng})
+                  </div>
                   {formData.urgent && <div>• Urgent (Medical emergency)</div>}
-                  {formData.contactNumber && (
-                    <div>• Contact number ({formData.contactNumber})</div>
-                  )}
+                  {formData.contactNumber && <div>• Contact number ({formData.contactNumber})</div>}
                   {formData.notes ? (
                     <div>• Add notes ({formData.notes})</div>
                   ) : (

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Head from 'next/head';
 import dynamic from 'next/dynamic';
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
@@ -23,7 +23,7 @@ export default function Help() {
   const [helpRequestFilters, setHelpRequestFilters] = useState<HelpRequestFilters>({});
   const [campFilters, setCampFilters] = useState<CampFilters>({});
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     setError(null);
 
@@ -51,11 +51,11 @@ export default function Help() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [type, helpRequestFilters, campFilters]);
 
   useEffect(() => {
     fetchData();
-  }, [type, helpRequestFilters, campFilters]);
+  }, [fetchData]);
 
   return (
     <div className={styles.container}>

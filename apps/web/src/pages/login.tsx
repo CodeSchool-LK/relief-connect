@@ -110,7 +110,7 @@ export default function LoginPage() {
                 </Button>
 
                 <div className="text-center text-sm text-gray-500">
-                  <p>Don't have an account?</p>
+                  <p>Don&apos;t have an account?</p>
                   <Button
                     variant="link"
                     className="text-primary p-0 h-auto"

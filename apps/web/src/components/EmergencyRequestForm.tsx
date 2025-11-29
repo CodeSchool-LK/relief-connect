@@ -161,24 +161,18 @@ export default function EmergencyRequestForm({
       const totalPeople =
         formData.elders + formData.children + (formData.requestType === 'family' ? 1 : 0)
       
-      // Convert ration items object to array of selected item IDs and quantities map
-      const selectedRationItemIds = Object.entries(formData.rationItems)
-        .filter(([_, quantity]) => quantity > 0)
-        .map(([id]) => id)
-
       // Create quantities map (only include items with quantity > 0)
-      const rationItemQuantities: Record<string, number> = {}
+      const rationItemsWithQuantities: Record<string, number> = {}
       Object.entries(formData.rationItems).forEach(([id, quantity]) => {
         if (quantity > 0) {
-          rationItemQuantities[id] = quantity
+          rationItemsWithQuantities[id] = quantity
         }
       })
 
-      // Create human-readable list for shortNote (for backward compatibility)
-      const rationItemsList = selectedRationItemIds
-        .map((id) => {
+      // Create human-readable list for shortNote
+      const rationItemsList = Object.entries(rationItemsWithQuantities)
+        .map(([id, quantity]) => {
           const item = RATION_ITEMS.find((i) => i.id === id)
-          const quantity = formData.rationItems[id] || 1
           return item ? `${item.label} (${quantity})` : ''
         })
         .filter(Boolean)
@@ -188,7 +182,7 @@ export default function EmergencyRequestForm({
         ? ` Special Needs: ${formData.specialNeeds}`
         : ''
 
-      const helpRequestData: ICreateHelpRequest & { rationItemQuantities?: Record<string, number> } = {
+      const helpRequestData: ICreateHelpRequest = {
         lat: formData.gpsLocation.lat,
         lng: formData.gpsLocation.lng,
         urgency: formData.urgent ? Urgency.HIGH : Urgency.MEDIUM,
@@ -205,10 +199,8 @@ export default function EmergencyRequestForm({
         elders: formData.elders > 0 ? formData.elders : undefined,
         children: formData.children > 0 ? formData.children : undefined,
         pets: formData.pets > 0 ? formData.pets : undefined,
-        // Ration items as structured array
-        rationItems: selectedRationItemIds.length > 0 ? selectedRationItemIds : undefined,
-        // Ration item quantities map
-        rationItemQuantities: Object.keys(rationItemQuantities).length > 0 ? rationItemQuantities : undefined,
+        // Ration items with quantities (object format only)
+        rationItems: Object.keys(rationItemsWithQuantities).length > 0 ? rationItemsWithQuantities : undefined,
       }
 
       const response = await onSubmit(helpRequestData)

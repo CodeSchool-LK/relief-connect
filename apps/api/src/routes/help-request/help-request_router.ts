@@ -63,6 +63,13 @@ export class HelpRequestRouter extends BaseRouter {
       controller.getHelpRequestsSummary
     );
 
+    // GET /api/help-requests/my - Get authenticated user's help requests
+    this.router.get(
+      '/my',
+      authenticate,
+      controller.getMyHelpRequests
+    );
+
     // GET /api/help-requests - Get all help requests (with optional filters)
     this.router.get(
       '/',
@@ -94,6 +101,13 @@ export class HelpRequestRouter extends BaseRouter {
     );
 
     // Donation routes (nested under help requests)
+    // GET /api/help-requests/my/donations - Get authenticated user's donations (must come before /:helpRequestId/donations)
+    this.router.get(
+      '/my/donations',
+      authenticate,
+      donationController.getMyDonations
+    );
+
     // GET /api/help-requests/:helpRequestId/donations - Get all donations for a help request
     this.router.get(
       '/:helpRequestId/donations',

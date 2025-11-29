@@ -1,5 +1,6 @@
 import { IHelpRequest } from '../../../interfaces/help-request/IHelpRequest';
 import { HelpRequestStatus, Urgency, ContactType } from '../../../enums';
+import { InventoryItemResponseDto } from '../../inventory/response/inventory_item_response_dto';
 
 /**
  * Extended DTO for help request response that includes ownership information
@@ -23,10 +24,11 @@ export class HelpRequestWithOwnershipResponseDto {
   pets?: number;
   rationItems?: string[];
   status?: HelpRequestStatus;
+  inventory?: InventoryItemResponseDto[]; // Inventory items for this help request
   createdAt?: Date;
   updatedAt?: Date;
 
-  constructor(helpRequest: IHelpRequest, isOwner: boolean = false) {
+  constructor(helpRequest: IHelpRequest, isOwner: boolean = false, inventory?: InventoryItemResponseDto[]) {
     this.id = helpRequest.id!;
     this.userId = helpRequest.userId;
     this.isOwner = isOwner;
@@ -44,6 +46,7 @@ export class HelpRequestWithOwnershipResponseDto {
     this.pets = helpRequest.pets;
     this.rationItems = helpRequest.rationItems;
     this.status = helpRequest.status || HelpRequestStatus.OPEN;
+    this.inventory = inventory;
     this.createdAt = helpRequest.createdAt;
     this.updatedAt = helpRequest.updatedAt;
   }

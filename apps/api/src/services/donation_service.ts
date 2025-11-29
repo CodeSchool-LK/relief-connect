@@ -1,5 +1,5 @@
 import { DonationDao, HelpRequestDao, HelpRequestInventoryItemDao } from '../dao';
-import { CreateDonationDto, DonationResponseDto } from '@nx-mono-repo-deployment-test/shared/src/dtos/donation';
+import { CreateDonationDto, DonationResponseDto, DonationWithHelpRequestResponseDto } from '@nx-mono-repo-deployment-test/shared/src/dtos/donation';
 import { DonationWithDonatorResponseDto } from '@nx-mono-repo-deployment-test/shared/src/dtos/donation/response/donation_with_donator_response_dto';
 import { IApiResponse } from '@nx-mono-repo-deployment-test/shared/src/interfaces';
 
@@ -35,6 +35,33 @@ class DonationService {
       );
     }
     return DonationService.instance;
+  }
+
+  /**
+   * Get all donations made by the authenticated user
+   * @param donatorId - User ID of the donator
+   */
+  public async getMyDonations(donatorId: number): Promise<IApiResponse<DonationWithHelpRequestResponseDto[]>> {
+    try {
+      const donations = await this.donationDao.findByDonatorId(donatorId);
+      
+      // Map donations to DTOs with help request information
+      const donationDtos = donations.map(d => {
+        return new DonationWithHelpRequestResponseDto(d, d.helpRequest);
+      });
+
+      return {
+        success: true,
+        data: donationDtos,
+        count: donationDtos.length,
+      };
+    } catch (error) {
+      console.error(`Error in DonationService.getMyDonations (${donatorId}):`, error);
+      return {
+        success: false,
+        error: 'Failed to retrieve donations',
+      };
+    }
   }
 
   /**

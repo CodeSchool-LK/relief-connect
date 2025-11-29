@@ -15,6 +15,30 @@ class DonationController {
   }
 
   /**
+   * GET /api/donations/my
+   * Get all donations made by the authenticated user
+   */
+  getMyDonations = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const donatorId = req.user?.id;
+      if (!donatorId) {
+        res.sendError('Authentication required', 401);
+        return;
+      }
+
+      const result = await this.donationService.getMyDonations(donatorId);
+
+      if (result.success && result.data) {
+        res.sendSuccess(result.data, result.message, 200);
+      } else {
+        res.sendError(result.error || 'Failed to retrieve donations', 500);
+      }
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
    * GET /api/help-requests/:helpRequestId/donations
    * Get all donations for a help request
    */

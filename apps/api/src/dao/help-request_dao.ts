@@ -73,18 +73,32 @@ class HelpRequestDao {
     }
   }
 
+  /**
+   * Find all help requests created by a specific user
+   * Includes all statuses (not just OPEN) and all dates (not just last 30 days)
+   */
+  public async findByUserId(userId: number): Promise<IHelpRequest[]> {
+    try {
+      const helpRequests = await HelpRequestModel.findAll({
+        where: {
+          [HelpRequestModel.HELP_REQUEST_USER_ID]: userId,
+        },
+        order: [[HelpRequestModel.HELP_REQUEST_CREATED_AT, 'DESC']],
+      });
+      return helpRequests.map(hr => hr.toJSON() as IHelpRequest);
+    } catch (error) {
+      console.error(`Error in HelpRequestDao.findByUserId (${userId}):`, error);
+      throw error;
+    }
+  }
+
   public async create(createHelpRequestDto: CreateHelpRequestDto, userId?: number): Promise<IHelpRequest> {
     try {
-      // Normalize rationItems: convert object to array if needed (for database storage)
-      let rationItemsArray: string[] | undefined;
-      if (createHelpRequestDto.rationItems) {
-        if (Array.isArray(createHelpRequestDto.rationItems)) {
-          rationItemsArray = createHelpRequestDto.rationItems;
-        } else {
-          // Object format: extract keys (item codes)
-          rationItemsArray = Object.keys(createHelpRequestDto.rationItems);
-        }
-      }
+      // Extract ration items array from DTO (service passes array format for database storage)
+      // The DTO now accepts Record<string, number>, but service converts to array before calling DAO
+      const rationItemsArray = Array.isArray(createHelpRequestDto.rationItems) 
+        ? createHelpRequestDto.rationItems 
+        : (createHelpRequestDto.rationItems ? Object.keys(createHelpRequestDto.rationItems) : undefined);
 
       const helpRequest = await HelpRequestModel.create({
         [HelpRequestModel.HELP_REQUEST_USER_ID]: userId,

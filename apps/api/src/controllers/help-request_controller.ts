@@ -48,6 +48,30 @@ class HelpRequestController {
   };
 
   /**
+   * GET /api/help-requests/my
+   * Get all help requests created by the authenticated user
+   */
+  getMyHelpRequests = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        res.sendError('Authentication required', 401);
+        return;
+      }
+
+      const result = await this.helpRequestService.getMyHelpRequests(userId);
+
+      if (result.success && result.data) {
+        res.sendSuccess(result.data, result.message, 200);
+      } else {
+        res.sendError(result.error || 'Failed to retrieve help requests', 500);
+      }
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
    * GET /api/help-requests/:id
    * Get a single help request by ID
    * Ownership is determined by the backend based on authenticated user

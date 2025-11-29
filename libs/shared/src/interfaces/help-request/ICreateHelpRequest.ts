@@ -18,8 +18,7 @@ export interface ICreateHelpRequest {
   elders?: number; // Number of elders/adults
   children?: number; // Number of children
   pets?: number; // Number of pets
-  // Ration items
-  rationItems?: string[]; // Array of selected ration item IDs (e.g., ['dry_rations', 'bottled_water'])
-  rationItemQuantities?: Record<string, number>; // Map of item IDs to quantities (e.g., { 'dry_rations': 5, 'bottled_water': 10 })
+  // Ration items with quantities
+  rationItems?: Record<string, number>; // Map of item codes to quantities (e.g., { 'dry_rations': 5, 'bottled_water': 10 })
 }
 

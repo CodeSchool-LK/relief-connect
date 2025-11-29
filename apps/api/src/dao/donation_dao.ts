@@ -1,4 +1,5 @@
 import DonationModel from '../models/donation.model';
+import HelpRequestModel from '../models/help-request.model';
 import UserModel from '../models/user.model';
 import { IDonation } from '@nx-mono-repo-deployment-test/shared/src/interfaces/donation/IDonation';
 
@@ -49,6 +50,33 @@ class DonationDao {
       return donation ? (donation.toJSON() as IDonation) : null;
     } catch (error) {
       console.error(`Error in DonationDao.findById (${id}):`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Find all donations made by a specific donator
+   * Includes help request information
+   */
+  public async findByDonatorId(donatorId: number): Promise<Array<IDonation & { helpRequest?: any }>> {
+    try {
+      const donations = await DonationModel.findAll({
+        where: {
+          [DonationModel.DONATION_DONATOR_ID]: donatorId,
+        },
+        include: [{
+          model: HelpRequestModel,
+          as: 'helpRequest',
+          attributes: ['id', 'lat', 'lng', 'urgency', 'shortNote', 'approxArea', 'contactType', 'contact', 'name', 'totalPeople', 'elders', 'children', 'pets', 'rationItems', 'status', 'createdAt', 'updatedAt'],
+        }],
+        order: [[DonationModel.DONATION_CREATED_AT, 'DESC']],
+      });
+      return donations.map(d => {
+        const donation = d.toJSON() as IDonation & { helpRequest?: any };
+        return donation;
+      });
+    } catch (error) {
+      console.error(`Error in DonationDao.findByDonatorId (${donatorId}):`, error);
       throw error;
     }
   }

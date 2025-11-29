@@ -789,7 +789,7 @@ export default function LandingPage() {
                             const label = meta?.label || itemId
                             const icon = meta?.icon
                             // Show request count (number of help requests requesting this item)
-                            const requestCount = itemSummary?.requestCount || 0
+                            const requestCount = itemSummary?.quantityRemaining || 0
 
                             return (
                               <div

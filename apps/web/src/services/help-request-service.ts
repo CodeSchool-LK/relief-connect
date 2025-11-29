@@ -129,6 +129,7 @@ class HelpRequestService {
       const response = await apiClient.get<IApiResponse<IHelpRequestSummary>>(
         `${this.basePath}/summary`
       );
+      console.log('[HelpRequestService] Help requests summary:', response);
       return response;
     } catch (error) {
       console.error('Error in HelpRequestService.getHelpRequestsSummary:', error);

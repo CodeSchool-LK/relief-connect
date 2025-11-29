@@ -29,6 +29,12 @@ COPY --from=deps /app/node_modules ./node_modules
 # Copy workspace configuration
 COPY package.json yarn.lock .yarnrc.yml ./
 
+# Copy shared library configuration and source (needed for TypeScript resolution)
+COPY libs/shared/package.json ./libs/shared/
+COPY libs/shared/tsconfig.json ./libs/shared/
+COPY libs/shared/project.json ./libs/shared/
+COPY libs/shared/src ./libs/shared/src
+
 # Copy application files
 COPY apps/web ./apps/web
 COPY tsconfig.base.json ./

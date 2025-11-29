@@ -1,7 +1,7 @@
 import { UserDao, RefreshTokenDao } from '../dao';
 import { CreateUserDto, UserResponseDto, LoginResponseDto } from '@nx-mono-repo-deployment-test/shared/src/dtos';
 import { UserRole, UserStatus } from '@nx-mono-repo-deployment-test/shared/src/enums';
-import { IApiResponse } from '@nx-mono-repo-deployment-test/shared/src/interfaces';
+import { IApiResponse, IUser } from '@nx-mono-repo-deployment-test/shared/src/interfaces';
 import { JwtUtil, PasswordUtil } from '../utils';
 
 /**
@@ -200,6 +200,103 @@ class UserService {
       return {
         success: false,
         error: 'Failed to retrieve user',
+      };
+    }
+  }
+
+  /**
+   * Get all users (admin only)
+   */
+  public async getAllUsers(): Promise<IApiResponse<UserResponseDto[]>> {
+    try {
+      const users = await this.userDao.findAll();
+      return {
+        success: true,
+        data: users.map(user => new UserResponseDto(user)),
+      };
+    } catch (error) {
+      console.error('Error in UserService.getAllUsers:', error);
+      return {
+        success: false,
+        error: 'Failed to retrieve users',
+      };
+    }
+  }
+
+  /**
+   * Update user (admin only)
+   */
+  public async updateUser(id: number, updateData: Partial<IUser>): Promise<IApiResponse<UserResponseDto>> {
+    try {
+      const user = await this.userDao.update(id, updateData);
+      if (!user) {
+        return {
+          success: false,
+          error: 'User not found',
+        };
+      }
+      return {
+        success: true,
+        data: new UserResponseDto(user),
+        message: 'User updated successfully',
+      };
+    } catch (error) {
+      console.error(`Error in UserService.updateUser (${id}):`, error);
+      return {
+        success: false,
+        error: 'Failed to update user',
+      };
+    }
+  }
+
+  /**
+   * Update user role (admin only)
+   */
+  public async updateUserRole(id: number, role: UserRole): Promise<IApiResponse<UserResponseDto>> {
+    try {
+      const user = await this.userDao.update(id, { role });
+      if (!user) {
+        return {
+          success: false,
+          error: 'User not found',
+        };
+      }
+      return {
+        success: true,
+        data: new UserResponseDto(user),
+        message: 'User role updated successfully',
+      };
+    } catch (error) {
+      console.error(`Error in UserService.updateUserRole (${id}):`, error);
+      return {
+        success: false,
+        error: 'Failed to update user role',
+      };
+    }
+  }
+
+  /**
+   * Update user status (admin only)
+   */
+  public async updateUserStatus(id: number, status: UserStatus): Promise<IApiResponse<UserResponseDto>> {
+    try {
+      const user = await this.userDao.update(id, { status });
+      if (!user) {
+        return {
+          success: false,
+          error: 'User not found',
+        };
+      }
+      return {
+        success: true,
+        data: new UserResponseDto(user),
+        message: 'User status updated successfully',
+      };
+    } catch (error) {
+      console.error(`Error in UserService.updateUserStatus (${id}):`, error);
+      return {
+        success: false,
+        error: 'Failed to update user status',
       };
     }
   }

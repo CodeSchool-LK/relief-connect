@@ -12,4 +12,6 @@ export * from './camp';
 export * from './user';
 export * from './auth';
 export * from './inventory';
+export * from './volunteer-club';
+export * from './membership';
 

@@ -12,6 +12,8 @@ import CampModel from './camp.model';
 import UserModel from './user.model';
 import RefreshTokenModel from './refresh-token.model';
 import DonationModel from './donation.model';
+import VolunteerClubModel from './volunteer-club.model';
+import UserVolunteerClubMembershipModel from './user-volunteer-club-membership.model';
 
 /**
  * Initialize model associations here
@@ -60,6 +62,38 @@ export const initializeAssociations = (): void => {
     foreignKey: HelpRequestInventoryItemModel.INVENTORY_ITEM_HELP_REQUEST_ID, 
     as: 'inventoryItems' 
   });
+
+  // User-VolunteerClub association (club owner)
+  // The @BelongsTo decorator in VolunteerClubModel already creates the belongsTo side,
+  // so we only need to set up the hasMany side here
+  UserModel.hasMany(VolunteerClubModel, { 
+    foreignKey: VolunteerClubModel.VOLUNTEER_CLUB_USER_ID, 
+    as: 'volunteerClubs' 
+  });
+
+  // VolunteerClub-Membership association
+  // The @BelongsTo decorator in UserVolunteerClubMembershipModel already creates the belongsTo side,
+  // so we only need to set up the hasMany side here
+  VolunteerClubModel.hasMany(UserVolunteerClubMembershipModel, { 
+    foreignKey: UserVolunteerClubMembershipModel.MEMBERSHIP_VOLUNTEER_CLUB_ID, 
+    as: 'memberships' 
+  });
+
+  // User-Membership association (as member)
+  // The @BelongsTo decorator in UserVolunteerClubMembershipModel already creates the belongsTo side,
+  // so we only need to set up the hasMany side here
+  UserModel.hasMany(UserVolunteerClubMembershipModel, { 
+    foreignKey: UserVolunteerClubMembershipModel.MEMBERSHIP_USER_ID, 
+    as: 'memberships' 
+  });
+
+  // User-Membership association (as reviewer)
+  // The @BelongsTo decorator in UserVolunteerClubMembershipModel already creates the belongsTo side,
+  // so we only need to set up the hasMany side here
+  UserModel.hasMany(UserVolunteerClubMembershipModel, { 
+    foreignKey: UserVolunteerClubMembershipModel.MEMBERSHIP_REVIEWED_BY, 
+    as: 'reviewedMemberships' 
+  });
 };
 
 // Export individual models (constants are accessible via ItemModel.TABLE_NAME, etc.)
@@ -70,6 +104,8 @@ export { default as CampModel } from './camp.model';
 export { default as UserModel } from './user.model';
 export { default as RefreshTokenModel } from './refresh-token.model';
 export { default as DonationModel } from './donation.model';
+export { default as VolunteerClubModel } from './volunteer-club.model';
+export { default as UserVolunteerClubMembershipModel } from './user-volunteer-club-membership.model';
 
 // Export sequelize instance
 export { sequelize };
@@ -83,6 +119,8 @@ export const models = {
   User: UserModel,
   RefreshToken: RefreshTokenModel,
   Donation: DonationModel,
+  VolunteerClub: VolunteerClubModel,
+  UserVolunteerClubMembership: UserVolunteerClubMembershipModel,
   // Add more models here
 };
 

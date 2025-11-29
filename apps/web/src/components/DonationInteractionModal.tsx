@@ -32,6 +32,8 @@ export default function DonationInteractionModal({
   const [creating, setCreating] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [rationItems, setRationItems] = useState<Record<string, number>>({});
+  const [donatorName, setDonatorName] = useState('');
+  const [donatorMobileNumber, setDonatorMobileNumber] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   const loadDonations = useCallback(async () => {
@@ -74,18 +76,30 @@ export default function DonationInteractionModal({
       setError('Please select at least one ration item with a count');
       return;
     }
+    if (!donatorName.trim()) {
+      setError('Please enter your name');
+      return;
+    }
+    if (!donatorMobileNumber.trim()) {
+      setError('Please enter your mobile number');
+      return;
+    }
 
     setCreating(true);
     setError(null);
     try {
       const createDonationDto: ICreateDonation = {
         helpRequestId: helpRequest.id,
+        donatorName: donatorName.trim(),
+        donatorMobileNumber: donatorMobileNumber.trim(),
         rationItems,
       };
 
       const response = await donationService.createDonation(helpRequest.id, createDonationDto);
       if (response.success) {
         setRationItems({});
+        setDonatorName('');
+        setDonatorMobileNumber('');
         setShowCreateForm(false);
         await loadDonations();
       } else {
@@ -213,6 +227,8 @@ export default function DonationInteractionModal({
                       onClick={() => {
                         setShowCreateForm(false);
                         setRationItems({});
+                        setDonatorName('');
+                        setDonatorMobileNumber('');
                         setError(null);
                       }}
                       className="text-gray-500 hover:text-gray-700"
@@ -221,6 +237,38 @@ export default function DonationInteractionModal({
                     </Button>
                   </div>
                   <div className="space-y-4">
+                    {/* Donator Contact Information */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-blue-50 rounded-lg border-2 border-blue-200">
+                      <div>
+                        <Label htmlFor="donatorName" className="text-sm font-semibold text-gray-700 mb-2 block">
+                          Your Name <span className="text-red-500">*</span>
+                        </Label>
+                        <Input
+                          id="donatorName"
+                          type="text"
+                          value={donatorName}
+                          onChange={(e) => setDonatorName(e.target.value)}
+                          placeholder="Enter your full name"
+                          className="w-full"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="donatorMobileNumber" className="text-sm font-semibold text-gray-700 mb-2 block">
+                          Mobile Number <span className="text-red-500">*</span>
+                        </Label>
+                        <Input
+                          id="donatorMobileNumber"
+                          type="tel"
+                          value={donatorMobileNumber}
+                          onChange={(e) => setDonatorMobileNumber(e.target.value)}
+                          placeholder="+94771234567"
+                          className="w-full"
+                          required
+                        />
+                      </div>
+                    </div>
+
                     {/* Requested Items Section */}
                     {helpRequest.rationItems && helpRequest.rationItems.length > 0 && (
                       <div>
@@ -404,16 +452,27 @@ export default function DonationInteractionModal({
                           );
                         })}
                       </div>
-                      {donation.donatorContactNumber && (
-                        <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                          <Phone className="h-4 w-4 text-green-600" />
-                          <span className="text-sm font-medium text-gray-700">Contact:</span>
-                          <a
-                            href={`tel:${donation.donatorContactNumber}`}
-                            className="text-blue-600 hover:text-blue-800 hover:underline font-semibold"
-                          >
-                            {donation.donatorContactNumber}
-                          </a>
+                      {(donation.donatorName || donation.donatorMobileNumber) && (
+                        <div className="flex flex-col gap-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                          {donation.donatorName && (
+                            <div className="flex items-center gap-2">
+                              <User className="h-4 w-4 text-blue-600" />
+                              <span className="text-sm font-medium text-gray-700">Name:</span>
+                              <span className="text-sm font-semibold text-gray-900">{donation.donatorName}</span>
+                            </div>
+                          )}
+                          {donation.donatorMobileNumber && (
+                            <div className="flex items-center gap-2">
+                              <Phone className="h-4 w-4 text-green-600" />
+                              <span className="text-sm font-medium text-gray-700">Contact:</span>
+                              <a
+                                href={`tel:${donation.donatorMobileNumber}`}
+                                className="text-blue-600 hover:text-blue-800 hover:underline font-semibold"
+                              >
+                                {donation.donatorMobileNumber}
+                              </a>
+                            </div>
+                          )}
                         </div>
                       )}
                       <div className="flex flex-wrap gap-2 pt-3 border-t border-gray-200">
@@ -495,16 +554,27 @@ export default function DonationInteractionModal({
                           );
                         })}
                       </div>
-                      {donation.donatorContactNumber && isOwner && (
-                        <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                          <Phone className="h-4 w-4 text-green-600" />
-                          <span className="text-sm font-medium text-gray-700">Contact:</span>
-                          <a
-                            href={`tel:${donation.donatorContactNumber}`}
-                            className="text-blue-600 hover:text-blue-800 hover:underline font-semibold"
-                          >
-                            {donation.donatorContactNumber}
-                          </a>
+                      {(donation.donatorName || donation.donatorMobileNumber) && isOwner && (
+                        <div className="flex flex-col gap-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                          {donation.donatorName && (
+                            <div className="flex items-center gap-2">
+                              <User className="h-4 w-4 text-blue-600" />
+                              <span className="text-sm font-medium text-gray-700">Name:</span>
+                              <span className="text-sm font-semibold text-gray-900">{donation.donatorName}</span>
+                            </div>
+                          )}
+                          {donation.donatorMobileNumber && (
+                            <div className="flex items-center gap-2">
+                              <Phone className="h-4 w-4 text-green-600" />
+                              <span className="text-sm font-medium text-gray-700">Contact:</span>
+                              <a
+                                href={`tel:${donation.donatorMobileNumber}`}
+                                className="text-blue-600 hover:text-blue-800 hover:underline font-semibold"
+                              >
+                                {donation.donatorMobileNumber}
+                              </a>
+                            </div>
+                          )}
                         </div>
                       )}
                       <div className="flex flex-wrap gap-2 pt-3 border-t border-gray-200">

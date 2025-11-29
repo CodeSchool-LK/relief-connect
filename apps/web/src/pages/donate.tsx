@@ -113,7 +113,7 @@ export default function DonatePage() {
                 <h1 className="text-2xl font-bold text-gray-900 mb-2">Error</h1>
                 <p className="text-gray-600 mb-6">{error || 'Help request not found'}</p>
                 <div className="flex gap-4 justify-center">
-                  <Button variant="outline" onClick={() => router.push('/requests')}>
+                  <Button variant="outline" onClick={() => router.push('/')}>
                     <ArrowLeft className="h-4 w-4 mr-2" />
                     Back to Requests
                   </Button>
@@ -138,7 +138,7 @@ export default function DonatePage() {
       <div className="min-h-screen bg-gray-50">
         <div className="container mx-auto px-4 py-6">
           <div className="mb-6">
-            <Button variant="ghost" onClick={() => router.push('/requests')}>
+            <Button variant="ghost" onClick={() => router.push('/')}>
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Requests
             </Button>
@@ -167,7 +167,7 @@ export default function DonatePage() {
           isOpen={showModal}
           onClose={() => {
             setShowModal(false)
-            router.push('/requests')
+            router.push('/')
           }}
           currentUserId={currentUserId}
           isOwner={helpRequest.isOwner}

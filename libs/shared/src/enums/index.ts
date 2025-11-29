@@ -9,6 +9,7 @@
 
 export * from './help-request.enum';
 export * from './camp.enum';
+export * from './camp-status.enum';
 export * from './user.enum';
 export * from './ration-item.enum';
 export * from './membership-status.enum';

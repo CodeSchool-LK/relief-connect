@@ -25,20 +25,71 @@ declare global {
  * 
  * The user will be available in controllers as req.user
  */
+/**
+ * Check if request is from a browser (HTML request) vs API client (JSON request)
+ */
+function isBrowserRequest(req: Request): boolean {
+  const acceptHeader = req.headers.accept || '';
+  const contentType = req.headers['content-type'] || '';
+  
+  // If explicitly accepts JSON, it's an API client
+  if (acceptHeader.includes('application/json')) {
+    return false;
+  }
+  
+  // If Content-Type is application/json, it's likely an API client
+  if (contentType.includes('application/json')) {
+    return false;
+  }
+  
+  // If has x-requested-with header (AJAX), it's an API client
+  if (req.headers['x-requested-with']) {
+    return false;
+  }
+  
+  // Otherwise, assume it's a browser request
+  return true;
+}
+
+/**
+ * Get login URL from environment or use default
+ */
+function getLoginUrl(): string {
+  return process.env.LOGIN_URL || '/login';
+}
+
 export async function authenticate(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     // Extract token from Authorization header
     const authHeader = req.headers.authorization;
 
     if (!authHeader) {
-      res.sendError('Authorization header is missing', 401);
+      // Check if it's a browser request - redirect to login
+      if (isBrowserRequest(req)) {
+        res.redirect(getLoginUrl());
+        return;
+      }
+      // For API clients, return JSON error with redirect hint
+      res.status(401).json({
+        success: false,
+        error: 'Authorization header is missing',
+        redirectTo: getLoginUrl(),
+      });
       return;
     }
 
     // Check if Bearer token format
     const parts = authHeader.split(' ');
     if (parts.length !== 2 || parts[0] !== 'Bearer') {
-      res.sendError('Invalid authorization header format. Expected: Bearer <token>', 401);
+      if (isBrowserRequest(req)) {
+        res.redirect(getLoginUrl());
+        return;
+      }
+      res.status(401).json({
+        success: false,
+        error: 'Invalid authorization header format. Expected: Bearer <token>',
+        redirectTo: getLoginUrl(),
+      });
       return;
     }
 
@@ -48,7 +99,15 @@ export async function authenticate(req: Request, res: Response, next: NextFuncti
     const decoded = JwtUtil.verifyAccessToken(token);
 
     if (!decoded || !decoded.id) {
-      res.sendError('Invalid or expired access token', 401);
+      if (isBrowserRequest(req)) {
+        res.redirect(getLoginUrl());
+        return;
+      }
+      res.status(401).json({
+        success: false,
+        error: 'Invalid or expired access token',
+        redirectTo: getLoginUrl(),
+      });
       return;
     }
 
@@ -57,7 +116,15 @@ export async function authenticate(req: Request, res: Response, next: NextFuncti
     const user = await userDao.findById(decoded.id);
 
     if (!user) {
-      res.sendError('User not found', 401);
+      if (isBrowserRequest(req)) {
+        res.redirect(getLoginUrl());
+        return;
+      }
+      res.status(401).json({
+        success: false,
+        error: 'User not found',
+        redirectTo: getLoginUrl(),
+      });
       return;
     }
 
@@ -72,6 +139,10 @@ export async function authenticate(req: Request, res: Response, next: NextFuncti
     next();
   } catch (error) {
     console.error('Error in authentication middleware:', error);
+    if (isBrowserRequest(req)) {
+      res.redirect(getLoginUrl());
+      return;
+    }
     res.sendError('Authentication failed', 500);
   }
 }

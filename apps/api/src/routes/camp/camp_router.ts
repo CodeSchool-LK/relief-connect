@@ -1,8 +1,8 @@
 import { BaseRouter } from '../common/base_router';
 import { CampController } from '../../controllers';
 import { CampService } from '../../services';
-import { ValidationMiddleware } from '../../middleware';
-import { CreateCampDto } from '@nx-mono-repo-deployment-test/shared/src/dtos/camp/request';
+import { ValidationMiddleware, authenticate, requireVolunteerClub, requireAuthenticated } from '../../middleware';
+import { CreateCampDto, UpdateCampDto } from '@nx-mono-repo-deployment-test/shared/src/dtos/camp/request';
 
 // Route path constants
 const CAMP_BASE_PATH = '/camps'; // Full path: /api/camps (api prefix added by RouterManager)
@@ -13,6 +13,8 @@ const CAMP_BASE_PATH = '/camps'; // Full path: /api/camps (api prefix added by R
  * 
  * Routes:
  * - GET    /api/camps     - Get all camps (with optional filters)
+ * - GET    /api/camps/:id - Get a single camp by ID
+ * - PUT    /api/camps/:id - Update an existing camp
  * - POST   /api/camps     - Create new camp
  */
 export class CampRouter extends BaseRouter {
@@ -47,9 +49,28 @@ export class CampRouter extends BaseRouter {
       controller.getCamps
     );
 
-    // POST /api/camps - Create new camp
+    // GET /api/camps/:id - Get a single camp by ID (requires authentication - only accessible by admins or owning volunteer club)
+    this.router.get(
+      '/:id',
+      authenticate,
+      requireAuthenticated(),
+      controller.getCampById
+    );
+
+    // PUT /api/camps/:id - Update an existing camp (requires authentication - only accessible by admins or owning volunteer club)
+    this.router.put(
+      '/:id',
+      authenticate,
+      requireAuthenticated(),
+      ValidationMiddleware.body(UpdateCampDto),
+      controller.updateCamp
+    );
+
+    // POST /api/camps - Create new camp (volunteer club only)
     this.router.post(
       '/',
+      authenticate,
+      requireVolunteerClub(),
       ValidationMiddleware.body(CreateCampDto),
       controller.createCamp
     );
@@ -70,7 +91,8 @@ export class CampRouter extends BaseRouter {
   public getRouteInfo(): Array<{ path: string; methods: string[] }> {
     // Note: Full paths will be /api/camps (api prefix added by RouterManager)
     return [
-      { path: CAMP_BASE_PATH, methods: ['GET', 'POST'] }
+      { path: CAMP_BASE_PATH, methods: ['GET', 'POST'] },
+      { path: `${CAMP_BASE_PATH}/:id`, methods: ['GET', 'PUT'] }
     ];
   }
 

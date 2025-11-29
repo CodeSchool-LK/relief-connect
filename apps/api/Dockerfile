@@ -26,8 +26,11 @@ COPY apps/api/src ./apps/api/src
 COPY libs/shared/src ./libs/shared/src
 
 # Build shared library first
+# Run build from libs/shared directory to ensure correct output path
 RUN echo "Building shared library..." && \
-    yarn workspace @nx-mono-repo-deployment-test/shared build && \
+    cd libs/shared && \
+    yarn build && \
+    cd ../.. && \
     echo "Shared library built successfully" && \
     echo "Checking shared library build output location..." && \
     echo "Current directory: $(pwd)" && \
@@ -36,7 +39,9 @@ RUN echo "Building shared library..." && \
     echo "Checking if dist/libs/shared/src exists:" && \
     ls -la dist/libs/shared/src/ 2>/dev/null || echo "dist/libs/shared/src not found" && \
     echo "Searching for any .js files in dist:" && \
-    find dist -name "*.js" -type f 2>/dev/null | head -10 || echo "No .js files found in dist"
+    find dist -name "*.js" -type f 2>/dev/null | head -10 || echo "No .js files found in dist" && \
+    echo "Checking libs/shared/dist (alternative location):" && \
+    ls -la libs/shared/dist/ 2>/dev/null || echo "libs/shared/dist not found"
 
 # Build API
 WORKDIR /app/apps/api
@@ -66,10 +71,9 @@ COPY --from=builder /app/libs/shared/src ./libs/shared/src
 RUN rm -rf node_modules/@nx-mono-repo-deployment-test/shared && \
     mkdir -p node_modules/@nx-mono-repo-deployment-test/shared
 COPY --from=builder /app/libs/shared/package.json node_modules/@nx-mono-repo-deployment-test/shared/package.json
-# Copy compiled JavaScript files but maintain src/ directory structure for imports
-# The imports use @nx-mono-repo-deployment-test/shared/src/enums, so we need src/ with .js files
-# First try to copy from dist (compiled JS), if that fails the build will show us where files actually are
-# Note: The shared library build output should be at dist/libs/shared/src/
+# Copy compiled JavaScript files from dist/libs/shared/src
+# The build should create output at dist/libs/shared/src/ (preserving src/ structure)
+# If this fails, check the build output debugging above to see where files actually are
 COPY --from=builder /app/dist/libs/shared/src node_modules/@nx-mono-repo-deployment-test/shared/src
 # Copy apps/api directory structure for .env file resolution
 # The .env.dev file will be mounted by docker-compose, but we need the directory structure

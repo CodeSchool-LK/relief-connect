@@ -39,8 +39,17 @@ COPY libs/shared/src ./libs/shared/src
 COPY apps/web ./apps/web
 COPY tsconfig.base.json ./
 
-WORKDIR /app/apps/web
+# Build shared library first (ensures types are available for TypeScript)
+# Note: We need to install shared library dependencies first
+WORKDIR /app
+RUN echo "Installing shared library dependencies..." && \
+    yarn workspace @nx-mono-repo-deployment-test/shared install --frozen-lockfile && \
+    echo "Building shared library..." && \
+    yarn workspace @nx-mono-repo-deployment-test/shared build && \
+    echo "Shared library built successfully"
 
+# Build Next.js app
+WORKDIR /app/apps/web
 ENV NEXT_TELEMETRY_DISABLED=1
 
 # Build Next.js app (TypeScript will be compiled automatically)

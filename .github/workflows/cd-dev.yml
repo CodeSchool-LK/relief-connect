@@ -66,17 +66,17 @@ jobs:
             set -e
             
             # Check if directory exists AND is a git repository
-            if [ ! -d "/opt/nx-mono-repo-dev/.git" ]; then
-              echo "Initializing /opt/nx-mono-repo-dev..."
-              sudo rm -rf /opt/nx-mono-repo-dev
-              sudo mkdir -p /opt/nx-mono-repo-dev
-              sudo chown -R $USER:$USER /opt/nx-mono-repo-dev
-              cd /opt/nx-mono-repo-dev
+            if [ ! -d "/opt/rebuildsl/.git" ]; then
+              echo "Initializing /opt/rebuildsl..."
+              sudo rm -rf /opt/rebuildsl
+              sudo mkdir -p /opt/rebuildsl
+              sudo chown -R $USER:$USER /opt/rebuildsl
+              cd /opt/rebuildsl
               git clone ${{ github.server_url }}/${{ github.repository }} .
               git checkout develop
             else
               # Navigate to deployment directory
-              cd /opt/nx-mono-repo-dev
+              cd /opt/rebuildsl
               
               # Pull latest changes
               echo "Pulling latest changes..."
@@ -98,6 +98,10 @@ jobs:
             DB_USER=${{ secrets.DEV_DB_USER }}
             DB_PASSWORD=${{ secrets.DEV_DB_PASSWORD }}
             CORS_ORIGIN=https://dev-web.pasindusampath.com
+            JWT_SECRET=${{ secrets.DEV_JWT_SECRET }}
+            JWT_REFRESH_SECRET=${{ secrets.DEV_JWT_REFRESH_SECRET }}
+            JWT_ACCESS_TOKEN_EXPIRES_IN=15m
+            JWT_REFRESH_TOKEN_EXPIRES_IN=7d
             EOF
             
             # Web env file

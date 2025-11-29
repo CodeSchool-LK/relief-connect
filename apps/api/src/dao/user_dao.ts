@@ -92,6 +92,39 @@ class UserDao {
       throw error;
     }
   }
+
+  /**
+   * Find all users
+   */
+  public async findAll(): Promise<IUser[]> {
+    try {
+      const users = await UserModel.findAll({
+        order: [['createdAt', 'DESC']],
+      });
+      return users.map(user => user.toJSON() as IUser);
+    } catch (error) {
+      console.error('Error in UserDao.findAll:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update user
+   */
+  public async update(id: number, updateData: Partial<IUser>): Promise<IUser | null> {
+    try {
+      const user = await UserModel.findByPk(id);
+      if (!user) {
+        return null;
+      }
+
+      await user.update(updateData);
+      return user.toJSON() as IUser;
+    } catch (error) {
+      console.error(`Error in UserDao.update (${id}):`, error);
+      throw error;
+    }
+  }
 }
 
 export default UserDao;

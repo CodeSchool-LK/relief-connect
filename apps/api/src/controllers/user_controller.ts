@@ -58,7 +58,7 @@ class UserController {
 
   /**
    * GET /api/users/:id
-   * Get user by ID
+   * Get user by ID (admin only)
    */
   getUserById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -75,6 +75,112 @@ class UserController {
         res.sendSuccess(result.data, result.message, 200);
       } else {
         res.sendError(result.error || 'User not found', 404);
+      }
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * GET /api/users
+   * Get all users (admin only)
+   */
+  getAllUsers = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const result = await this.userService.getAllUsers();
+
+      if (result.success && result.data) {
+        res.sendSuccess(result.data, 'Users retrieved successfully', 200);
+      } else {
+        res.sendError(result.error || 'Failed to retrieve users', 500);
+      }
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * PUT /api/users/:id
+   * Update user (admin only)
+   */
+  updateUser = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      
+      if (isNaN(id)) {
+        res.sendError('Invalid user ID', 400);
+        return;
+      }
+
+      const updateData = req.body;
+      const result = await this.userService.updateUser(id, updateData);
+
+      if (result.success && result.data) {
+        res.sendSuccess(result.data, result.message || 'User updated successfully', 200);
+      } else {
+        res.sendError(result.error || 'Failed to update user', 400);
+      }
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * PUT /api/users/:id/role
+   * Update user role (admin only)
+   */
+  updateUserRole = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      
+      if (isNaN(id)) {
+        res.sendError('Invalid user ID', 400);
+        return;
+      }
+
+      const { role } = req.body;
+      if (!role) {
+        res.sendError('Role is required', 400);
+        return;
+      }
+
+      const result = await this.userService.updateUserRole(id, role);
+
+      if (result.success && result.data) {
+        res.sendSuccess(result.data, result.message || 'User role updated successfully', 200);
+      } else {
+        res.sendError(result.error || 'Failed to update user role', 400);
+      }
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * PUT /api/users/:id/status
+   * Update user status (admin only)
+   */
+  updateUserStatus = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      
+      if (isNaN(id)) {
+        res.sendError('Invalid user ID', 400);
+        return;
+      }
+
+      const { status } = req.body;
+      if (!status) {
+        res.sendError('Status is required', 400);
+        return;
+      }
+
+      const result = await this.userService.updateUserStatus(id, status);
+
+      if (result.success && result.data) {
+        res.sendSuccess(result.data, result.message || 'User status updated successfully', 200);
+      } else {
+        res.sendError(result.error || 'Failed to update user status', 400);
       }
     } catch (error) {
       next(error);

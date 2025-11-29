@@ -5,6 +5,8 @@ import { HelpRequestRouter } from './help-request/help-request_router';
 import { CampRouter } from './camp/camp_router';
 import { UserRouter } from './user/user_router';
 import { AuthRouter } from './auth/auth_router';
+import { VolunteerClubRouter } from './volunteer-club/volunteer-club_router';
+import { MembershipRouter } from './membership/membership_router';
 
 // Interface for router-like objects
 interface RouterLike {
@@ -39,6 +41,8 @@ export class RouterManager {
   private campRouter: CampRouter;
   private userRouter: UserRouter;
   private authRouter: AuthRouter;
+  private volunteerClubRouter: VolunteerClubRouter;
+  private membershipRouter: MembershipRouter;
 
   private constructor() {
     this.mainRouter = Router();
@@ -48,6 +52,8 @@ export class RouterManager {
     this.campRouter = new CampRouter();
     this.userRouter = new UserRouter();
     this.authRouter = new AuthRouter();
+    this.volunteerClubRouter = new VolunteerClubRouter();
+    this.membershipRouter = new MembershipRouter();
     this.configureRoutes();
   }
 
@@ -82,6 +88,8 @@ export class RouterManager {
     this.mainRouter.use(`${API_PREFIX}${this.campRouter.getBasePath()}`, this.campRouter.getRouter());
     this.mainRouter.use(`${API_PREFIX}${this.userRouter.getBasePath()}`, this.userRouter.getRouter());
     this.mainRouter.use(`${API_PREFIX}${this.authRouter.getBasePath()}`, this.authRouter.getRouter());
+    this.mainRouter.use(`${API_PREFIX}${this.volunteerClubRouter.getBasePath()}`, this.volunteerClubRouter.getRouter());
+    this.mainRouter.use(`${API_PREFIX}${this.membershipRouter.getBasePath()}`, this.membershipRouter.getRouter());
   }
 
   /**
@@ -187,6 +195,16 @@ export class RouterManager {
     routes.push(...this.authRouter.getRouteInfo().map(route => ({
       ...route,
       path: `${API_PREFIX}${route.path}` // Add API prefix to auth routes
+    })));
+    
+    routes.push(...this.volunteerClubRouter.getRouteInfo().map(route => ({
+      ...route,
+      path: `${API_PREFIX}${route.path}` // Add API prefix to volunteer club routes
+    })));
+    
+    routes.push(...this.membershipRouter.getRouteInfo().map(route => ({
+      ...route,
+      path: `${API_PREFIX}${route.path}` // Add API prefix to membership routes
     })));
     
     return routes;

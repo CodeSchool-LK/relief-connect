@@ -11,4 +11,5 @@ export * from './help-request.enum';
 export * from './camp.enum';
 export * from './user.enum';
 export * from './ration-item.enum';
+export * from './membership-status.enum';
 

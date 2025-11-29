@@ -14,6 +14,8 @@ declare module 'class-validator' {
   export function IsBoolean(...args: any[]): PropertyDecorator;
   export function IsDate(...args: any[]): PropertyDecorator;
   export function Length(...args: any[]): PropertyDecorator;
+  export function MinLength(...args: any[]): PropertyDecorator;
+  export function MaxLength(...args: any[]): PropertyDecorator;
   export function Min(...args: any[]): PropertyDecorator;
   export function Max(...args: any[]): PropertyDecorator;
   export function ArrayMinSize(...args: any[]): PropertyDecorator;
@@ -32,6 +34,7 @@ declare module 'class-validator' {
   export function IsIn(...args: any[]): PropertyDecorator;
   export function IsNotIn(...args: any[]): PropertyDecorator;
   export function IsUrl(...args: any[]): PropertyDecorator;
+  export function ValidateIf(...args: any[]): PropertyDecorator;
   
   // Validation functions
   export function validate(object: object, validatorOptions?: any): Promise<any[]>;

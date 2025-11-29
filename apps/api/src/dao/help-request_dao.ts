@@ -1,10 +1,12 @@
 import HelpRequestModel from '../models/help-request.model';
+import HelpRequestInventoryItemModel from '../models/help-request-inventory-item.model';
 import { 
   IHelpRequest, 
   CreateHelpRequestDto,
   Urgency,
   HelpRequestStatus,
-  IHelpRequestSummary
+  IHelpRequestSummary,
+  IRationItemInventorySummary
 } from '@nx-mono-repo-deployment-test/shared';
 import { Op, Sequelize } from 'sequelize';
 
@@ -132,6 +134,16 @@ class HelpRequestDao {
         },
       };
 
+      // Get help request IDs that match the date filter for inventory query
+      const helpRequestIds = await HelpRequestModel.findAll({
+        where: whereClause,
+        attributes: [HelpRequestModel.HELP_REQUEST_ID],
+        raw: true,
+      });
+      const helpRequestIdArray = (helpRequestIds as unknown as Array<Record<string, unknown>>)
+        .map(hr => hr[HelpRequestModel.HELP_REQUEST_ID] as number)
+        .filter((id): id is number => id !== undefined && id !== null);
+
       // Execute all aggregation queries in parallel for better performance
       const [
         total,
@@ -139,7 +151,7 @@ class HelpRequestDao {
         statusGroups,
         districtGroups,
         peopleSums,
-        rationItemsData,
+        inventoryItemsData,
       ] = await Promise.all([
         // Total count
         HelpRequestModel.count({ where: whereClause }),
@@ -189,12 +201,37 @@ class HelpRequestDao {
           raw: true,
         }),
 
-        // Get ration items (array field - need to process in memory)
-        HelpRequestModel.findAll({
-          where: whereClause,
-          attributes: [HelpRequestModel.HELP_REQUEST_RATION_ITEMS],
-          raw: true,
-        }),
+        // Get inventory items aggregated by itemName (optimized database query)
+        helpRequestIdArray.length > 0
+          ? HelpRequestInventoryItemModel.findAll({
+              where: {
+                [HelpRequestInventoryItemModel.INVENTORY_ITEM_HELP_REQUEST_ID]: {
+                  [Op.in]: helpRequestIdArray,
+                },
+              },
+              attributes: [
+                HelpRequestInventoryItemModel.INVENTORY_ITEM_NAME,
+                [
+                  Sequelize.fn('COALESCE', Sequelize.fn('SUM', Sequelize.col(HelpRequestInventoryItemModel.INVENTORY_ITEM_QUANTITY_NEEDED)), 0),
+                  'totalQuantityNeeded',
+                ],
+                [
+                  Sequelize.fn('COALESCE', Sequelize.fn('SUM', Sequelize.col(HelpRequestInventoryItemModel.INVENTORY_ITEM_QUANTITY_DONATED)), 0),
+                  'totalQuantityDonated',
+                ],
+                [
+                  Sequelize.fn('COALESCE', Sequelize.fn('SUM', Sequelize.col(HelpRequestInventoryItemModel.INVENTORY_ITEM_QUANTITY_PENDING)), 0),
+                  'totalQuantityPending',
+                ],
+                [
+                  Sequelize.fn('COUNT', Sequelize.literal('*')),
+                  'requestCount',
+                ],
+              ],
+              group: [HelpRequestInventoryItemModel.INVENTORY_ITEM_NAME],
+              raw: true,
+            })
+          : [],
       ]);
 
       // Initialize counts with default values
@@ -211,7 +248,7 @@ class HelpRequestDao {
       };
 
       const byDistrict: Record<string, number> = {};
-      const rationItems: Record<string, number> = {};
+      const rationItems: Record<string, IRationItemInventorySummary> = {};
 
       // Process urgency groups (raw queries return model field names, not constants)
       (urgencyGroups as unknown as Array<Record<string, unknown>>).forEach(group => {
@@ -249,13 +286,30 @@ class HelpRequestDao {
         pets: peopleSumsData ? (typeof peopleSumsData.pets === 'string' ? parseInt(peopleSumsData.pets, 10) : Number(peopleSumsData.pets || 0)) : 0,
       };
 
-      // Process ration items (array field - PostgreSQL array)
-      (rationItemsData as unknown as Array<Record<string, unknown>>).forEach(item => {
-        const rationItemsArray = item.rationItems as string[] | undefined;
-        if (rationItemsArray && Array.isArray(rationItemsArray)) {
-          rationItemsArray.forEach(rationItem => {
-            rationItems[rationItem] = (rationItems[rationItem] || 0) + 1;
-          });
+      // Process inventory items (optimized database aggregation)
+      (inventoryItemsData as unknown as Array<Record<string, unknown>>).forEach(item => {
+        const itemName = item.itemName as string;
+        const quantityNeeded = typeof item.totalQuantityNeeded === 'string' 
+          ? parseInt(item.totalQuantityNeeded, 10) 
+          : Number(item.totalQuantityNeeded || 0);
+        const quantityDonated = typeof item.totalQuantityDonated === 'string'
+          ? parseInt(item.totalQuantityDonated, 10)
+          : Number(item.totalQuantityDonated || 0);
+        const quantityPending = typeof item.totalQuantityPending === 'string'
+          ? parseInt(item.totalQuantityPending, 10)
+          : Number(item.totalQuantityPending || 0);
+        const requestCount = typeof item.requestCount === 'string'
+          ? parseInt(item.requestCount, 10)
+          : Number(item.requestCount || 0);
+
+        if (itemName) {
+          rationItems[itemName] = {
+            quantityNeeded,
+            quantityDonated,
+            quantityPending,
+            quantityRemaining: Math.max(0, quantityNeeded - quantityDonated),
+            requestCount,
+          };
         }
       });
 

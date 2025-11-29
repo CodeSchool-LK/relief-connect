@@ -784,10 +784,12 @@ export default function LandingPage() {
                       </summary>
                       <div className="px-3 pb-3">
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-                          {Object.entries(summary.rationItems || {}).map(([itemId, count]) => {
+                          {Object.entries(summary.rationItems || {}).map(([itemId, itemSummary]) => {
                             const meta = RATION_ITEMS.find((item) => item.id === itemId)
                             const label = meta?.label || itemId
                             const icon = meta?.icon
+                            // Show request count (number of help requests requesting this item)
+                            const requestCount = itemSummary?.requestCount || 0
 
                             return (
                               <div
@@ -801,7 +803,7 @@ export default function LandingPage() {
                                   </span>
                                 </div>
                                 <span className="text-xs font-bold text-purple-700">
-                                  ×{count as number}
+                                  ×{requestCount}
                                 </span>
                               </div>
                             )

@@ -77,7 +77,7 @@ class ItemDao {
   public async upsertByCode(code: string, name: string, description?: string): Promise<IItem> {
     try {
       const [item] = await ItemModel.upsert({
-        [ItemModel.ITEM_CODE]: code,
+        [ItemModel.ITEM_CODE]: code as any, // Type assertion: code is validated as RationItemType before calling
         [ItemModel.ITEM_NAME]: name,
         [ItemModel.ITEM_DESCRIPTION]: description,
       }, {

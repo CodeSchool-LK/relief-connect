@@ -5,7 +5,7 @@
 declare module 'class-validator' {
   // Export all common decorators as PropertyDecorator
   // Note: These decorators can accept multiple arguments (validation options and validation options object)
-  //trigger 1
+  //trigger 2
   export function IsString(...args: any[]): PropertyDecorator;
   export function IsNotEmpty(...args: any[]): PropertyDecorator;
   export function IsOptional(...args: any[]): PropertyDecorator;

@@ -11,4 +11,5 @@ export * from './help-request';
 export * from './camp';
 export * from './user';
 export * from './auth';
+export * from './inventory';
 

@@ -70,6 +70,14 @@ export class HelpRequestRouter extends BaseRouter {
       controller.getHelpRequests
     );
 
+    // GET /api/help-requests/:id/inventory - Get inventory items for a help request
+    // Must come before /:id route to avoid route matching conflicts
+    this.router.get(
+      '/:id/inventory',
+      authenticate,
+      controller.getInventoryItems
+    );
+
     // GET /api/help-requests/:id - Get a single help request by ID
     this.router.get(
       '/:id',
@@ -141,6 +149,7 @@ export class HelpRequestRouter extends BaseRouter {
       { path: `${HELP_REQUEST_BASE_PATH}/summary`, methods: ['GET'] },
       { path: HELP_REQUEST_BASE_PATH, methods: ['GET', 'POST'] },
       { path: `${HELP_REQUEST_BASE_PATH}/:id`, methods: ['GET'] },
+      { path: `${HELP_REQUEST_BASE_PATH}/:id/inventory`, methods: ['GET'] },
       { path: `${HELP_REQUEST_BASE_PATH}/:helpRequestId/donations`, methods: ['GET', 'POST'] },
       { path: `${HELP_REQUEST_BASE_PATH}/:helpRequestId/donations/:donationId/schedule`, methods: ['PATCH'] },
       { path: `${HELP_REQUEST_BASE_PATH}/:helpRequestId/donations/:donationId/complete-donator`, methods: ['PATCH'] },

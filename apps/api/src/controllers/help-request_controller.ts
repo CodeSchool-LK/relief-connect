@@ -120,6 +120,31 @@ class HelpRequestController {
       next(error);
     }
   };
+
+  /**
+   * GET /api/help-requests/:id/inventory
+   * Get inventory items for a help request
+   * Returns inventory summary with pending, donated, and remaining quantities
+   */
+  getInventoryItems = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const helpRequestId = parseInt(req.params.id, 10);
+      if (isNaN(helpRequestId)) {
+        res.sendError('Invalid help request ID', 400);
+        return;
+      }
+
+      const result = await this.helpRequestService.getInventoryItems(helpRequestId);
+
+      if (result.success && result.data) {
+        res.sendSuccess(result.data, result.message, 200);
+      } else {
+        res.sendError(result.error || 'Failed to retrieve inventory items', result.success ? 200 : 404);
+      }
+    } catch (error) {
+      next(error);
+    }
+  };
 }
 
 export default HelpRequestController;

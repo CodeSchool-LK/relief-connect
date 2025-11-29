@@ -1,6 +1,7 @@
 import 'reflect-metadata'; // Required for decorators
 import { sequelize } from './config';
 import { initializeAssociations } from './models';
+import { seedRationItems } from './scripts/seed-ration-items';
 
 /**
  * Database connection and sync utility
@@ -71,6 +72,19 @@ class Database {
       console.log('✓ Database models synchronized successfully');
     } catch (error) {
       console.error('✗ Error synchronizing database models:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Seed initial data (ration items)
+   * Should be called after sync
+   */
+  public async seed(): Promise<void> {
+    try {
+      await seedRationItems();
+    } catch (error) {
+      console.error('✗ Error seeding database:', error);
       throw error;
     }
   }

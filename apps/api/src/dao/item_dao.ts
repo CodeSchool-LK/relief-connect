@@ -43,12 +43,49 @@ class ItemDao {
   public async create(createItemDto: CreateItemDto): Promise<IItem> {
     try {
       const item = await ItemModel.create({
+        [ItemModel.ITEM_CODE]: createItemDto.code,
         [ItemModel.ITEM_NAME]: createItemDto.name,
         [ItemModel.ITEM_DESCRIPTION]: createItemDto.description,
       });
       return item.toJSON() as IItem;
     } catch (error) {
       console.error('Error in ItemDao.create:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Find item by code
+   */
+  public async findByCode(code: string): Promise<IItem | null> {
+    try {
+      const item = await ItemModel.findOne({
+        where: {
+          [ItemModel.ITEM_CODE]: code,
+        },
+      });
+      return item ? (item.toJSON() as IItem) : null;
+    } catch (error) {
+      console.error(`Error in ItemDao.findByCode (${code}):`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Create or update item by code (upsert)
+   */
+  public async upsertByCode(code: string, name: string, description?: string): Promise<IItem> {
+    try {
+      const [item] = await ItemModel.upsert({
+        [ItemModel.ITEM_CODE]: code,
+        [ItemModel.ITEM_NAME]: name,
+        [ItemModel.ITEM_DESCRIPTION]: description,
+      }, {
+        returning: true,
+      });
+      return item.toJSON() as IItem;
+    } catch (error) {
+      console.error(`Error in ItemDao.upsertByCode (${code}):`, error);
       throw error;
     }
   }

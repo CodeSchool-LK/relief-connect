@@ -108,6 +108,9 @@ class Server {
       const shouldAlter = appConfig.environment.isDevelopment;
       await this.database.sync(false, shouldAlter);
 
+      // Seed initial data (ration items)
+      await this.database.seed();
+
       // Setup application
       this.setupMiddleware();
       this.setupRoutes();

@@ -7,6 +7,7 @@
 import { sequelize } from '../config';
 import ItemModel from './item.model';
 import HelpRequestModel from './help-request.model';
+import HelpRequestInventoryItemModel from './help-request-inventory-item.model';
 import CampModel from './camp.model';
 import UserModel from './user.model';
 import RefreshTokenModel from './refresh-token.model';
@@ -51,11 +52,20 @@ export const initializeAssociations = (): void => {
     foreignKey: DonationModel.DONATION_HELP_REQUEST_ID, 
     as: 'donations' 
   });
+
+  // HelpRequest-InventoryItem association
+  // The @BelongsTo decorator in HelpRequestInventoryItemModel already creates the belongsTo side,
+  // so we only need to set up the hasMany side here
+  HelpRequestModel.hasMany(HelpRequestInventoryItemModel, { 
+    foreignKey: HelpRequestInventoryItemModel.INVENTORY_ITEM_HELP_REQUEST_ID, 
+    as: 'inventoryItems' 
+  });
 };
 
 // Export individual models (constants are accessible via ItemModel.TABLE_NAME, etc.)
 export { default as ItemModel } from './item.model';
 export { default as HelpRequestModel } from './help-request.model';
+export { default as HelpRequestInventoryItemModel } from './help-request-inventory-item.model';
 export { default as CampModel } from './camp.model';
 export { default as UserModel } from './user.model';
 export { default as RefreshTokenModel } from './refresh-token.model';
@@ -68,6 +78,7 @@ export { sequelize };
 export const models = {
   Item: ItemModel,
   HelpRequest: HelpRequestModel,
+  HelpRequestInventoryItem: HelpRequestInventoryItemModel,
   Camp: CampModel,
   User: UserModel,
   RefreshToken: RefreshTokenModel,

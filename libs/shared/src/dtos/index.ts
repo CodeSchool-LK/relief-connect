@@ -26,6 +26,7 @@ export * from './camp';
 export * from './user';
 export * from './auth';
 export * from './donation';
+export * from './inventory';
 
 // Re-export commonly used types for convenience
 export { BaseDto, ValidationFailedError } from './common/base_dto';
@@ -36,4 +37,5 @@ export { CreateCampDto, CampResponseDto } from './camp';
 export { CreateUserDto, UserResponseDto } from './user';
 export { LoginDto, LoginResponseDto, RefreshTokenDto } from './auth';
 export { CreateDonationDto, DonationResponseDto } from './donation';
+export { InventoryItemResponseDto } from './inventory';
 

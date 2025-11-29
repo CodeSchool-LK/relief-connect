@@ -1,5 +1,4 @@
-import { DonationDao } from '../dao';
-import { HelpRequestDao } from '../dao';
+import { DonationDao, HelpRequestDao, HelpRequestInventoryItemDao } from '../dao';
 import { CreateDonationDto, DonationResponseDto } from '@nx-mono-repo-deployment-test/shared/src/dtos/donation';
 import { DonationWithDonatorResponseDto } from '@nx-mono-repo-deployment-test/shared/src/dtos/donation/response/donation_with_donator_response_dto';
 import { IApiResponse } from '@nx-mono-repo-deployment-test/shared/src/interfaces';
@@ -12,10 +11,16 @@ class DonationService {
   private static instance: DonationService;
   private donationDao: DonationDao;
   private helpRequestDao: HelpRequestDao;
+  private inventoryItemDao: HelpRequestInventoryItemDao;
 
-  private constructor(donationDao: DonationDao, helpRequestDao: HelpRequestDao) {
+  private constructor(
+    donationDao: DonationDao,
+    helpRequestDao: HelpRequestDao,
+    inventoryItemDao: HelpRequestInventoryItemDao
+  ) {
     this.donationDao = donationDao;
     this.helpRequestDao = helpRequestDao;
+    this.inventoryItemDao = inventoryItemDao;
   }
 
   /**
@@ -25,7 +30,8 @@ class DonationService {
     if (!DonationService.instance) {
       DonationService.instance = new DonationService(
         DonationDao.getInstance(),
-        HelpRequestDao.getInstance()
+        HelpRequestDao.getInstance(),
+        HelpRequestInventoryItemDao.getInstance()
       );
     }
     return DonationService.instance;
@@ -107,6 +113,12 @@ class DonationService {
       const donation = await this.donationDao.create(
         createDonationDto.helpRequestId,
         donatorId,
+        createDonationDto.rationItems
+      );
+
+      // Add pending quantities to inventory
+      await this.inventoryItemDao.addPendingQuantities(
+        createDonationDto.helpRequestId,
         createDonationDto.rationItems
       );
 
@@ -196,6 +208,14 @@ class DonationService {
         };
       }
 
+      // If both donator and receiver have confirmed, move pending to donated
+      if (updatedDonation.donatorMarkedCompleted && updatedDonation.ownerMarkedCompleted) {
+        await this.inventoryItemDao.confirmPendingQuantities(
+          updatedDonation.helpRequestId,
+          updatedDonation.rationItems
+        );
+      }
+
       return {
         success: true,
         data: new DonationResponseDto(updatedDonation),
@@ -245,6 +265,14 @@ class DonationService {
           success: false,
           error: 'Failed to update donation',
         };
+      }
+
+      // If both donator and receiver have confirmed, move pending to donated
+      if (updatedDonation.donatorMarkedCompleted && updatedDonation.ownerMarkedCompleted) {
+        await this.inventoryItemDao.confirmPendingQuantities(
+          updatedDonation.helpRequestId,
+          updatedDonation.rationItems
+        );
       }
 
       return {

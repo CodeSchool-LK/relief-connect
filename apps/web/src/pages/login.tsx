@@ -77,7 +77,7 @@ export default function LoginPage() {
         localStorage.setItem('donor_user', JSON.stringify(userData))
         
         setLoading(false)
-        router.push('/requests')
+        router.push('/')
       } else {
         // Handle validation errors
         let errorMessage = response.error || 'Login failed. Please try again.'

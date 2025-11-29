@@ -25,11 +25,15 @@ import {
   CheckCircle,
 } from 'lucide-react'
 import { HelpRequestResponseDto } from '@nx-mono-repo-deployment-test/shared/src/dtos/help-request/response/help_request_response_dto'
+import { HelpRequestWithOwnershipResponseDto } from '@nx-mono-repo-deployment-test/shared/src/dtos/help-request/response/help_request_with_ownership_response_dto'
 import { Urgency, HelpRequestCategory, ContactType } from '@nx-mono-repo-deployment-test/shared/src/enums'
-import { helpRequestService } from '../../services'
+import { helpRequestService, donationService } from '../../services'
+import { RATION_ITEMS } from '../../components/EmergencyRequestForm'
+import { DonationWithDonatorResponseDto } from '@nx-mono-repo-deployment-test/shared/src/dtos/donation/response/donation_with_donator_response_dto'
 
 interface DonationRequest {
   id: number
+  donatorId: number
   donorName: string
   donorContact: string
   donorContactType: string
@@ -37,6 +41,9 @@ interface DonationRequest {
   status: 'pending' | 'confirmed' | 'completed'
   requestedDate: string
   message?: string
+  donatorMarkedScheduled: boolean
+  donatorMarkedCompleted: boolean
+  ownerMarkedCompleted: boolean
 }
 
 // Donation requests are now loaded from localStorage
@@ -51,38 +58,79 @@ const dummyPhotos = [
 export default function RequestDetailsPage() {
   const router = useRouter()
   const { id } = router.query
-  const [request, setRequest] = useState<HelpRequestResponseDto | null>(null)
+  const [request, setRequest] = useState<HelpRequestWithOwnershipResponseDto | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null)
   const [userInfo, setUserInfo] = useState<{ name?: string; identifier?: string } | null>(null)
+  const [currentUserId, setCurrentUserId] = useState<number | undefined>(undefined)
   const [donationRequests, setDonationRequests] = useState<DonationRequest[]>([])
+  const [loadingDonations, setLoadingDonations] = useState(false)
 
-  // Load donations from localStorage
+  // Load donations from API
   useEffect(() => {
-    if (typeof window !== 'undefined' && id) {
-      const allDonations = JSON.parse(
-        localStorage.getItem('donations') || '[]'
-      )
-      const donationStatuses = JSON.parse(
-        localStorage.getItem('donation_statuses') || '{}'
-      )
-      
-      // Filter donations for this request ID
-      const requestDonations = allDonations
-        .filter((donation: any) => donation.requestId === Number(id))
-        .map((donation: any) => ({
-          id: donation.id,
-          donorName: donation.donorName,
-          donorContact: donation.donorContact,
-          donorContactType: donation.donorContactType,
-          items: donation.items,
-          status: (donationStatuses[donation.id] as DonationRequest['status']) || donation.status || 'pending',
-          requestedDate: donation.requestedDate,
-          message: donation.message,
-        }))
-      
-      setDonationRequests(requestDonations)
+    if (id) {
+      const loadDonations = async () => {
+        setLoadingDonations(true)
+        try {
+          const response = await donationService.getDonationsByHelpRequestId(Number(id))
+          if (response.success && response.data) {
+            // Map API response to UI format
+            const mappedDonations: DonationRequest[] = response.data.map((donation: DonationWithDonatorResponseDto) => {
+              // Map rationItems from Record<string, number> to readable string
+              const itemsList = Object.entries(donation.rationItems)
+                .map(([itemId, quantity]) => {
+                  const rationItem = RATION_ITEMS.find((item) => item.id === itemId)
+                  const label = rationItem ? rationItem.label : itemId
+                  return `${label} (${quantity})`
+                })
+                .join(', ')
+
+              // Map status from boolean flags to UI status
+              let status: 'pending' | 'confirmed' | 'completed' = 'pending'
+              if (donation.ownerMarkedCompleted) {
+                status = 'completed'
+              } else if (donation.donatorMarkedScheduled || donation.donatorMarkedCompleted) {
+                status = 'confirmed'
+              }
+
+              // Format date
+              const requestedDate = donation.createdAt
+                ? new Date(donation.createdAt).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                  })
+                : 'Unknown date'
+
+              return {
+                id: donation.id,
+                donatorId: donation.donatorId,
+                donorName: donation.donatorUsername || 'Anonymous',
+                donorContact: donation.donatorContactNumber || 'N/A',
+                donorContactType: donation.donatorContactNumber ? 'Phone' : 'Email',
+                items: itemsList || 'Various items',
+                status,
+                requestedDate,
+                message: undefined, // API doesn't have message field
+                donatorMarkedScheduled: donation.donatorMarkedScheduled || false,
+                donatorMarkedCompleted: donation.donatorMarkedCompleted || false,
+                ownerMarkedCompleted: donation.ownerMarkedCompleted || false,
+              }
+            })
+            setDonationRequests(mappedDonations)
+          } else {
+            console.error('Failed to load donations:', response.error)
+            setDonationRequests([])
+          }
+        } catch (err) {
+          console.error('[RequestPage] Error loading donations:', err)
+          setDonationRequests([])
+        } finally {
+          setLoadingDonations(false)
+        }
+      }
+      loadDonations()
     }
   }, [id])
 
@@ -105,22 +153,45 @@ export default function RequestDetailsPage() {
     }
   }, [])
 
+  // Get current user ID from API if authenticated
+  useEffect(() => {
+    const getCurrentUser = async () => {
+      try {
+        if (typeof window !== 'undefined') {
+          const accessToken = localStorage.getItem('accessToken')
+          if (accessToken) {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/users/me`, {
+              headers: {
+                'Authorization': `Bearer ${accessToken}`,
+              },
+            })
+            if (response.ok) {
+              const data = await response.json()
+              if (data.success && data.data && data.data.id) {
+                setCurrentUserId(data.data.id)
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error('[RequestPage] Error getting current user:', error)
+      }
+    }
+    getCurrentUser()
+  }, [])
+
   useEffect(() => {
     if (id) {
       const loadRequest = async () => {
         setLoading(true)
+        setError(null)
         try {
-          // Fetch all requests and find the one with matching ID
-          const response = await helpRequestService.getAllHelpRequests()
+          // Fetch the specific request by ID using the API endpoint
+          const response = await helpRequestService.getHelpRequestById(Number(id))
           if (response.success && response.data) {
-            const foundRequest = response.data.find((req) => req.id === Number(id))
-            if (foundRequest) {
-              setRequest(foundRequest)
-            } else {
-              setError('Request not found')
-            }
+            setRequest(response.data)
           } else {
-            setError(response.error || 'Failed to load request')
+            setError(response.error || 'Request not found')
           }
         } catch (err) {
           console.error('[RequestPage] Error loading request:', err)
@@ -134,22 +205,76 @@ export default function RequestDetailsPage() {
   }, [id])
 
   // Check if current user is the owner of the request
-  // Owner is determined by matching contact information
-  const isOwner = userInfo && request && userInfo.identifier === request.contact
+  // isOwner is determined by the backend based on authenticated user
+  const isOwner = request?.isOwner || false
 
-  const handleConfirmDonation = (donationId: number) => {
-    const updated = donationRequests.map((donation) =>
-      donation.id === donationId ? { ...donation, status: 'confirmed' as const } : donation
-    )
-    setDonationRequests(updated)
+  const handleConfirmDonation = async (donationId: number) => {
+    if (!id) return
     
-    // Store in localStorage to sync with my-requests page
-    if (typeof window !== 'undefined') {
-      const donationStatuses = JSON.parse(
-        localStorage.getItem('donation_statuses') || '{}'
-      )
-      donationStatuses[donationId] = 'confirmed'
-      localStorage.setItem('donation_statuses', JSON.stringify(donationStatuses))
+    try {
+      // Mark donation as completed by owner via API
+      const response = await donationService.markAsCompletedByOwner(Number(id), donationId)
+      if (response.success) {
+        // Update local state
+        const updated = donationRequests.map((donation) =>
+          donation.id === donationId 
+            ? { ...donation, status: 'completed' as const, ownerMarkedCompleted: true }
+            : donation
+        )
+        setDonationRequests(updated)
+      } else {
+        console.error('Failed to confirm donation:', response.error)
+        alert(response.error || 'Failed to confirm donation')
+      }
+    } catch (err) {
+      console.error('[RequestPage] Error confirming donation:', err)
+      alert('Failed to confirm donation. Please try again.')
+    }
+  }
+
+  const handleMarkAsScheduled = async (donationId: number) => {
+    if (!id) return
+    
+    try {
+      const response = await donationService.markAsScheduled(Number(id), donationId)
+      if (response.success) {
+        // Update local state
+        const updated = donationRequests.map((donation) =>
+          donation.id === donationId 
+            ? { ...donation, status: 'confirmed' as const, donatorMarkedScheduled: true }
+            : donation
+        )
+        setDonationRequests(updated)
+      } else {
+        console.error('Failed to mark donation as scheduled:', response.error)
+        alert(response.error || 'Failed to mark donation as scheduled')
+      }
+    } catch (err) {
+      console.error('[RequestPage] Error marking donation as scheduled:', err)
+      alert('Failed to mark donation as scheduled. Please try again.')
+    }
+  }
+
+  const handleMarkAsCompletedByDonator = async (donationId: number) => {
+    if (!id) return
+    
+    try {
+      const response = await donationService.markAsCompletedByDonator(Number(id), donationId)
+      if (response.success) {
+        // Update local state
+        const updated = donationRequests.map((donation) =>
+          donation.id === donationId 
+            ? { ...donation, status: 'confirmed' as const, donatorMarkedCompleted: true }
+            : donation
+        )
+        setDonationRequests(updated)
+      } else {
+        console.error('Failed to mark donation as completed:', response.error)
+        alert(response.error || 'Failed to mark donation as completed')
+      }
+    } catch (err) {
+      console.error('[RequestPage] Error marking donation as completed:', err)
+      alert('Failed to mark donation as completed. Please try again.')
     }
   }
 
@@ -161,19 +286,45 @@ export default function RequestDetailsPage() {
 
   const handleDonate = () => {
     if (!request) return
-    const requestName = request.shortNote?.split(',')[0]?.replace('Name:', '').trim() || 'Anonymous'
+    
+    // Get request name - use name field first, then parse from shortNote
+    const requestName = request.name || 'Anonymous'
+    
+    // Build items string from rationItems array if available, otherwise parse from shortNote
+    let itemsString = ''
+    if (request.rationItems && request.rationItems.length > 0) {
+      itemsString = request.rationItems
+        .map((itemId) => {
+          const meta = RATION_ITEMS.find((item) => item.id === itemId)
+          return meta ? `${meta.label}` : itemId
+        })
+        .join(', ')
+    } else {
+      itemsString = request.shortNote?.match(/Items:\s*(.+)/)?.[1] || ''
+    }
+    
+    // Determine category - if not available, infer from urgency or default to FOOD_WATER
+    // Note: HelpRequestResponseDto might not have category field, so we default
+    const category = (request as any).category || HelpRequestCategory.FOOD_WATER
+    
     // Navigate to donation form with request details
     router.push({
       pathname: '/donate',
       query: {
         requestId: request.id,
         userName: requestName,
+        category: category,
         urgency: request.urgency,
-        items: request.shortNote?.match(/Items:\s*(.+)/)?.[1] || '',
+        items: itemsString,
         location: request.approxArea || '',
+        // Pass rationItems as comma-separated string for the donate page
+        rationItems: request.rationItems && request.rationItems.length > 0 
+          ? request.rationItems.join(',')
+          : undefined,
       },
     })
   }
+
 
   if (loading) {
     return (
@@ -195,15 +346,21 @@ export default function RequestDetailsPage() {
     )
   }
 
-  const name = request.shortNote?.split(',')[0]?.replace('Name:', '').trim() || 'Anonymous'
-  const peopleMatch = request.shortNote?.match(/People:\s*(\d+)/)
-  const peopleCount = peopleMatch ? parseInt(peopleMatch[1]) : 1
-  const kidsMatch = request.shortNote?.match(/Kids:\s*(\d+)/)
-  const kidsCount = kidsMatch ? parseInt(kidsMatch[1]) : 0
-  const eldersMatch = request.shortNote?.match(/Elders:\s*(\d+)/)
-  const eldersCount = eldersMatch ? parseInt(eldersMatch[1]) : 0
-  const itemsMatch = request.shortNote?.match(/Items:\s*(.+)/)
-  const items = itemsMatch ? itemsMatch[1] : 'Various items'
+  // Use structured fields directly from API response
+  const name = request.name || 'Anonymous'
+  const peopleCount = request.totalPeople || 1
+  const kidsCount = request.children || 0
+  const eldersCount = request.elders || 0
+  
+  // Map rationItems array to readable labels using RATION_ITEMS
+  const items = request.rationItems && request.rationItems.length > 0
+    ? request.rationItems
+        .map((itemId) => {
+          const rationItem = RATION_ITEMS.find((item) => item.id === itemId)
+          return rationItem ? rationItem.label : itemId
+        })
+        .join(', ')
+    : request.shortNote?.match(/Items:\s*(.+)/)?.[1] || 'Various items'
 
   return (
     <>
@@ -350,18 +507,25 @@ export default function RequestDetailsPage() {
               <Phone className="h-5 w-5 mr-2" />
               Call
             </Button>
-            <Button
-              onClick={handleDonate}
-              className="flex-1 h-12 text-base font-semibold bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white"
-            >
-              <Heart className="h-5 w-5 mr-2" />
-              Donate
-            </Button>
+            {/* Only show Donate button if user is NOT the owner */}
+            {!isOwner && (
+              <Button
+                onClick={handleDonate}
+                className="flex-1 h-12 text-base font-semibold bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white"
+              >
+                <Heart className="h-5 w-5 mr-2" />
+                Donate
+              </Button>
+            )}
             <Dialog>
               <DialogTrigger asChild>
-                <Button className="flex-1 h-12 text-base font-semibold" variant="outline">
+                <Button 
+                  className="flex-1 h-12 text-base font-semibold" 
+                  variant="outline"
+                  disabled={loadingDonations}
+                >
                   <Users className="h-5 w-5 mr-2" />
-                  View Donation Requests ({donationRequests.length})
+                  {loadingDonations ? 'Loading...' : `View Donation Requests (${donationRequests.length})`}
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
@@ -425,38 +589,77 @@ export default function RequestDetailsPage() {
                               <span>Requested: {donation.requestedDate}</span>
                             </div>
                             <div className="flex gap-2 pt-2">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="flex-1"
-                                onClick={() => {
-                                  window.location.href =
-                                    donation.donorContactType === 'Phone'
-                                      ? `tel:${donation.donorContact}`
-                                      : `mailto:${donation.donorContact}`
-                                }}
-                              >
-                                {donation.donorContactType === 'Phone' ? (
-                                  <>
-                                    <Phone className="h-4 w-4 mr-2" />
-                                    Call
-                                  </>
-                                ) : (
-                                  <>
-                                    <Mail className="h-4 w-4 mr-2" />
-                                    Email
-                                  </>
-                                )}
-                              </Button>
-                              {donation.status === 'pending' && isOwner && (
+                              {donation.donorContact !== 'N/A' && isOwner && (
                                 <Button
                                   size="sm"
+                                  variant="outline"
                                   className="flex-1"
+                                  onClick={() => {
+                                    window.location.href =
+                                      donation.donorContactType === 'Phone'
+                                        ? `tel:${donation.donorContact}`
+                                        : `mailto:${donation.donorContact}`
+                                  }}
+                                >
+                                  {donation.donorContactType === 'Phone' ? (
+                                    <>
+                                      <Phone className="h-4 w-4 mr-2" />
+                                      Call
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Mail className="h-4 w-4 mr-2" />
+                                      Email
+                                    </>
+                                  )}
+                                </Button>
+                              )}
+                              {/* Owner (Getter) can mark donation as completed - show if not already completed by owner */}
+                              {isOwner && !donation.ownerMarkedCompleted && (
+                                <Button
+                                  size="sm"
+                                  className="flex-1 bg-blue-600 hover:bg-blue-700"
                                   onClick={() => handleConfirmDonation(donation.id)}
                                 >
                                   <CheckCircle className="h-4 w-4 mr-2" />
-                                  Confirm
+                                  Mark as Completed (Owner)
                                 </Button>
+                              )}
+                              {/* Donator (Giver) can mark their own donation as scheduled or completed */}
+                              {currentUserId && donation.donatorId === currentUserId && !donation.ownerMarkedCompleted && (
+                                <>
+                                  {!donation.donatorMarkedScheduled && !donation.donatorMarkedCompleted && (
+                                    <>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        className="flex-1"
+                                        onClick={() => handleMarkAsScheduled(donation.id)}
+                                      >
+                                        <Calendar className="h-4 w-4 mr-2" />
+                                        Mark as Scheduled
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        className="flex-1 bg-green-600 hover:bg-green-700"
+                                        onClick={() => handleMarkAsCompletedByDonator(donation.id)}
+                                      >
+                                        <CheckCircle className="h-4 w-4 mr-2" />
+                                        Mark as Completed (Donator)
+                                      </Button>
+                                    </>
+                                  )}
+                                  {donation.donatorMarkedScheduled && !donation.donatorMarkedCompleted && (
+                                    <Button
+                                      size="sm"
+                                      className="flex-1 bg-green-600 hover:bg-green-700"
+                                      onClick={() => handleMarkAsCompletedByDonator(donation.id)}
+                                    >
+                                      <CheckCircle className="h-4 w-4 mr-2" />
+                                      Mark as Completed (Donator)
+                                    </Button>
+                                  )}
+                                </>
                               )}
                             </div>
                           </div>

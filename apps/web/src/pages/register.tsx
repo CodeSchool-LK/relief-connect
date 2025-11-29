@@ -66,7 +66,7 @@ export default function RegisterPage() {
     )
 
     setLoading(false)
-    router.push('/requests')
+    router.push('/')
   }
 
   return (

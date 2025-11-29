@@ -60,6 +60,26 @@ const Map: React.FC<MapProps> = ({
   zoom = 7,
   onRequestClick,
 }) => {
+  // Filter and validate coordinates
+  const validHelpRequests = helpRequests.filter((request) => {
+    const lat = Number(request.lat)
+    const lng = Number(request.lng)
+    return !isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0
+  })
+
+  const validCamps = camps.filter((camp) => {
+    const lat = Number(camp.lat)
+    const lng = Number(camp.lng)
+    return !isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0
+  })
+
+  console.log('[Map Component] Rendering markers:', {
+    helpRequests: validHelpRequests.length,
+    camps: validCamps.length,
+    totalHelpRequests: helpRequests.length,
+    totalCamps: camps.length,
+  })
+
   return (
     <div className={styles.mapContainer}>
       <MapContainer center={center} zoom={zoom} style={{ height: "100%", width: "100%" }} scrollWheelZoom={true}>
@@ -70,12 +90,15 @@ const Map: React.FC<MapProps> = ({
         />
 
         {/* Help Request Markers */}
-        {helpRequests.map((request) => (
-          <Marker
-            key={`help-${request.id}`}
-            position={[request.lat, request.lng]}
-            icon={getUrgencyIcon(request.urgency)}
-          >
+        {validHelpRequests.map((request) => {
+          const lat = Number(request.lat)
+          const lng = Number(request.lng)
+          return (
+            <Marker
+              key={`help-${request.id}`}
+              position={[lat, lng]}
+              icon={getUrgencyIcon(request.urgency)}
+            >
             <Popup>
               <div className={styles.popup}>
                 <h4>Help Request</h4>
@@ -134,11 +157,15 @@ const Map: React.FC<MapProps> = ({
               </div>
             </Popup>
           </Marker>
-        ))}
+            )
+          })}
 
         {/* Camp Markers */}
-        {camps.map((camp) => (
-          <Marker key={`camp-${camp.id}`} position={[camp.lat, camp.lng]} icon={campIcon}>
+        {validCamps.map((camp) => {
+          const lat = Number(camp.lat)
+          const lng = Number(camp.lng)
+          return (
+            <Marker key={`camp-${camp.id}`} position={[lat, lng]} icon={campIcon}>
             <Popup>
               <div className={styles.popup}>
                 <h4>Camp: {camp.name}</h4>
@@ -176,7 +203,8 @@ const Map: React.FC<MapProps> = ({
               </div>
             </Popup>
           </Marker>
-        ))}
+            )
+          })}
       </MapContainer>
     </div>
   )

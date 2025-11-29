@@ -20,11 +20,6 @@ import type { HelpRequestResponseDto } from '@nx-mono-repo-deployment-test/share
 import type { CampResponseDto } from '@nx-mono-repo-deployment-test/shared/src/dtos/camp/response/camp_response_dto'
 import { Urgency } from '@nx-mono-repo-deployment-test/shared/src/enums'
 import { Filter, ArrowLeft } from 'lucide-react'
-import {
-  SRI_LANKA_PROVINCES,
-  SRI_LANKA_DISTRICTS,
-  DISTRICT_COORDINATES,
-} from '../data/sri-lanka-locations'
 import { helpRequestService, campService } from '../services'
 
 // Dynamically import Map to avoid SSR issues with Leaflet
@@ -40,14 +35,10 @@ export default function MapDashboard() {
   const [isMobile, setIsMobile] = useState(false)
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   const [tempFilters, setTempFilters] = useState<{
-    province?: string
-    district?: string
     emergencyLevel?: Urgency
     type?: 'individual' | 'group'
   }>({})
   const [appliedFilters, setAppliedFilters] = useState<{
-    province?: string
-    district?: string
     emergencyLevel?: Urgency
     type?: 'individual' | 'group'
   }>({})
@@ -66,11 +57,9 @@ export default function MapDashboard() {
 
   // Read filters from query params on initial load
   useEffect(() => {
-    const { province, district, urgency, type } = router.query
-    if (province || district || urgency || type) {
+    const { urgency, type } = router.query
+    if (urgency || type) {
       const initialFilters = {
-        province: province as string | undefined,
-        district: district as string | undefined,
         emergencyLevel: urgency as Urgency | undefined,
         type: type as 'individual' | 'group' | undefined,
       }
@@ -91,14 +80,11 @@ export default function MapDashboard() {
     try {
       // Fetch help requests from API
       const helpRequestsResponse = await helpRequestService.getAllHelpRequests({
-        district: appliedFilters.district,
         urgency: appliedFilters.emergencyLevel,
       })
 
       // Fetch camps from API
-      const campsResponse = await campService.getAllCamps({
-        district: appliedFilters.district,
-      })
+      const campsResponse = await campService.getAllCamps({})
 
       if (helpRequestsResponse.success && helpRequestsResponse.data) {
         setHelpRequests(helpRequestsResponse.data)
@@ -118,36 +104,19 @@ export default function MapDashboard() {
     } finally {
       setLoading(false)
     }
-  }, [appliedFilters.district, appliedFilters.emergencyLevel])
+  }, [appliedFilters.emergencyLevel])
 
   useEffect(() => {
     fetchData()
   }, [fetchData])
 
-  // Update map center when applied filters change
-  useEffect(() => {
-    if (appliedFilters.district && DISTRICT_COORDINATES[appliedFilters.district]) {
-      setMapCenter(DISTRICT_COORDINATES[appliedFilters.district])
-      setMapZoom(10)
-    } else if (appliedFilters.province) {
-      // Center on first district of province
-      const districts = SRI_LANKA_DISTRICTS[appliedFilters.province]
-      if (districts && districts.length > 0 && DISTRICT_COORDINATES[districts[0]]) {
-        setMapCenter(DISTRICT_COORDINATES[districts[0]])
-        setMapZoom(9)
-      }
-    } else {
-      setMapCenter([7.8731, 80.7718])
-      setMapZoom(8)
-    }
-  }, [appliedFilters.district, appliedFilters.province])
+  // Map center is fixed to Sri Lanka center
+  // Province/District filter logic removed
 
   const handleApplyFilters = () => {
     setAppliedFilters({ ...tempFilters })
     // Update URL with filters
     const params = new URLSearchParams()
-    if (tempFilters.province) params.set('province', tempFilters.province)
-    if (tempFilters.district) params.set('district', tempFilters.district)
     if (tempFilters.emergencyLevel) params.set('urgency', tempFilters.emergencyLevel)
     if (tempFilters.type) params.set('type', tempFilters.type)
     router.push(`/map?${params.toString()}`, undefined, { shallow: true })
@@ -162,47 +131,52 @@ export default function MapDashboard() {
   const filteredRequests = useMemo(() => {
     let filtered = requestsWithMockCoords
 
-    // Filter by district
-    if (appliedFilters.district) {
-      filtered = filtered.filter((request) =>
-        request.approxArea?.toLowerCase().includes(appliedFilters.district!.toLowerCase())
-      )
-    }
+    // Always exclude Low urgency requests - only show Medium and High
+    filtered = filtered.filter((request) => 
+      request.urgency === Urgency.MEDIUM || request.urgency === Urgency.HIGH
+    )
 
-    // Filter by province
-    if (appliedFilters.province && !appliedFilters.district) {
-      const districts = SRI_LANKA_DISTRICTS[appliedFilters.province] || []
-      filtered = filtered.filter((request) =>
-        districts.some((district) =>
-          request.approxArea?.toLowerCase().includes(district.toLowerCase())
-        )
-      )
-    }
-
-    // Filter by urgency
+    // Filter by urgency (only Medium or High can be selected)
     if (appliedFilters.emergencyLevel) {
       filtered = filtered.filter((request) => request.urgency === appliedFilters.emergencyLevel)
     }
 
-    // Filter by type
+    // Filter by type (individual = 1 person, group = more than 1 person)
     if (appliedFilters.type === 'individual') {
       filtered = filtered.filter((request) => {
-        const peopleMatch = request.shortNote?.match(/People:\s*(\d+)/)
-        return peopleMatch && Number.parseInt(peopleMatch[1]) <= 10
+        // Use totalPeople field from API, fallback to parsing shortNote
+        const totalPeople = request.totalPeople || (() => {
+          const peopleMatch = request.shortNote?.match(/People:\s*(\d+)/)
+          return peopleMatch ? Number.parseInt(peopleMatch[1]) : 1
+        })()
+        return totalPeople === 1
       })
     } else if (appliedFilters.type === 'group') {
       filtered = filtered.filter((request) => {
-        const peopleMatch = request.shortNote?.match(/People:\s*(\d+)/)
-        return peopleMatch && Number.parseInt(peopleMatch[1]) > 10
+        // Use totalPeople field from API, fallback to parsing shortNote
+        const totalPeople = request.totalPeople || (() => {
+          const peopleMatch = request.shortNote?.match(/People:\s*(\d+)/)
+          return peopleMatch ? Number.parseInt(peopleMatch[1]) : 1
+        })()
+        return totalPeople > 1
       })
     }
 
+    // Filter out requests with invalid coordinates
+    filtered = filtered.filter((request) => {
+      const lat = Number(request.lat)
+      const lng = Number(request.lng)
+      return !isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0
+    })
+
+    console.log('[MapPage] Filtered requests:', {
+      total: requestsWithMockCoords.length,
+      filtered: filtered.length,
+      filters: appliedFilters,
+    })
+
     return filtered
   }, [requestsWithMockCoords, appliedFilters])
-
-  const availableDistricts = tempFilters.province
-    ? SRI_LANKA_DISTRICTS[tempFilters.province] || []
-    : Object.values(SRI_LANKA_DISTRICTS).flat()
 
   const DesktopFiltersBar = () => (
     <nav className="hidden md:block absolute top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-200/50 shadow-sm">
@@ -224,45 +198,6 @@ export default function MapDashboard() {
 
           <div className="flex-1 flex flex-wrap items-center gap-3">
             <select
-              className="h-10 rounded-md border border-input bg-white px-3 py-2 text-sm min-w-[150px]"
-              value={tempFilters.province || ''}
-              onChange={(e) => {
-                const province = e.target.value || undefined
-                setTempFilters({
-                  ...tempFilters,
-                  province,
-                  district: undefined,
-                })
-              }}
-            >
-              <option value="">All Provinces</option>
-              {SRI_LANKA_PROVINCES.map((province) => (
-                <option key={province} value={province}>
-                  {province}
-                </option>
-              ))}
-            </select>
-
-            <select
-              className="h-10 rounded-md border border-input bg-white px-3 py-2 text-sm min-w-[150px]"
-              value={tempFilters.district || ''}
-              onChange={(e) =>
-                setTempFilters({
-                  ...tempFilters,
-                  district: e.target.value || undefined,
-                })
-              }
-              disabled={!tempFilters.province}
-            >
-              <option value="">All Districts</option>
-              {availableDistricts.map((district) => (
-                <option key={district} value={district}>
-                  {district}
-                </option>
-              ))}
-            </select>
-
-            <select
               className="h-10 rounded-md border border-input bg-white px-3 py-2 text-sm min-w-[130px]"
               value={tempFilters.emergencyLevel || ''}
               onChange={(e) =>
@@ -272,8 +207,7 @@ export default function MapDashboard() {
                 })
               }
             >
-              <option value="">All Levels</option>
-              <option value={Urgency.LOW}>Low</option>
+              <option value="">All Levels (Medium & High)</option>
               <option value={Urgency.MEDIUM}>Medium</option>
               <option value={Urgency.HIGH}>High</option>
             </select>
@@ -302,16 +236,6 @@ export default function MapDashboard() {
             </Button>
           </div>
         </div>
-        {appliedFilters.district || appliedFilters.province ? (
-          <div className="mt-2 text-sm text-gray-600">
-            Showing:{' '}
-            {appliedFilters.district
-              ? appliedFilters.district
-              : appliedFilters.province
-                ? appliedFilters.province
-                : 'All Locations'}
-          </div>
-        ) : null}
       </div>
     </nav>
   )
@@ -356,53 +280,6 @@ export default function MapDashboard() {
 
             <div className="flex-1 overflow-y-auto px-4 pb-4 space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="province-select">Province</Label>
-                <select
-                  id="province-select"
-                  className="w-full h-10 rounded-md border border-input bg-white px-3 py-2 text-sm"
-                  value={tempFilters.province || ''}
-                  onChange={(e) => {
-                    const province = e.target.value || undefined
-                    setTempFilters({
-                      ...tempFilters,
-                      province,
-                      district: undefined,
-                    })
-                  }}
-                >
-                  <option value="">{t('allProvinces')}</option>
-                  {SRI_LANKA_PROVINCES.map((province) => (
-                    <option key={province} value={province}>
-                      {province}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="district-select">District</Label>
-                <select
-                  id="district-select"
-                  className="w-full h-10 rounded-md border border-input bg-white px-3 py-2 text-sm disabled:opacity-50"
-                  value={tempFilters.district || ''}
-                  onChange={(e) =>
-                    setTempFilters({
-                      ...tempFilters,
-                      district: e.target.value || undefined,
-                    })
-                  }
-                  disabled={!tempFilters.province}
-                >
-                  <option value="">{t('allDistricts')}</option>
-                  {availableDistricts.map((district) => (
-                    <option key={district} value={district}>
-                      {district}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="space-y-2">
                 <Label htmlFor="urgency-select">Urgency Level</Label>
                 <select
                   id="urgency-select"
@@ -415,8 +292,7 @@ export default function MapDashboard() {
                     })
                   }
                 >
-                  <option value="">{t('allLevels')}</option>
-                  <option value={Urgency.LOW}>{t('low')}</option>
+                  <option value="">All Levels (Medium & High)</option>
                   <option value={Urgency.MEDIUM}>{t('medium')}</option>
                   <option value={Urgency.HIGH}>{t('high')}</option>
                 </select>
@@ -488,6 +364,7 @@ export default function MapDashboard() {
           {!loading && !error && (
             <div className="h-full w-full">
               <Map
+                key={`map-${filteredRequests.length}-${appliedFilters.emergencyLevel || 'all'}-${appliedFilters.type || 'all'}`}
                 helpRequests={filteredRequests}
                 camps={camps}
                 center={mapCenter}

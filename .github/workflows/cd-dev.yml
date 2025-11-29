@@ -72,11 +72,16 @@ jobs:
               sudo mkdir -p /opt/rebuildsl
               sudo chown -R $USER:$USER /opt/rebuildsl
               cd /opt/rebuildsl
+              # Add to Git safe directory to avoid ownership issues
+              git config --global --add safe.directory /opt/rebuildsl
               git clone ${{ github.server_url }}/${{ github.repository }} .
               git checkout develop
             else
               # Navigate to deployment directory
               cd /opt/rebuildsl
+              
+              # Add to Git safe directory to avoid ownership issues
+              git config --global --add safe.directory /opt/rebuildsl
               
               # Pull latest changes
               echo "Pulling latest changes..."

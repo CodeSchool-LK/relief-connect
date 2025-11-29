@@ -30,6 +30,7 @@ import { Urgency, HelpRequestCategory, ContactType } from '@nx-mono-repo-deploym
 import { helpRequestService, donationService } from '../../services'
 import { RATION_ITEMS } from '../../components/EmergencyRequestForm'
 import { DonationWithDonatorResponseDto } from '@nx-mono-repo-deployment-test/shared/src/dtos/donation/response/donation_with_donator_response_dto'
+import DonationInteractionModal from '../../components/DonationInteractionModal'
 
 interface DonationRequest {
   id: number
@@ -66,6 +67,7 @@ export default function RequestDetailsPage() {
   const [currentUserId, setCurrentUserId] = useState<number | undefined>(undefined)
   const [donationRequests, setDonationRequests] = useState<DonationRequest[]>([])
   const [loadingDonations, setLoadingDonations] = useState(false)
+  const [showDonationModal, setShowDonationModal] = useState(false)
 
   // Load donations from API
   useEffect(() => {
@@ -305,43 +307,8 @@ export default function RequestDetailsPage() {
 
   const handleDonate = () => {
     if (!request) return
-    
-    // Get request name - use name field first, then parse from shortNote
-    const requestName = request.name || 'Anonymous'
-    
-    // Build items string from rationItems array if available, otherwise parse from shortNote
-    let itemsString = ''
-    if (request.rationItems && request.rationItems.length > 0) {
-      itemsString = request.rationItems
-        .map((itemId) => {
-          const meta = RATION_ITEMS.find((item) => item.id === itemId)
-          return meta ? `${meta.label}` : itemId
-        })
-        .join(', ')
-    } else {
-      itemsString = request.shortNote?.match(/Items:\s*(.+)/)?.[1] || ''
-    }
-    
-    // Determine category - if not available, infer from urgency or default to FOOD_WATER
-    // Note: HelpRequestResponseDto might not have category field, so we default
-    const category = (request as any).category || HelpRequestCategory.FOOD_WATER
-    
-    // Navigate to donation form with request details
-    router.push({
-      pathname: '/donate',
-      query: {
-        requestId: request.id,
-        userName: requestName,
-        category: category,
-        urgency: request.urgency,
-        items: itemsString,
-        location: request.approxArea || '',
-        // Pass rationItems as comma-separated string for the donate page
-        rationItems: request.rationItems && request.rationItems.length > 0 
-          ? request.rationItems.join(',')
-          : undefined,
-      },
-    })
+    // Open donation modal instead of navigating
+    setShowDonationModal(true)
   }
 
 
@@ -704,6 +671,75 @@ export default function RequestDetailsPage() {
           </div>
         </div>
       </div>
+
+      {/* Donation Modal */}
+      {request && (
+        <DonationInteractionModal
+          helpRequest={request}
+          isOpen={showDonationModal}
+          onClose={() => {
+            setShowDonationModal(false)
+            // Reload donations after closing modal
+            if (id) {
+              const loadDonations = async () => {
+                setLoadingDonations(true)
+                try {
+                  const response = await donationService.getDonationsByHelpRequestId(Number(id))
+                  if (response.success && response.data) {
+                    const mappedDonations: DonationRequest[] = response.data.map((donation: DonationWithDonatorResponseDto) => {
+                      const itemsList = Object.entries(donation.rationItems)
+                        .map(([itemId, quantity]) => {
+                          const rationItem = RATION_ITEMS.find((item) => item.id === itemId)
+                          const label = rationItem ? rationItem.label : itemId
+                          return `${label} (${quantity})`
+                        })
+                        .join(', ')
+
+                      let status: 'pending' | 'confirmed' | 'completed' = 'pending'
+                      if (donation.ownerMarkedCompleted) {
+                        status = 'completed'
+                      } else if (donation.donatorMarkedScheduled || donation.donatorMarkedCompleted) {
+                        status = 'confirmed'
+                      }
+
+                      const requestedDate = donation.createdAt
+                        ? new Date(donation.createdAt).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric',
+                          })
+                        : 'Unknown date'
+
+                      return {
+                        id: donation.id,
+                        donatorId: donation.donatorId,
+                        donorName: donation.donatorUsername || 'Anonymous',
+                        donorContact: donation.donatorContactNumber || 'N/A',
+                        donorContactType: donation.donatorContactNumber ? 'Phone' : 'Email',
+                        items: itemsList || 'Various items',
+                        status,
+                        requestedDate,
+                        message: undefined,
+                        donatorMarkedScheduled: donation.donatorMarkedScheduled || false,
+                        donatorMarkedCompleted: donation.donatorMarkedCompleted || false,
+                        ownerMarkedCompleted: donation.ownerMarkedCompleted || false,
+                      }
+                    })
+                    setDonationRequests(mappedDonations)
+                  }
+                } catch (err) {
+                  console.error('[RequestPage] Error loading donations:', err)
+                } finally {
+                  setLoadingDonations(false)
+                }
+              }
+              loadDonations()
+            }
+          }}
+          currentUserId={currentUserId}
+          isOwner={isOwner}
+        />
+      )}
     </>
   )
 }

@@ -32,5 +32,20 @@ declare module 'class-validator' {
   export function IsIn(...args: any[]): PropertyDecorator;
   export function IsNotIn(...args: any[]): PropertyDecorator;
   export function IsUrl(...args: any[]): PropertyDecorator;
+  
+  // Validation functions
+  export function validate(object: object, validatorOptions?: any): Promise<any[]>;
+  export function validateOrReject(object: object, validatorOptions?: any): Promise<void>;
+  export function validateSync(object: object, validatorOptions?: any): any[];
+  
+  // Validation error types
+  export interface ValidationError {
+    target?: object;
+    property: string;
+    value?: any;
+    constraints?: { [type: string]: string };
+    children?: ValidationError[];
+    contexts?: { [type: string]: any };
+  }
 }
 

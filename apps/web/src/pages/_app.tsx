@@ -7,6 +7,7 @@ import '../styles/globals.css'
 import 'leaflet/dist/leaflet.css'
 import { IntroLoader } from '../components/IntroLoader'
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/router'
 
 const dmSans = DM_Sans({
   subsets: ['latin'],
@@ -23,15 +24,26 @@ const inter = Inter({
 })
 
 function MyApp({ Component, pageProps }: AppProps) {
+  const router = useRouter()
   const [pageHidden, setPageHidden] = useState(true)
+  const [showLoader, setShowLoader] = useState(false)
 
   useEffect(() => {
-    const timeout = setTimeout(() => {
-      setPageHidden(false)
-    }, 100)
+    const hasSeenIntro = localStorage.getItem('hasSeenIntro')
+    const isHome = router.pathname === '/'
 
-    return () => clearTimeout(timeout)
-  }, [])
+    if (!hasSeenIntro && isHome) {
+      setShowLoader(true)
+    } else {
+      setPageHidden(false)
+    }
+  }, [router.pathname])
+
+  const handleIntroFinish = () => {
+    localStorage.setItem('hasSeenIntro', 'true')
+    setShowLoader(false)
+    setPageHidden(false)
+  }
 
   return (
     <>
@@ -44,10 +56,17 @@ function MyApp({ Component, pageProps }: AppProps) {
       </Head>
 
       <AuthProvider>
-        <IntroLoader />
+        {showLoader && <IntroLoader onFinish={handleIntroFinish} />}
+
+        {/* loading state while checking auth/intro status */}
+        {/* {pageHidden && router.pathname === '/' && !showLoader && (
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-white">
+            <div className="h-10 w-10 animate-spin rounded-full border-4 border-gray-200 border-t-black" />
+          </div>
+        )} */}
 
         {/* hide page behind loader to prevent flash */}
-        <div className={`${dmSans.variable} ${inter.variable} ${pageHidden ? 'page-hidden' : ''}`}>
+        <div className={pageHidden ? 'page-hidden' : ''}>
           <Component {...pageProps} />
         </div>
       </AuthProvider>

@@ -7,34 +7,46 @@ const FRAME_DURATION = 600
 const blurs = [8, 14, 20]
 const texts = ["Let's", 'Rebuild', null]
 
-export const IntroLoader = () => {
+interface IntroLoaderProps {
+  onFinish: () => void
+}
+
+export const IntroLoader = ({ onFinish }: IntroLoaderProps) => {
   const [isVisible, setIsVisible] = useState(true)
+  const [imagesLoaded, setImagesLoaded] = useState(false)
+  const [started, setStarted] = useState(false)
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [isFadingOut, setIsFadingOut] = useState(false)
-  const [fadeIn, setFadeIn] = useState(false)
 
-  // prevent page flash by rendering loader immediately
+  // preload images
   useEffect(() => {
-    const hasSeenIntro = localStorage.getItem('hasSeenIntro')
-
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        if (hasSeenIntro) {
-          setFadeIn(true)
-          setIsFadingOut(true)
-          setTimeout(() => {
-            setIsVisible(false)
-          }, 200)
-          return
-        }
-
-        setFadeIn(true)
+    const preloadImages = async () => {
+      const promises = images.map((src) => {
+        return new Promise((resolve, reject) => {
+          const img = new window.Image()
+          img.src = src
+          img.onload = resolve
+          img.onerror = reject
+        })
       })
-    })
+
+      try {
+        await Promise.all(promises)
+        setImagesLoaded(true)
+        // small delay before starting the intro
+        setTimeout(() => setStarted(true), 500)
+      } catch (error) {
+        console.error('Failed to preload images', error)
+        setImagesLoaded(true)
+        setStarted(true)
+      }
+    }
+
+    preloadImages()
   }, [])
 
   useEffect(() => {
-    if (!isVisible) return
+    if (!imagesLoaded || !started || !isVisible) return
 
     const interval = setInterval(() => {
       setCurrentImageIndex((prev) => {
@@ -46,7 +58,7 @@ export const IntroLoader = () => {
           setIsFadingOut(true)
           setTimeout(() => {
             setIsVisible(false)
-            localStorage.setItem('hasSeenIntro', 'true')
+            onFinish()
           }, 300)
         }, FRAME_DURATION)
 
@@ -55,7 +67,7 @@ export const IntroLoader = () => {
     }, FRAME_DURATION)
 
     return () => clearInterval(interval)
-  }, [isVisible])
+  }, [imagesLoaded, started, isVisible, onFinish])
 
   if (!isVisible) return null
 
@@ -64,8 +76,7 @@ export const IntroLoader = () => {
       className={`
         fixed inset-0 z-[9999] flex items-center justify-center bg-black
         transition-opacity duration-500
-        ${fadeIn ? 'opacity-100' : 'opacity-0'}
-        ${isFadingOut ? 'opacity-0' : ''}
+        ${isFadingOut ? 'opacity-0' : 'opacity-100'}
       `}
     >
       {/* bg images */}
@@ -75,12 +86,19 @@ export const IntroLoader = () => {
           className="absolute inset-0 bg-cover bg-center transition-all duration-500 ease-linear"
           style={{
             backgroundImage: `url(${src})`,
-            opacity: currentImageIndex === index ? 1 : 0,
+            opacity: started && currentImageIndex === index ? 1 : 0,
             filter: `blur(${blurs[index]}px)`,
             transform: currentImageIndex === index ? 'scale(1.06)' : 'scale(1)',
           }}
         />
       ))}
+
+      {/* loading spinner (visible while preloading) */}
+      {!started && (
+        <div className="absolute inset-0 z-20 flex items-center justify-center">
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-gray-600 border-t-white" />
+        </div>
+      )}
 
       {/* foreground */}
       <div className="relative z-10 flex flex-col items-center text-center">

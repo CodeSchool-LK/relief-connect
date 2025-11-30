@@ -26,9 +26,11 @@ import {
   CheckCircle,
   Clock,
   XCircle,
+  Building2,
 } from 'lucide-react'
 import { HelpRequestResponseDto, HelpRequestWithOwnershipResponseDto } from '@nx-mono-repo-deployment-test/shared/src/dtos/help-request/response'
 import { DonationWithHelpRequestResponseDto } from '@nx-mono-repo-deployment-test/shared/src/dtos/donation/response/donation_with_help_request_response_dto'
+import { CampResponseDto } from '@nx-mono-repo-deployment-test/shared/src/dtos/camp/response/camp_response_dto'
 import { Urgency, HelpRequestCategory } from '@nx-mono-repo-deployment-test/shared/src/enums'
 import { helpRequestService, donationService } from '../services'
 import { RATION_ITEMS } from '../components/EmergencyRequestForm'
@@ -51,6 +53,8 @@ interface DonorRequest {
   shortNote: string
   lat: number | null
   lng: number | null
+  isCampDonation?: boolean
+  campId?: number
 }
 
 interface VictimRequest {
@@ -124,12 +128,10 @@ export default function MyRequestsPage() {
           const response = await donationService.getMyDonations()
           console.log('[MyRequestsPage] My donations response:', response)
           if (response.success && response.data) {
-            // Filter out camp donations - only show help request donations
-            const helpRequestDonations = response.data.filter(donation => donation.helpRequestId !== undefined);
+            // Process all donations - separate help request donations and camp donations
+            const userDonations: DonorRequest[] = []
             
-            const userDonations = helpRequestDonations.map((donation): DonorRequest => {
-              const helpRequest = donation.helpRequest
-              
+            for (const donation of response.data) {
               // Convert rationItems object to array for tag display
               const itemsList = Object.entries(donation.rationItems || {})
                 .map(([itemId, quantity]) => {
@@ -153,24 +155,51 @@ export default function MyRequestsPage() {
                 status = 'in_progress'
               }
               
-              return {
-                id: donation.id,
-                requestId: donation.helpRequestId!,
-                requestTitle: helpRequest?.name || helpRequest?.shortNote?.split(',')[0]?.replace('Name:', '').trim() || `Request #${donation.helpRequestId}`,
-                location: helpRequest?.approxArea || 'Unknown',
-                category: HelpRequestCategory.OTHER, // Category not available in DTO
-                urgency: helpRequest?.urgency || Urgency.MEDIUM,
-                status,
-                donatedItems: itemsString,
-                donatedItemsList: itemsList,
-                donatedDate: donation.createdAt ? new Date(donation.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-                contact: helpRequest?.contact || '',
-                contactType: helpRequest?.contactType || 'Phone',
-                shortNote: helpRequest?.shortNote || '',
-                lat: helpRequest?.lat ?? null,
-                lng: helpRequest?.lng ?? null,
+              // If helpRequestId is null but campId exists, show camp details
+              if (!donation.helpRequestId && donation.campId && donation.camp) {
+                const camp = donation.camp
+                userDonations.push({
+                  id: donation.id,
+                  requestId: donation.campId,
+                  requestTitle: camp.name || `Camp #${donation.campId}`,
+                  location: camp.location || 'Unknown',
+                  category: HelpRequestCategory.OTHER,
+                  urgency: Urgency.MEDIUM, // Camps don't have urgency
+                  status,
+                  donatedItems: itemsString,
+                  donatedItemsList: itemsList,
+                  donatedDate: donation.createdAt ? new Date(donation.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+                  contact: '', // Camps don't have direct contact in the same way
+                  contactType: 'Phone',
+                  shortNote: camp.description || '',
+                  lat: null, // Camp location might be different format
+                  lng: null,
+                  isCampDonation: true,
+                  campId: donation.campId,
+                })
+              } else if (donation.helpRequestId && donation.helpRequest) {
+                // Help request donation
+                const helpRequest = donation.helpRequest
+                userDonations.push({
+                  id: donation.id,
+                  requestId: donation.helpRequestId,
+                  requestTitle: helpRequest?.name || helpRequest?.shortNote?.split(',')[0]?.replace('Name:', '').trim() || `Request #${donation.helpRequestId}`,
+                  location: helpRequest?.approxArea || 'Unknown',
+                  category: HelpRequestCategory.OTHER,
+                  urgency: helpRequest?.urgency || Urgency.MEDIUM,
+                  status,
+                  donatedItems: itemsString,
+                  donatedItemsList: itemsList,
+                  donatedDate: donation.createdAt ? new Date(donation.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+                  contact: helpRequest?.contact || '',
+                  contactType: helpRequest?.contactType || 'Phone',
+                  shortNote: helpRequest?.shortNote || '',
+                  lat: helpRequest?.lat ?? null,
+                  lng: helpRequest?.lng ?? null,
+                  isCampDonation: false,
+                })
               }
-            })
+            }
             
             setDonorRequests(userDonations)
           } else {
@@ -506,9 +535,16 @@ export default function MyRequestsPage() {
                             <div className="font-bold text-lg text-gray-900 mb-1 line-clamp-2">
                               {request.requestTitle}
                             </div>
-                            <div className="text-xs text-gray-500">
-                              {request.contactType}: {request.contact}
-                            </div>
+                            {request.isCampDonation ? (
+                              <div className="text-xs text-gray-500 flex items-center gap-1">
+                                <Building2 className="h-3 w-3" />
+                                Camp Donation
+                              </div>
+                            ) : (
+                              <div className="text-xs text-gray-500">
+                                {request.contactType}: {request.contact}
+                              </div>
+                            )}
                           </div>
 
                           {/* Items Section - Tag Style */}
@@ -570,7 +606,13 @@ export default function MyRequestsPage() {
                           <div className="flex flex-col gap-2 pt-2 border-t border-gray-200 mt-auto">
                             <Button
                               className="w-full h-10"
-                              onClick={() => router.push(`/request/${request.requestId}`)}
+                              onClick={() => {
+                                if (request.isCampDonation && request.campId) {
+                                  router.push(`/camps/${request.campId}`)
+                                } else {
+                                  router.push(`/request/${request.requestId}`)
+                                }
+                              }}
                             >
                               {t('seeDetails')}
                             </Button>

@@ -17,6 +17,10 @@ export default class CampDropOffLocationModel extends Model<ICampDropOffLocation
   public static readonly LOCATION_LNG = 'lng';
   public static readonly LOCATION_CONTACT_NUMBER = 'contactNumber';
   public static readonly LOCATION_NOTES = 'notes';
+  public static readonly LOCATION_DROP_OFF_START_DATE = 'dropOffStartDate';
+  public static readonly LOCATION_DROP_OFF_END_DATE = 'dropOffEndDate';
+  public static readonly LOCATION_DROP_OFF_START_TIME = 'dropOffStartTime';
+  public static readonly LOCATION_DROP_OFF_END_TIME = 'dropOffEndTime';
   public static readonly LOCATION_CREATED_AT = 'createdAt';
   public static readonly LOCATION_UPDATED_AT = 'updatedAt';
 
@@ -86,6 +90,34 @@ export default class CampDropOffLocationModel extends Model<ICampDropOffLocation
     field: CampDropOffLocationModel.LOCATION_NOTES,
   })
   notes?: string;
+
+  @Column({
+    type: DataType.DATE,
+    allowNull: true,
+    field: CampDropOffLocationModel.LOCATION_DROP_OFF_START_DATE,
+  })
+  dropOffStartDate?: Date;
+
+  @Column({
+    type: DataType.DATE,
+    allowNull: true,
+    field: CampDropOffLocationModel.LOCATION_DROP_OFF_END_DATE,
+  })
+  dropOffEndDate?: Date;
+
+  @Column({
+    type: DataType.STRING(10),
+    allowNull: true,
+    field: CampDropOffLocationModel.LOCATION_DROP_OFF_START_TIME,
+  })
+  dropOffStartTime?: string;
+
+  @Column({
+    type: DataType.STRING(10),
+    allowNull: true,
+    field: CampDropOffLocationModel.LOCATION_DROP_OFF_END_TIME,
+  })
+  dropOffEndTime?: string;
 
   @CreatedAt
   @Column({

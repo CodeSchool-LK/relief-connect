@@ -64,6 +64,12 @@ export class CampRouter extends BaseRouter {
       controller.getCamps
     );
 
+    // GET /api/camps/drop-off-locations - Get all drop-off locations for active camps
+    this.router.get(
+      '/drop-off-locations',
+      controller.getAllDropOffLocations
+    );
+
     // GET /api/camps/:id - Get a single camp by ID (requires authentication - only accessible by admins or owning volunteer club)
     this.router.get(
       '/:id',
@@ -143,6 +149,7 @@ export class CampRouter extends BaseRouter {
     // Note: Full paths will be /api/camps (api prefix added by RouterManager)
     return [
       { path: CAMP_BASE_PATH, methods: ['GET', 'POST'] },
+      { path: `${CAMP_BASE_PATH}/drop-off-locations`, methods: ['GET'] },
       { path: `${CAMP_BASE_PATH}/:id`, methods: ['GET', 'PUT'] },
       { path: `${CAMP_BASE_PATH}/:id/inventory`, methods: ['GET'] },
       { path: `${CAMP_BASE_PATH}/:campId/donations`, methods: ['GET', 'POST'] },

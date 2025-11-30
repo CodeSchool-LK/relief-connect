@@ -98,7 +98,9 @@ export default function CampDonationModal({
         rationItems,
       };
 
-      const response = await donationService.createCampDonation(camp.id, createDonationDto);
+      // For club admins, auto-approve donations (directly add to inventory)
+      const autoApprove = isClubAdmin;
+      const response = await donationService.createCampDonation(camp.id, createDonationDto, autoApprove);
       if (response.success) {
         setRationItems({});
         setDonatorName('');
@@ -165,8 +167,8 @@ export default function CampDonationModal({
             </div>
           )}
 
-          {/* Create Donation Section */}
-          {currentUserId && !isClubAdmin && (
+              {/* Create Donation Section */}
+              {currentUserId && (
             <div className="border-2 border-dashed border-blue-200 rounded-xl p-5 bg-gradient-to-br from-blue-50/50 to-purple-50/50">
               {!showCreateForm ? (
                 <Button 
@@ -174,14 +176,14 @@ export default function CampDonationModal({
                   className="w-full h-12 text-base font-semibold bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg"
                 >
                   <Package className="h-5 w-5 mr-2" />
-                  Create New Donation
+                  {isClubAdmin ? 'Add Items to Inventory' : 'Create New Donation'}
                 </Button>
               ) : (
                 <div className="space-y-5">
                   <div className="flex items-center justify-between pb-3 border-b border-gray-200">
                     <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
                       <HandHeart className="h-5 w-5 text-green-600" />
-                      Select Items to Donate
+                      {isClubAdmin ? 'Add Items to Camp Inventory' : 'Select Items to Donate'}
                     </h3>
                     <Button
                       variant="ghost"
@@ -312,12 +314,12 @@ export default function CampDonationModal({
                     {creating ? (
                       <>
                         <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                        Creating...
+                        {isClubAdmin ? 'Adding to Inventory...' : 'Creating...'}
                       </>
                     ) : (
                       <>
                         <CheckCircle className="h-5 w-5 mr-2" />
-                        Submit Donation
+                        {isClubAdmin ? 'Add to Inventory' : 'Submit Donation'}
                       </>
                     )}
                   </Button>

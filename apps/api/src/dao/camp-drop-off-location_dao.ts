@@ -21,6 +21,10 @@ class CampDropOffLocationDao {
     lng?: number;
     contactNumber?: string;
     notes?: string;
+    dropOffStartDate?: Date;
+    dropOffEndDate?: Date;
+    dropOffStartTime?: string;
+    dropOffEndTime?: string;
   }, transaction?: any): Promise<ICampDropOffLocation> {
     try {
       const location = await CampDropOffLocationModel.create({
@@ -31,6 +35,10 @@ class CampDropOffLocationDao {
         [CampDropOffLocationModel.LOCATION_LNG]: data.lng,
         [CampDropOffLocationModel.LOCATION_CONTACT_NUMBER]: data.contactNumber,
         [CampDropOffLocationModel.LOCATION_NOTES]: data.notes,
+        [CampDropOffLocationModel.LOCATION_DROP_OFF_START_DATE]: data.dropOffStartDate,
+        [CampDropOffLocationModel.LOCATION_DROP_OFF_END_DATE]: data.dropOffEndDate,
+        [CampDropOffLocationModel.LOCATION_DROP_OFF_START_TIME]: data.dropOffStartTime,
+        [CampDropOffLocationModel.LOCATION_DROP_OFF_END_TIME]: data.dropOffEndTime,
       }, transaction ? { transaction } : undefined);
       return location.toJSON() as ICampDropOffLocation;
     } catch (error) {
@@ -49,6 +57,37 @@ class CampDropOffLocationDao {
       return locations.map(loc => loc.toJSON() as ICampDropOffLocation);
     } catch (error) {
       console.error(`Error in CampDropOffLocationDao.findByCampId (${campId}):`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Find all drop-off locations for active camps
+   * Includes camp information
+   */
+  public async findAllForActiveCamps(): Promise<Array<ICampDropOffLocation & { camp?: { id: number; name: string; status: string } }>> {
+    try {
+      const { CampModel } = require('../models');
+      const { CampStatus } = require('@nx-mono-repo-deployment-test/shared/src/enums');
+      
+      const locations = await CampDropOffLocationModel.findAll({
+        include: [{
+          model: CampModel,
+          as: 'camp',
+          where: {
+            [CampModel.CAMP_STATUS]: CampStatus.ACTIVE,
+          },
+          attributes: ['id', 'name', 'status'],
+        }],
+        order: [[CampDropOffLocationModel.LOCATION_NAME, 'ASC']],
+      });
+      
+      return locations.map(loc => {
+        const locationData = loc.toJSON() as ICampDropOffLocation & { camp?: { id: number; name: string; status: string } };
+        return locationData;
+      });
+    } catch (error) {
+      console.error('Error in CampDropOffLocationDao.findAllForActiveCamps:', error);
       throw error;
     }
   }

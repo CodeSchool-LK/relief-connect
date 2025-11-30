@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { DonationService } from '../services';
 import { CreateDonationDto } from '@nx-mono-repo-deployment-test/shared/src/dtos';
 import { CreateCampDonationDto } from '@nx-mono-repo-deployment-test/shared/src/dtos/donation/request/create_camp_donation_dto';
+import { UserRole } from '@nx-mono-repo-deployment-test/shared/src/enums';
 
 /**
  * Controller for Donation endpoints
@@ -204,10 +205,11 @@ class DonationController {
         return;
       }
 
-      // Get requester user ID if authenticated (to check permissions)
+      // Get requester user ID and role if authenticated (to check permissions)
       const requesterUserId = req.user?.id;
+      const requesterUserRole = req.user?.role;
 
-      const result = await this.donationService.getDonationsByCampId(campId, requesterUserId);
+      const result = await this.donationService.getDonationsByCampId(campId, requesterUserId, requesterUserRole);
 
       if (result.success && result.data) {
         res.sendSuccess(result.data, result.message, 200);
@@ -236,14 +238,27 @@ class DonationController {
       const createCampDonationDto = req.body as CreateCampDonationDto;
       createCampDonationDto.campId = campId; // Override with URL param
 
-      // Get user ID from authenticated user (set by authenticate middleware)
+      // Get user ID and role from authenticated user (set by authenticate middleware)
       const donatorId = req.user?.id;
+      const donatorRole = req.user?.role;
       if (!donatorId) {
         res.sendError('User not authenticated', 401);
         return;
       }
 
-      const result = await this.donationService.createCampDonation(createCampDonationDto, donatorId);
+      // Check if this is an admin donation request (auto-approve)
+      // System admins and club admins can create donations that immediately add to inventory
+      const isSystemAdmin = donatorRole === UserRole.SYSTEM_ADMINISTRATOR || donatorRole === UserRole.ADMIN;
+      // For club admins, check if they own the camp's club
+      let isClubAdmin = false;
+      if (campId && donatorId) {
+        // We'll check this in the service, but for now allow auto-approve for system admins
+        // or if explicitly requested
+        isClubAdmin = false; // Will be checked in service
+      }
+      const autoApprove = isSystemAdmin || req.body.autoApprove === true;
+
+      const result = await this.donationService.createCampDonation(createCampDonationDto, donatorId, donatorRole, autoApprove);
 
       if (result.success && result.data) {
         res.sendSuccess(result.data, result.message || 'Camp donation created successfully', 201);

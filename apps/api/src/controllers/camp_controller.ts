@@ -169,6 +169,24 @@ class CampController {
       next(error);
     }
   };
+
+  /**
+   * GET /api/camps/drop-off-locations
+   * Get all drop-off locations for active camps
+   */
+  getAllDropOffLocations = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const result = await this.campService.getAllDropOffLocationsForActiveCamps();
+
+      if (result.success && result.data) {
+        res.sendSuccess(result.data, result.message, 200);
+      } else {
+        res.sendError(result.error || 'Failed to retrieve drop-off locations', 500);
+      }
+    } catch (error) {
+      next(error);
+    }
+  };
 }
 
 export default CampController;

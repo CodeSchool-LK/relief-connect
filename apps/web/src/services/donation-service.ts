@@ -201,12 +201,17 @@ class DonationService {
    */
   public async createCampDonation(
     campId: number,
-    createCampDonationDto: ICreateCampDonation
+    createCampDonationDto: ICreateCampDonation,
+    autoApprove?: boolean
   ): Promise<IApiResponse<DonationResponseDto>> {
     try {
+      const requestBody = {
+        ...createCampDonationDto,
+        ...(autoApprove !== undefined && { autoApprove }),
+      };
       const response = await apiClient.post<IApiResponse<DonationResponseDto>>(
         `/api/camps/${campId}/donations`,
-        createCampDonationDto
+        requestBody
       );
       return response;
     } catch (error) {

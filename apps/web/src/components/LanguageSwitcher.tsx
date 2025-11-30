@@ -15,7 +15,11 @@ const languages = [
   { code: 'ta', name: 'Tamil', nativeName: 'தமிழ்' },
 ];
 
-export default function LanguageSwitcher() {
+interface LanguageSwitcherProps {
+  variant?: 'light' | 'dark';
+}
+
+export default function LanguageSwitcher({ variant = 'light' }: LanguageSwitcherProps) {
   const router = useRouter();
   const { locale, pathname, asPath, query } = router;
 
@@ -31,12 +35,13 @@ export default function LanguageSwitcher() {
   };
 
   const currentLanguage = languages.find((lang) => lang.code === locale) || languages[0];
+  const isDark = variant === 'dark';
 
   return (
     <div className="flex items-center gap-2">
-      <Globe className="h-4 w-4 text-gray-600" />
+      <Globe className={`h-4 w-4 ${isDark ? 'text-white' : 'text-gray-600'}`} />
       <Select value={locale || 'en'} onValueChange={handleLanguageChange}>
-        <SelectTrigger className="w-[140px] h-9">
+        <SelectTrigger className={`w-[140px] h-9 ${isDark ? 'bg-white/20 backdrop-blur-sm border-white/30 text-white' : ''}`}>
           <SelectValue>
             <span className="flex items-center gap-2">
               <span>{currentLanguage.nativeName}</span>

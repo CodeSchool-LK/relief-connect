@@ -80,14 +80,14 @@ docker/nginx/ssl/*.pem
 docker/nginx/ssl/*.key
 
 # Documentation (keeping docs/ but ignoring generated docs)
-docs/
+
 
 # Cursor AI
 .cursor
 *.plan.md
 
 # Documentation (keeping docs/ but ignoring generated docs)
-docs/
+
 
 # Cursor AI
 .cursor

@@ -1,155 +1,88 @@
-# Sri Lanka Crisis Help Web App
+# Relief Connect - Crisis Relief Management Platform
 
-A public, no-login web application that connects people in need with those who can help during crisis situations. Fast, simple, and lightweight.
+<div align="center">
 
-## 🎯 Goal
+![Relief Connect](https://img.shields.io/badge/Relief-Connect-blue?style=for-the-badge)
+![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)
+![Next.js](https://img.shields.io/badge/Next.js-15-black?style=for-the-badge&logo=next.js&logoColor=white)
+![Express](https://img.shields.io/badge/Express.js-404D59?style=for-the-badge&logo=express)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)
 
-Create a *public, no-login web app* that lets anyone:
-- **Request help** - Post their needs with location
-- **Create a camp** - Register relief camps
-- **View all requests & camps on a map** - See where help is needed and offer assistance
+**A comprehensive crisis relief management platform connecting people in need with volunteers, donors, and relief organizations in Sri Lanka.**
 
-No login required. Fast, simple, lightweight.
+[Quick Start](#-quick-start) • [Documentation](#-documentation) • [Contributing](#-contributing)
 
----
-
-## ✨ Main Features
-
-### A) I Need Help
-
-- **No login required**
-- **Auto GPS** → or manual pin placement
-- **Simple form**:
-  - Category (Food/Water, Rescue, Medical, Shelter, Other)
-  - Urgency (Low / Medium / High)
-  - Short note (max 160 chars)
-  - Approx area (e.g., "Kelaniya near bridge")
-  - Contact: Phone / WhatsApp / No contact
-- **Submit** → shown as a red/orange/green marker on map
-
-### B) We Are a Camp
-
-- **No login required**
-- **Auto GPS** → or manual pin placement
-- **Simple form**:
-  - Camp type (Official / Community)
-  - Name/landmark
-  - People count (1–10, 10–50, 50+)
-  - Needs (Food, Medical, Rescue, Clothes, Children/Elderly)
-  - Short note
-  - Contact (optional)
-- Shows as **camp icon** on map
-
-### C) I Can Help
-
-- **No login required**
-- Opens a **map** with:
-  - All help requests (pins)
-  - All camps (tent icons)
-- **Zoom/pan** functionality
-- **Tap marker** → see details
-- If contact exists → **Call / WhatsApp** button
-- **Filters**:
-  - Type: All / Individuals / Camps
-  - Category
-  - District (optional)
+</div>
 
 ---
 
-## 🛠️ Tech Stack
+## 📋 Table of Contents
 
-- **Frontend**: Next.js (App Router), TypeScript, react-leaflet
-- **Backend**: Next.js API routes
-- **Database**: PostgreSQL
-- **Map**: Leaflet + OpenStreetMap
-- **UI**: Simple custom CSS (mobile-first)
-
----
-
-## 📊 Data Models
-
-### HelpRequest
-
-```typescript
-{
-  id: string
-  lat: number
-  lng: number
-  category: 'Food/Water' | 'Rescue' | 'Medical' | 'Shelter' | 'Other'
-  urgency: 'Low' | 'Medium' | 'High'
-  shortNote: string (max 160 chars)
-  approxArea: string
-  contactType: 'Phone' | 'WhatsApp' | 'None'
-  contact?: string
-  status: 'OPEN' | 'CLOSED'
-  createdAt: Date
-}
-```
-
-### Camp
-
-```typescript
-{
-  id: string
-  lat: number
-  lng: number
-  campType: 'Official' | 'Community'
-  name: string
-  peopleRange: '1-10' | '10-50' | '50+'
-  needs: string[] // ['Food', 'Medical', 'Rescue', 'Clothes', 'Children/Elderly']
-  shortNote: string
-  contactType?: 'Phone' | 'WhatsApp' | 'None'
-  contact?: string
-  createdAt: Date
-}
-```
+- [Overview](#-overview)
+- [Features](#-features)
+- [Technology Stack](#-technology-stack)
+- [Quick Start](#-quick-start)
+- [Documentation](#-documentation)
+- [Project Structure](#-project-structure)
+- [Contributing](#-contributing)
+- [License](#-license)
 
 ---
 
-## 🔌 API Endpoints
+## 🎯 Overview
 
-### Help Requests
+**Relief Connect** is a full-stack crisis relief management platform designed to coordinate emergency assistance during natural disasters and crises. The platform enables:
 
-- `POST /api/help-requests` - Create a new help request
-- `GET /api/help-requests` - Get all help requests
+- **Individuals** to request help with location-based needs
+- **Volunteer Organizations** to manage relief camps and coordinate efforts
+- **Donors** to contribute resources to specific requests
+- **Administrators** to oversee and manage the entire system
 
-### Camps
+Built with modern technologies and best practices, Relief Connect provides a scalable, secure, and user-friendly solution for crisis management.
 
-- `POST /api/camps` - Create a new camp
-- `GET /api/camps` - Get all camps
-
-**Note**: All endpoints are public, no authentication required.
-
----
-
-## 📱 Pages
-
-### Home
-- I need help (button/link)
-- We are a camp (button/link)
-- I can help (button/link)
-
-### I Need Help
-- GPS location detection → small form → submit
-
-### We Are a Camp
-- GPS location detection → simple form → submit
-
-### I Can Help
-- Map with markers + filters + popups
-- Filter by type, category, district
-- Click markers to see details and contact options
+📖 **[Read Full Overview →](docs/01-overview.md)**
 
 ---
 
-## 🛡️ Safety Features
+## ✨ Features
 
-- ✅ **No login required** - Fast access for everyone
-- ✅ **No personal details** - Only optional phone/WhatsApp
-- ✅ **No address** - Only approximate area
-- ✅ **No photos** - Privacy-focused
-- ✅ **Auto-expire data** - Requests expire after 30 days
-- ⚠️ **Safety banner**: "Do not share OTPs or bank details."
+### Core Features
+
+- 🔐 **Multi-Role Authentication** - Users, Volunteer Clubs, Admins with JWT-based security
+- 🆘 **Help Request Management** - Location-based requests with urgency levels and categories
+- 🏕️ **Relief Camp Management** - Volunteer clubs can create and manage relief camps
+- 💝 **Donation System** - Track donations with status workflow
+- 👥 **Volunteer Club System** - Organizations can register and manage memberships
+- 🗺️ **Interactive Mapping** - Leaflet maps with color-coded markers and filtering
+- 👨‍💼 **Admin Dashboard** - Comprehensive system management and analytics
+- 🌐 **Multi-Language Support** - English, Sinhala, and Tamil
+
+📖 **[Read Full Features →](docs/02-features.md)**
+
+---
+
+## 🛠️ Technology Stack
+
+### Frontend
+- **Next.js 15** - React framework with SSR/SSG
+- **TypeScript** - Type-safe development
+- **Tailwind CSS** - Utility-first styling
+- **shadcn/ui** - Accessible UI components
+- **Leaflet** - Interactive maps
+
+### Backend
+- **Express.js** - Web framework
+- **PostgreSQL** - Relational database
+- **Sequelize** - ORM for database operations
+- **JWT** - Authentication tokens
+- **TypeScript** - Type-safe backend
+
+### Infrastructure
+- **NX Monorepo** - Workspace management
+- **Docker** - Containerization
+- **GitHub Actions** - CI/CD
+
+📖 **[Read Full Tech Stack →](docs/03-technology-stack.md)**
 
 ---
 
@@ -160,67 +93,57 @@ No login required. Fast, simple, lightweight.
 - Node.js 18.x or higher
 - PostgreSQL 14.x or higher
 - Yarn 4.x (via Corepack)
-- Git
 
-### Local Development
+### Installation
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/KavinduUoM20/relief-connect.git
-   cd relief-connect
-   ```
+```bash
+# Clone repository
+git clone https://github.com/KavinduUoM20/relief-connect.git
+cd relief-connect
 
-2. **Install dependencies**
-   ```bash
-   # Enable Corepack for Yarn
-   corepack enable
-   
-   # Install all workspace dependencies
-   yarn install
-   ```
+# Enable Corepack
+corepack enable
 
-3. **Set up environment variables**
-   
-   Create `.env.local` in the root:
-   ```env
-   DATABASE_URL=postgresql://user:password@localhost:5432/relief_connect
-   NODE_ENV=development
-   ```
+# Install dependencies
+yarn install
 
-4. **Set up database**
-   ```bash
-   # Create database
-   createdb relief_connect
-   
-   # Run migrations (when available)
-   yarn db:migrate
-   ```
+# Build shared library
+yarn shared:build
 
-5. **Start the development server**
-   ```bash
-   yarn web:dev
-   ```
-   App will run on http://localhost:3000
+# Set up environment variables (see docs)
+# Create .env files in apps/api and apps/web
 
-6. **Access the application**
-   - Home: http://localhost:3000
-   - I Need Help: http://localhost:3000/need-help
-   - We Are a Camp: http://localhost:3000/camp
-   - I Can Help: http://localhost:3000/help-map
+# Start development servers
+yarn api:dev    # Terminal 1 - Backend on port 3000
+yarn web:dev    # Terminal 2 - Frontend on port 3001
+```
+
+Access the application:
+- **Frontend**: http://localhost:3001
+- **API**: http://localhost:3000
+
+📖 **[Read Full Quick Start Guide →](docs/05-quick-start.md)**
 
 ---
 
-## 📜 Available Scripts
+## 📚 Documentation
 
-```bash
-yarn web:dev          # Start Next.js dev server
-yarn web:build        # Build for production
-yarn web:start        # Start production server
-yarn db:migrate       # Run database migrations
-yarn db:seed          # Seed database (if available)
-yarn lint             # Run linter
-yarn type-check       # Run TypeScript type checking
-```
+Comprehensive documentation is available in the [`docs/`](docs/) directory:
+
+| Document | Description |
+|----------|-------------|
+| [Overview](docs/01-overview.md) | Project purpose, goals, and vision |
+| [Features](docs/02-features.md) | Detailed feature breakdown |
+| [Technology Stack](docs/03-technology-stack.md) | Complete tech stack with versions |
+| [Architecture](docs/04-architecture.md) | System architecture and design patterns |
+| [Quick Start](docs/05-quick-start.md) | Step-by-step setup instructions |
+| [Project Structure](docs/06-project-structure.md) | Directory structure and organization |
+| [API Reference](docs/07-api-reference.md) | Complete API endpoint documentation |
+| [Authentication & Authorization](docs/08-authentication-authorization.md) | Auth system and RBAC |
+| [Database Schema](docs/09-database-schema.md) | Database tables and relationships |
+| [Deployment](docs/10-deployment.md) | Production deployment guide |
+| [Development](docs/11-development.md) | Development workflows and guidelines |
+| [Contributing](docs/12-contributing.md) | Contribution guidelines |
 
 ---
 
@@ -229,195 +152,110 @@ yarn type-check       # Run TypeScript type checking
 ```
 relief-connect/
 ├── apps/
-│   └── web/                    # Next.js frontend + API routes
-│       ├── src/
-│       │   ├── app/            # Next.js App Router pages
-│       │   │   ├── page.tsx    # Home page
-│       │   │   ├── need-help/  # I Need Help page
-│       │   │   ├── camp/       # We Are a Camp page
-│       │   │   └── help-map/   # I Can Help map page
-│       │   ├── api/            # API routes
-│       │   │   ├── help-requests/
-│       │   │   └── camps/
-│       │   ├── components/     # React components
-│       │   │   ├── Map/        # Map component
-│       │   │   ├── Forms/      # Form components
-│       │   │   └── Filters/    # Filter components
-│       │   └── lib/            # Utilities
-│       │       ├── db.ts       # Database connection
-│       │       └── types.ts    # TypeScript types
-│       └── package.json
-│
+│   ├── api/              # Express.js Backend
+│   └── web/              # Next.js Frontend
 ├── libs/
-│   └── shared/                 # Shared utilities and types
-│       └── src/
-│           ├── dtos/           # Data Transfer Objects
-│           └── interfaces/     # TypeScript interfaces
-│
-├── .github/
-│   └── workflows/              # CI/CD pipelines
-│
-├── docker-compose.yml          # Docker Compose configuration
-├── nx.json                     # NX configuration
-└── package.json                # Root package.json
+│   └── shared/           # Shared code library
+├── docs/                  # Documentation
+├── docker-compose.yml     # Docker orchestration
+└── package.json           # Root package.json
 ```
 
----
-
-## 🗺️ Development Phases
-
-### Phase 1 (MVP) ✅
-
-- [x] Data models: HelpRequest, Camp
-- [x] API endpoints: POST + GET for both
-- [x] Pages: home, need-help, camp, help-map
-- [x] Map showing markers
-- [x] Basic form submissions
-- [x] GPS location detection
-
-### Phase 2 🚧
-
-- [ ] Advanced filters (type, category, district)
-- [ ] Map-bound loading (load markers in viewport)
-- [ ] UI polish + mobile optimization
-- [ ] Multi-language support (Sinhala, Tamil, English)
-- [ ] Auto-expire old requests (30 days)
-- [ ] Contact buttons (Call/WhatsApp)
-
-### Phase 3 🔮
-
-- [ ] Real-time updates
-- [ ] Request status updates
-- [ ] Admin dashboard (moderation)
-- [ ] Analytics and reporting
-- [ ] SMS notifications (optional)
+📖 **[Read Full Project Structure →](docs/06-project-structure.md)**
 
 ---
 
-## 🔧 Configuration
+## 🔌 API Reference
 
-### Environment Variables
+### Base URL
+- **Development**: `http://localhost:3000`
+- **Production**: `https://api.yourdomain.com`
 
-**Development (.env.local)**
-```env
-DATABASE_URL=postgresql://user:password@localhost:5432/relief_connect
-NODE_ENV=development
-NEXT_PUBLIC_MAP_TILE_URL=https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png
-```
+### Key Endpoints
 
-**Production**
-```env
-DATABASE_URL=postgresql://user:password@host:5432/relief_connect
-NODE_ENV=production
-NEXT_PUBLIC_MAP_TILE_URL=https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png
-```
+- `POST /api/auth/login` - User authentication
+- `GET /api/help-requests` - Get all help requests
+- `POST /api/help-requests` - Create help request
+- `GET /api/camps` - Get all relief camps
+- `POST /api/camps` - Create camp (Volunteer Club)
+- `GET /api/volunteer-clubs` - Get all volunteer clubs
+- `GET /api/admin/stats` - System statistics (Admin)
+
+📖 **[Read Full API Reference →](docs/07-api-reference.md)**
+
+1. **Build Docker images**
+   ```bash
+   docker-compose build
+   ```
+
+2. **Start services**
+   ```bash
+   docker-compose up -d
+   ```
+
+3. **View logs**
+   ```bash
+   docker-compose logs -f
+   ```
+
+We welcome contributions! Please see our [Contributing Guide](docs/12-contributing.md) for details.
+
+### Quick Contribution Steps
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Make your changes
+4. Commit following [Conventional Commits](https://www.conventionalcommits.org/)
+5. Push to your branch (`git push origin feature/amazing-feature`)
+6. Open a Pull Request
+
+📖 **[Read Full Contributing Guide →](docs/12-contributing.md)**
+
+The project includes Docker Compose files for different environments:
+
+- `docker-compose.yml` - Base configuration
+- `docker-compose.dev.yml` - Development
+- `docker-compose.qa.yml` - QA environment
+- `docker-compose.staging.yml` - Staging
+- `docker-compose.prod.yml` - Production
+
+### CI/CD
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
 
-## 🗄️ Database Schema
+## 🆘 Support
 
-### help_requests
-
-| Column | Type | Description |
-|--------|------|-------------|
-| id | UUID | Primary key |
-| lat | DECIMAL(10,8) | Latitude |
-| lng | DECIMAL(11,8) | Longitude |
-| category | VARCHAR(50) | Request category |
-| urgency | VARCHAR(20) | Urgency level |
-| short_note | VARCHAR(160) | Short description |
-| approx_area | VARCHAR(255) | Approximate location |
-| contact_type | VARCHAR(20) | Contact method |
-| contact | VARCHAR(50) | Contact info (optional) |
-| status | VARCHAR(20) | Request status |
-| created_at | TIMESTAMP | Creation timestamp |
-
-### camps
-
-| Column | Type | Description |
-|--------|------|-------------|
-| id | UUID | Primary key |
-| lat | DECIMAL(10,8) | Latitude |
-| lng | DECIMAL(11,8) | Longitude |
-| camp_type | VARCHAR(20) | Camp type |
-| name | VARCHAR(255) | Camp name/landmark |
-| people_range | VARCHAR(10) | People count range |
-| needs | TEXT[] | Array of needs |
-| short_note | TEXT | Description |
-| contact_type | VARCHAR(20) | Contact method (optional) |
-| contact | VARCHAR(50) | Contact info (optional) |
-| created_at | TIMESTAMP | Creation timestamp |
+- **Issues**: [GitHub Issues](https://github.com/KavinduUoM20/relief-connect/issues)
+- **Documentation**: See [`docs/`](docs/) directory
+- **Questions**: Open a discussion on GitHub
 
 ---
 
-## 🛡️ Security & Privacy
+## 🙏 Acknowledgments
 
-- ✅ **No authentication** - Public access for speed
-- ✅ **Minimal data collection** - Only essential information
-- ✅ **No personal addresses** - Only approximate areas
-- ✅ **Optional contact** - Users choose to share
-- ✅ **Auto-expiration** - Data expires after 30 days
-- ✅ **Rate limiting** - Prevent abuse
-- ✅ **Input validation** - Sanitize all inputs
-- ⚠️ **Safety warnings** - Display security notices
+- Built with ❤️ for crisis relief coordination
+- Inspired by the need for efficient disaster response systems
+- Thanks to all contributors and volunteers
 
 ---
 
 ## 🤝 Contributing
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
----
-
-## 📝 License
-
-MIT
-
----
-
-## 🐛 Troubleshooting
-
-### Database Connection Issues
-
-```bash
-# Check PostgreSQL is running
-sudo systemctl status postgresql
-
-# Check connection string
-psql $DATABASE_URL
-```
-
-### Map Not Loading
-
-- Check browser console for errors
-- Verify `NEXT_PUBLIC_MAP_TILE_URL` is set correctly
-- Ensure internet connection (OpenStreetMap tiles)
-
-### GPS Not Working
-
-- Ensure HTTPS in production (required for geolocation API)
-- Check browser permissions for location access
-- Fallback to manual pin placement available
-
----
-
-## 📚 Additional Resources
-
 - [Next.js Documentation](https://nextjs.org/docs)
-- [Leaflet Documentation](https://leafletjs.com/reference.html)
-- [React Leaflet Documentation](https://react-leaflet.js.org/)
-- [PostgreSQL Documentation](https://www.postgresql.org/docs/)
+- [Express.js Documentation](https://expressjs.com/)
+- [Sequelize Documentation](https://sequelize.org/)
+- [Leaflet Documentation](https://leafletjs.com/)
+- [TypeScript Documentation](https://www.typescriptlang.org/docs/)
+- [NX Documentation](https://nx.dev/)
 
 ---
 
-## 📧 Support
-
-For issues, questions, or contributions, please open an issue on [GitHub](https://github.com/KavinduUoM20/relief-connect/issues).
-
----
+<div align="center">
 
 **Built with ❤️ to help connect people in need with those who can help**
+
+[⬆ Back to Top](#relief-connect---crisis-relief-management-platform)
+
+</div>

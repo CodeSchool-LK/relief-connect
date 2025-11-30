@@ -35,6 +35,7 @@ export default function DonationInteractionModal({
   const [donatorName, setDonatorName] = useState('');
   const [donatorMobileNumber, setDonatorMobileNumber] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [showSuccessNotification, setShowSuccessNotification] = useState(false);
 
   const loadDonations = useCallback(async () => {
     if (!helpRequest.id) return;
@@ -101,7 +102,12 @@ export default function DonationInteractionModal({
         setDonatorName('');
         setDonatorMobileNumber('');
         setShowCreateForm(false);
+        setShowSuccessNotification(true);
         await loadDonations();
+        // Auto-hide notification after 5 seconds
+        setTimeout(() => {
+          setShowSuccessNotification(false);
+        }, 5000);
       } else {
         setError(response.error || 'Failed to create donation');
       }
@@ -173,8 +179,32 @@ export default function DonationInteractionModal({
   const otherDonations = donations.filter((d) => d.donatorId !== currentUserId);
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <Card className="w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
+    <>
+      {/* Success Notification */}
+      {showSuccessNotification && (
+        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-[60] w-full max-w-md px-4 animate-in slide-in-from-top-5 duration-300">
+          <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg shadow-2xl p-4 sm:p-5 border-2 border-green-400 flex items-start gap-3 sm:gap-4">
+            <div className="flex-shrink-0 mt-0.5">
+              <CheckCircle className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h4 className="font-bold text-base sm:text-lg mb-1">Donation Request Submitted!</h4>
+              <p className="text-sm sm:text-base text-green-50">
+                Your donation has been successfully submitted. Thank you for your generosity!
+              </p>
+            </div>
+            <button
+              onClick={() => setShowSuccessNotification(false)}
+              className="flex-shrink-0 text-white hover:text-green-100 transition-colors p-1"
+              aria-label="Close notification"
+            >
+              <X className="h-5 w-5 sm:h-6 sm:w-6" />
+            </button>
+          </div>
+        </div>
+      )}
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <Card className="w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
         <CardHeader className="sticky top-0 bg-gradient-to-r from-blue-50 to-purple-50 z-10 border-b shadow-sm">
           <div className="flex items-center justify-between">
             <div className="flex-1">
@@ -431,7 +461,7 @@ export default function DonationInteractionModal({
                               className="bg-green-600 hover:bg-green-700 text-white"
                             >
                               <CheckCircle className="h-4 w-4 mr-1" />
-                              Mark Completed
+                              Mark as Completed
                             </Button>
                           )}
                         </div>
@@ -534,7 +564,7 @@ export default function DonationInteractionModal({
                             className="bg-blue-600 hover:bg-blue-700 text-white"
                           >
                             <CheckCircle className="h-4 w-4 mr-1" />
-                            Mark Completed
+                            Mark as Completed
                           </Button>
                         )}
                       </div>
@@ -629,6 +659,7 @@ export default function DonationInteractionModal({
         </CardContent>
       </Card>
     </div>
+    </>
   );
 }
 

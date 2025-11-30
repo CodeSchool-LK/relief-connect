@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { DonationService } from '../services';
 import { CreateDonationDto } from '@nx-mono-repo-deployment-test/shared/src/dtos';
+import { CreateCampDonationDto } from '@nx-mono-repo-deployment-test/shared/src/dtos/donation/request/create_camp_donation_dto';
 
 /**
  * Controller for Donation endpoints
@@ -185,6 +186,101 @@ class DonationController {
         res.sendSuccess(result.data, result.message || 'Donation marked as completed', 200);
       } else {
         res.sendError(result.error || 'Failed to mark donation as completed', 400);
+      }
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * GET /api/camps/:campId/donations
+   * Get all donations for a camp
+   */
+  getDonationsByCampId = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const campId = parseInt(req.params.campId, 10);
+      if (isNaN(campId)) {
+        res.sendError('Invalid camp ID', 400);
+        return;
+      }
+
+      // Get requester user ID if authenticated (to check permissions)
+      const requesterUserId = req.user?.id;
+
+      const result = await this.donationService.getDonationsByCampId(campId, requesterUserId);
+
+      if (result.success && result.data) {
+        res.sendSuccess(result.data, result.message, 200);
+      } else {
+        res.sendError(result.error || 'Failed to retrieve donations', result.success ? 200 : 404);
+      }
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * POST /api/camps/:campId/donations
+   * Create a new donation for a camp
+   * Requires authentication - tracks which user created the donation
+   */
+  createCampDonation = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const campId = parseInt(req.params.campId, 10);
+      if (isNaN(campId)) {
+        res.sendError('Invalid camp ID', 400);
+        return;
+      }
+
+      // Body is already validated and transformed to CreateCampDonationDto by middleware
+      const createCampDonationDto = req.body as CreateCampDonationDto;
+      createCampDonationDto.campId = campId; // Override with URL param
+
+      // Get user ID from authenticated user (set by authenticate middleware)
+      const donatorId = req.user?.id;
+      if (!donatorId) {
+        res.sendError('User not authenticated', 401);
+        return;
+      }
+
+      const result = await this.donationService.createCampDonation(createCampDonationDto, donatorId);
+
+      if (result.success && result.data) {
+        res.sendSuccess(result.data, result.message || 'Camp donation created successfully', 201);
+      } else {
+        res.sendError(result.error || 'Failed to create camp donation', 400);
+      }
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * PUT /api/camps/:campId/donations/:donationId/accept
+   * Accept a camp donation (club admin only)
+   */
+  acceptCampDonation = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const campId = parseInt(req.params.campId, 10);
+      const donationId = parseInt(req.params.donationId, 10);
+      
+      if (isNaN(campId) || isNaN(donationId)) {
+        res.sendError('Invalid camp ID or donation ID', 400);
+        return;
+      }
+
+      const clubAdminId = req.user?.id;
+      if (!clubAdminId) {
+        res.sendError('User not authenticated', 401);
+        return;
+      }
+
+      const result = await this.donationService.acceptCampDonation(donationId, campId, clubAdminId);
+
+      if (result.success && result.data) {
+        res.sendSuccess(result.data, result.message || 'Camp donation accepted successfully', 200);
+      } else {
+        res.sendError(result.error || 'Failed to accept camp donation', 400);
       }
     } catch (error) {
       next(error);

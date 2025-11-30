@@ -1,6 +1,7 @@
 import { Table, Column, Model, DataType, CreatedAt, UpdatedAt, PrimaryKey, AutoIncrement, ForeignKey, BelongsTo } from 'sequelize-typescript';
 import { IDonation } from '@nx-mono-repo-deployment-test/shared/src/interfaces/donation/IDonation';
 import HelpRequestModel from './help-request.model';
+import CampModel from './camp.model';
 import UserModel from './user.model';
 
 @Table({
@@ -12,6 +13,7 @@ export default class DonationModel extends Model<IDonation> implements IDonation
   public static readonly TABLE_NAME = 'donations';
   public static readonly DONATION_ID = 'id';
   public static readonly DONATION_HELP_REQUEST_ID = 'helpRequestId';
+  public static readonly DONATION_CAMP_ID = 'campId';
   public static readonly DONATION_DONATOR_ID = 'donatorId';
   public static readonly DONATION_DONATOR_NAME = 'donatorName';
   public static readonly DONATION_DONATOR_MOBILE_NUMBER = 'donatorMobileNumber';
@@ -36,13 +38,24 @@ export default class DonationModel extends Model<IDonation> implements IDonation
   @ForeignKey(() => HelpRequestModel)
   @Column({
     type: DataType.INTEGER,
-    allowNull: false,
+    allowNull: true,
     field: DonationModel.DONATION_HELP_REQUEST_ID,
   })
-  helpRequestId!: number;
+  helpRequestId?: number;
 
   @BelongsTo(() => HelpRequestModel)
   helpRequest?: HelpRequestModel;
+
+  @ForeignKey(() => CampModel)
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: true,
+    field: DonationModel.DONATION_CAMP_ID,
+  })
+  campId?: number;
+
+  @BelongsTo(() => CampModel)
+  camp?: CampModel;
 
   @ForeignKey(() => UserModel)
   @Column({

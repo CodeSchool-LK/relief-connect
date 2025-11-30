@@ -145,6 +145,30 @@ class CampController {
       next(error);
     }
   };
+
+  /**
+   * GET /api/camps/:id/inventory
+   * Get inventory items for a camp
+   */
+  getCampInventoryItems = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const campId = parseInt(req.params.id, 10);
+      if (isNaN(campId)) {
+        res.sendError('Invalid camp ID', 400);
+        return;
+      }
+
+      const result = await this.campService.getCampInventoryItems(campId);
+
+      if (result.success && result.data) {
+        res.sendSuccess(result.data, result.message, 200);
+      } else {
+        res.sendError(result.error || 'Failed to retrieve camp inventory items', result.success ? 200 : 404);
+      }
+    } catch (error) {
+      next(error);
+    }
+  };
 }
 
 export default CampController;

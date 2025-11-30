@@ -18,6 +18,7 @@ import CampDropOffLocationModel from './camp-drop-off-location.model';
 import CampItemModel from './camp-item.model';
 import CampHelpRequestModel from './camp-help-request.model';
 import CampDonationModel from './camp-donation.model';
+import CampInventoryItemModel from './camp-inventory-item.model';
 
 /**
  * Initialize model associations here
@@ -113,6 +114,12 @@ export const initializeAssociations = (): void => {
     as: 'items'
   });
 
+  // Camp-InventoryItem association
+  CampModel.hasMany(CampInventoryItemModel, {
+    foreignKey: CampInventoryItemModel.INVENTORY_ITEM_CAMP_ID,
+    as: 'inventoryItems'
+  });
+
   // Camp-HelpRequest association (many-to-many)
   CampModel.belongsToMany(HelpRequestModel, {
     through: CampHelpRequestModel,
@@ -128,19 +135,25 @@ export const initializeAssociations = (): void => {
     as: 'camps'
   });
 
-  // Camp-Donation association (many-to-many)
+  // Camp-Donation association (many-to-many via junction table, and direct via campId)
   CampModel.belongsToMany(DonationModel, {
     through: CampDonationModel,
     foreignKey: CampDonationModel.CAMP_ID,
     otherKey: CampDonationModel.DONATION_ID,
-    as: 'donations'
+    as: 'linkedDonations'
   });
 
   DonationModel.belongsToMany(CampModel, {
     through: CampDonationModel,
     foreignKey: CampDonationModel.DONATION_ID,
     otherKey: CampDonationModel.CAMP_ID,
-    as: 'camps'
+    as: 'linkedCamps'
+  });
+
+  // Direct Camp-Donation association (for direct camp donations)
+  CampModel.hasMany(DonationModel, {
+    foreignKey: 'campId',
+    as: 'directDonations'
   });
 };
 
@@ -158,6 +171,7 @@ export { default as CampDropOffLocationModel } from './camp-drop-off-location.mo
 export { default as CampItemModel } from './camp-item.model';
 export { default as CampHelpRequestModel } from './camp-help-request.model';
 export { default as CampDonationModel } from './camp-donation.model';
+export { default as CampInventoryItemModel } from './camp-inventory-item.model';
 
 // Export sequelize instance
 export { sequelize };
@@ -177,6 +191,7 @@ export const models = {
   CampItem: CampItemModel,
   CampHelpRequest: CampHelpRequestModel,
   CampDonation: CampDonationModel,
+  CampInventoryItem: CampInventoryItemModel,
 };
 
 export default models;

@@ -37,11 +37,13 @@ const campIcon = L.divIcon({
   iconSize: [24, 24],
 })
 
+
 interface MapProps {
   helpRequests: HelpRequestResponseDto[]
   camps: CampResponseDto[]
   center?: [number, number]
   zoom?: number
+  centerUpdateKey?: number
   onRequestClick?: (request: HelpRequestResponseDto) => void
   onBoundsChange?: (bounds: { minLat: number; maxLat: number; minLng: number; maxLng: number }) => void
 }
@@ -58,6 +60,28 @@ const MapUpdater: React.FC<{ center: [number, number]; zoom: number }> = ({ cent
       hasInitialized.current = true
     }
   }, [map, center, zoom]) // Include center/zoom in deps but only set once
+
+  return null
+}
+
+// Component to force center updates (e.g., when user clicks "Find My Location")
+const CenterUpdater: React.FC<{ center: [number, number]; zoom: number; updateKey: number }> = ({ center, zoom, updateKey }) => {
+  const map = useMap()
+  const centerRef = useRef(center)
+  const zoomRef = useRef(zoom)
+
+  // Keep refs updated with latest values
+  useEffect(() => {
+    centerRef.current = center
+    zoomRef.current = zoom
+  }, [center, zoom])
+
+  useEffect(() => {
+    // This will run ONLY when updateKey changes, forcing a center update
+    if (updateKey > 0) {
+      map.setView(centerRef.current, zoomRef.current, { animate: true, duration: 0.5 })
+    }
+  }, [map, updateKey]) // Only depend on updateKey to control when it updates
 
   return null
 }
@@ -336,6 +360,7 @@ const Map: React.FC<MapProps> = ({
   camps,
   center = [7.8731, 80.7718], // Sri Lanka center
   zoom = 7,
+  centerUpdateKey = 0,
   onRequestClick,
   onBoundsChange,
 }) => {
@@ -363,6 +388,7 @@ const Map: React.FC<MapProps> = ({
     <div className={styles.mapContainer}>
       <MapContainer center={center} zoom={zoom} style={{ height: "100%", width: "100%" }} scrollWheelZoom={true}>
         <MapUpdater center={center} zoom={zoom} />
+        <CenterUpdater center={center} zoom={zoom} updateKey={centerUpdateKey} />
         <MapBoundsTracker onBoundsChange={onBoundsChange} />
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'

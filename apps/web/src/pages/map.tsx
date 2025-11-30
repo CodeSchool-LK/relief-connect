@@ -19,7 +19,7 @@ import {
 import type { HelpRequestResponseDto } from '@nx-mono-repo-deployment-test/shared/src/dtos/help-request/response/help_request_response_dto'
 import type { CampResponseDto } from '@nx-mono-repo-deployment-test/shared/src/dtos/camp/response/camp_response_dto'
 import { Urgency } from '@nx-mono-repo-deployment-test/shared/src/enums'
-import { Filter, ArrowLeft } from 'lucide-react'
+import { Filter, ArrowLeft, MapPin, Navigation } from 'lucide-react'
 import { helpRequestService, campService } from '../services'
 
 // Dynamically import Map to avoid SSR issues with Leaflet
@@ -46,6 +46,9 @@ export default function MapDashboard() {
   const [mapZoom, setMapZoom] = useState(8)
   const [mapBounds, setMapBounds] = useState<{ minLat: number; maxLat: number; minLng: number; maxLng: number } | null>(null)
   const [debouncedBounds, setDebouncedBounds] = useState<{ minLat: number; maxLat: number; minLng: number; maxLng: number } | null>(null)
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
+  const [locationLoading, setLocationLoading] = useState(false)
+  const [centerUpdateKey, setCenterUpdateKey] = useState(0)
   const isInitialLoadRef = useRef(true)
 
   useEffect(() => {
@@ -177,6 +180,40 @@ export default function MapDashboard() {
     setMapBounds(bounds)
   }, [])
 
+  const handleFindMyLocation = useCallback(() => {
+    if (typeof window === 'undefined' || !navigator.geolocation) {
+      setError('Geolocation is not supported by your browser')
+      return
+    }
+
+    setLocationLoading(true)
+    setError(null)
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords
+        const userLoc = { lat: latitude, lng: longitude }
+        setUserLocation(userLoc)
+        // Center map on user location with a closer zoom
+        setMapCenter([latitude, longitude])
+        setMapZoom(12) // Zoom in closer when showing user location
+        setCenterUpdateKey((prev) => prev + 1) // Force map center update
+        setLocationLoading(false)
+        console.log('[MapPage] User location found:', userLoc)
+      },
+      (error) => {
+        console.error('[MapPage] Geolocation error:', error)
+        setError('Unable to get your location. Please enable location permissions.')
+        setLocationLoading(false)
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0, // Don't use cached location
+      }
+    )
+  }, [])
+
   // Map center is fixed to Sri Lanka center
   // Province/District filter logic removed
 
@@ -300,6 +337,16 @@ export default function MapDashboard() {
             <Button variant="outline" onClick={() => router.push('/#requests')} className="h-10">
               View Requests List
             </Button>
+
+            <Button
+              variant="outline"
+              onClick={handleFindMyLocation}
+              disabled={locationLoading}
+              className="h-10 flex items-center gap-2"
+            >
+              <Navigation className={`h-4 w-4 ${locationLoading ? 'animate-spin' : ''}`} />
+              {locationLoading ? 'Finding...' : 'My Location'}
+            </Button>
           </div>
         </div>
       </div>
@@ -321,6 +368,21 @@ export default function MapDashboard() {
         >
           <ArrowLeft className="h-5 w-5" />
           <span className="text-[11px] font-medium">Back</span>
+        </Button>
+
+        {/* Divider */}
+        <div className="w-px h-6 bg-gray-300/60"></div>
+
+        {/* Find My Location Button */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleFindMyLocation}
+          disabled={locationLoading}
+          className="flex flex-col items-center justify-center gap-1 text-gray-700 hover:text-gray-900 hover:bg-transparent"
+        >
+          <Navigation className={`h-5 w-5 ${locationLoading ? 'animate-spin' : ''}`} />
+          <span className="text-[11px] font-medium">My Location</span>
         </Button>
 
         {/* Divider */}
@@ -435,6 +497,7 @@ export default function MapDashboard() {
                 camps={camps}
                 center={mapCenter}
                 zoom={mapZoom}
+                centerUpdateKey={centerUpdateKey}
                 onRequestClick={handleViewRequestDetails}
                 onBoundsChange={handleBoundsChange}
               />

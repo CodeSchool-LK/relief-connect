@@ -107,8 +107,10 @@ export default function LandingPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router.query])
 
-  // Load requests from API with pagination and filters
+  // Load requests from API with pagination and filters (async, non-blocking)
   useEffect(() => {
+    let isCancelled = false
+    
     const loadData = async () => {
       setLoadingRequests(true)
       try {
@@ -126,6 +128,10 @@ export default function LandingPage() {
         }
 
         const response = await helpRequestService.getAllHelpRequests(filters)
+        
+        // Don't update state if component unmounted or effect cancelled
+        if (isCancelled) return
+        
         if (response.success && response.data) {
           setHelpRequests(response.data) // Replace with first page
           // Use count from API response for total count (this should be the total count, not page size)
@@ -147,15 +153,25 @@ export default function LandingPage() {
           setCurrentPage(1)
         }
       } catch (error) {
+        if (isCancelled) return
         console.error('[LandingPage] Error loading help requests:', error)
         setHelpRequests([])
         setTotalCount(0)
         setCurrentPage(1)
       } finally {
-        setLoadingRequests(false)
+        if (!isCancelled) {
+          setLoadingRequests(false)
+        }
       }
     }
+    
+    // Start loading immediately, don't wait
     loadData()
+    
+    // Cleanup function to cancel if component unmounts or effect re-runs
+    return () => {
+      isCancelled = true
+    }
   }, [selectedLevel, itemsPerPage]) // Remove currentPage from dependencies - only reload when filters change
 
   // Function to load more items (next page)
@@ -203,24 +219,40 @@ export default function LandingPage() {
     }
   }
 
-  // Load summary statistics from API (for Donation Requests cards)
+  // Load summary statistics from API (async, non-blocking, runs in parallel with requests)
   useEffect(() => {
+    let isCancelled = false
+    
     const loadSummary = async () => {
       setSummaryLoading(true)
       try {
         const response = await helpRequestService.getHelpRequestsSummary()
+        
+        // Don't update state if component unmounted or effect cancelled
+        if (isCancelled) return
+        
         if (response.success && response.data) {
           setSummary(response.data)
         } else {
           console.error('[LandingPage] Failed to load summary:', response.error)
         }
       } catch (error) {
+        if (isCancelled) return
         console.error('[LandingPage] Error loading summary:', error)
       } finally {
-        setSummaryLoading(false)
+        if (!isCancelled) {
+          setSummaryLoading(false)
+        }
       }
     }
+    
+    // Start loading immediately in parallel with requests, don't wait
     loadSummary()
+    
+    // Cleanup function to cancel if component unmounts or effect re-runs
+    return () => {
+      isCancelled = true
+    }
   }, [])
 
   // Use requests as-is (coordinates should come from API)

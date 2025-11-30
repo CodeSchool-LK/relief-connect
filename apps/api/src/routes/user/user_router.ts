@@ -100,6 +100,15 @@ export class UserRouter extends BaseRouter {
       ValidationMiddleware.params(IdParamDto),
       controller.updateUserStatus
     );
+
+    // POST /api/users/:id/generate-password - Generate password for user (admin only)
+    this.router.post(
+      '/:id/generate-password',
+      authenticate,
+      requireAdmin(),
+      ValidationMiddleware.params(IdParamDto),
+      controller.generatePassword
+    );
   }
 
   /**
@@ -122,7 +131,8 @@ export class UserRouter extends BaseRouter {
       { path: `${USER_BASE_PATH}`, methods: ['GET'] },
       { path: `${USER_BASE_PATH}/:id`, methods: ['GET', 'PUT'] },
       { path: `${USER_BASE_PATH}/:id/role`, methods: ['PUT'] },
-      { path: `${USER_BASE_PATH}/:id/status`, methods: ['PUT'] }
+      { path: `${USER_BASE_PATH}/:id/status`, methods: ['PUT'] },
+      { path: `${USER_BASE_PATH}/:id/generate-password`, methods: ['POST'] }
     ];
   }
 

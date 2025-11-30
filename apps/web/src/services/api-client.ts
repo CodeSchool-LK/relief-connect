@@ -42,7 +42,7 @@ class ApiClient {
   /**
    * Get access token from localStorage
    */
-  private getAccessToken(): string | null {
+  public getAccessToken(): string | null {
     if (typeof window === 'undefined') return null;
     return localStorage.getItem(ACCESS_TOKEN_KEY);
   }
@@ -50,7 +50,7 @@ class ApiClient {
   /**
    * Get refresh token from localStorage
    */
-  private getRefreshToken(): string | null {
+  public getRefreshToken(): string | null {
     if (typeof window === 'undefined') return null;
     return localStorage.getItem(REFRESH_TOKEN_KEY);
   }
@@ -180,6 +180,7 @@ class ApiClient {
     // Build headers
     const defaultHeaders: Record<string, string> = {
       'Content-Type': 'application/json',
+      'Accept': 'application/json',
       ...(headers as Record<string, string>),
     };
 

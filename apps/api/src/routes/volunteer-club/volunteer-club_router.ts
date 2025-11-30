@@ -54,11 +54,9 @@ export class VolunteerClubRouter extends BaseRouter {
       controller.create
     );
 
-    // GET /api/volunteer-clubs - List all (all authenticated users)
+    // GET /api/volunteer-clubs - List all (public - for viewing clubs and drop-off locations)
     this.router.get(
       '/',
-      authenticate,
-      requireAuthenticated(),
       controller.getAll
     );
 
@@ -70,11 +68,9 @@ export class VolunteerClubRouter extends BaseRouter {
       controller.getMyClub
     );
 
-    // GET /api/volunteer-clubs/:id - Get by ID (all authenticated users)
+    // GET /api/volunteer-clubs/:id - Get by ID (public - for viewing club details)
     this.router.get(
       '/:id',
-      authenticate,
-      requireAuthenticated(),
       ValidationMiddleware.params(IdParamDto),
       controller.getById
     );

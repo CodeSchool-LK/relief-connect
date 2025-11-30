@@ -7,6 +7,7 @@ import { UserRouter } from './user/user_router';
 import { AuthRouter } from './auth/auth_router';
 import { VolunteerClubRouter } from './volunteer-club/volunteer-club_router';
 import { MembershipRouter } from './membership/membership_router';
+import { AdminRouter } from './admin/admin_router';
 
 // Interface for router-like objects
 interface RouterLike {
@@ -43,6 +44,7 @@ export class RouterManager {
   private authRouter: AuthRouter;
   private volunteerClubRouter: VolunteerClubRouter;
   private membershipRouter: MembershipRouter;
+  private adminRouter: AdminRouter;
 
   private constructor() {
     this.mainRouter = Router();
@@ -54,6 +56,7 @@ export class RouterManager {
     this.authRouter = new AuthRouter();
     this.volunteerClubRouter = new VolunteerClubRouter();
     this.membershipRouter = new MembershipRouter();
+    this.adminRouter = new AdminRouter();
     this.configureRoutes();
   }
 
@@ -90,6 +93,7 @@ export class RouterManager {
     this.mainRouter.use(`${API_PREFIX}${this.authRouter.getBasePath()}`, this.authRouter.getRouter());
     this.mainRouter.use(`${API_PREFIX}${this.volunteerClubRouter.getBasePath()}`, this.volunteerClubRouter.getRouter());
     this.mainRouter.use(`${API_PREFIX}${this.membershipRouter.getBasePath()}`, this.membershipRouter.getRouter());
+    this.mainRouter.use(`${API_PREFIX}${this.adminRouter.getBasePath()}`, this.adminRouter.getRouter());
   }
 
   /**

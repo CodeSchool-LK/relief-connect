@@ -29,6 +29,7 @@ export * from './donation';
 export * from './inventory';
 export * from './volunteer-club';
 export * from './membership';
+export * from './admin';
 
 // Re-export commonly used types for convenience
 export { BaseDto, ValidationFailedError } from './common/base_dto';
@@ -42,4 +43,5 @@ export { CreateDonationDto, DonationResponseDto } from './donation';
 export { InventoryItemResponseDto } from './inventory';
 export { CreateVolunteerClubDto, UpdateVolunteerClubDto, VolunteerClubResponseDto } from './volunteer-club';
 export { RequestMembershipDto, ReviewMembershipDto, MembershipResponseDto } from './membership';
+export { CreateAdminDto, CreateVolunteerClubUserDto, GeneratePasswordResponseDto } from './admin';
 

@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { UserService } from '../services';
-import { CreateUserDto, LoginResponseDto, UserResponseDto } from '@nx-mono-repo-deployment-test/shared/src/dtos';
+import { CreateUserDto, LoginResponseDto, UserResponseDto, CreateAdminDto, CreateVolunteerClubUserDto, GeneratePasswordResponseDto } from '@nx-mono-repo-deployment-test/shared/src/dtos';
 
 /**
  * Controller for User endpoints
@@ -181,6 +181,69 @@ class UserController {
         res.sendSuccess(result.data, result.message || 'User status updated successfully', 200);
       } else {
         res.sendError(result.error || 'Failed to update user status', 400);
+      }
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * POST /api/admin/create-admin
+   * Create initial admin account (one-time, requires API key)
+   */
+  createAdminAccount = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const createAdminDto = req.body as CreateAdminDto;
+      const result = await this.userService.createAdminAccount(createAdminDto);
+
+      if (result.success && result.data) {
+        res.sendSuccess(result.data, result.message || 'Admin account created successfully', 201);
+      } else {
+        res.sendError(result.error || 'Failed to create admin account', 400);
+      }
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * POST /api/admin/volunteer-club-users
+   * Create volunteer club user account (admin only)
+   */
+  createVolunteerClubUser = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const createDto = req.body as CreateVolunteerClubUserDto;
+      const result = await this.userService.createVolunteerClubUser(createDto);
+
+      if (result.success && result.data) {
+        res.sendSuccess(result.data, result.message || 'Volunteer club user created successfully', 201);
+      } else {
+        res.sendError(result.error || 'Failed to create volunteer club user', 400);
+      }
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * POST /api/users/:id/generate-password
+   * Generate a new password for a user (admin only)
+   */
+  generatePassword = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      
+      if (isNaN(id)) {
+        res.sendError('Invalid user ID', 400);
+        return;
+      }
+
+      const result = await this.userService.generatePasswordForUser(id);
+
+      if (result.success && result.data) {
+        res.sendSuccess(result.data, result.message || 'Password generated successfully', 200);
+      } else {
+        res.sendError(result.error || 'Failed to generate password', 400);
       }
     } catch (error) {
       next(error);

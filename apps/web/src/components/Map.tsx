@@ -55,6 +55,110 @@ const MapUpdater: React.FC<{ center: [number, number]; zoom: number }> = ({ cent
   return null
 }
 
+// Camp Popup Content Component
+const CampPopupContent: React.FC<{
+  camp: CampResponseDto
+}> = ({ camp }) => {
+  const router = useRouter()
+
+  const handleViewDetails = () => {
+    router.push(`/camps/${camp.id}`)
+  }
+
+  const handleViewDropOffPlaces = () => {
+    router.push(`/camps/${camp.id}?tab=dropoff`)
+  }
+
+  return (
+    <div className="min-w-[280px] max-w-[320px]">
+      <div className="mb-3">
+        <h4 className="text-lg font-bold text-gray-900 mb-2">🏕️ {camp.name}</h4>
+        <div className="flex items-center gap-2 mb-2">
+          <span className="px-2 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">
+            {camp.campType}
+          </span>
+        </div>
+      </div>
+
+      <div className="space-y-2 mb-3 text-sm">
+        <div>
+          <span className="font-semibold text-gray-700">People:</span>{' '}
+          <span className="text-gray-600">{camp.peopleRange}</span>
+          {camp.peopleCount && (
+            <span className="text-gray-600"> ({camp.peopleCount} exact)</span>
+          )}
+        </div>
+
+        {camp.needs && camp.needs.length > 0 && (
+          <div>
+            <span className="font-semibold text-gray-700">Needs:</span>{' '}
+            <span className="text-gray-600">{camp.needs.join(", ")}</span>
+          </div>
+        )}
+
+        {camp.shortNote && (
+          <div>
+            <span className="font-semibold text-gray-700">Note:</span>{' '}
+            <span className="text-gray-600">{camp.shortNote}</span>
+          </div>
+        )}
+
+        {camp.location && (
+          <div>
+            <span className="font-semibold text-gray-700">Location:</span>{' '}
+            <span className="text-gray-600">{camp.location}</span>
+          </div>
+        )}
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <button
+          onClick={handleViewDetails}
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200 text-sm"
+        >
+          View Details
+        </button>
+
+        {camp.dropOffLocations && camp.dropOffLocations.length > 0 && (
+          <button
+            onClick={handleViewDropOffPlaces}
+            className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200 text-sm flex items-center justify-center gap-1"
+          >
+            <span>📍</span>
+            <span>View Drop-off Places ({camp.dropOffLocations.length})</span>
+          </button>
+        )}
+
+        {camp.contact && camp.contactType !== ContactType.NONE && (
+          <div className="flex gap-2">
+            {camp.contactType === ContactType.PHONE && (
+              <a
+                href={`tel:${camp.contact}`}
+                className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200 text-sm text-center flex items-center justify-center gap-1"
+                style={{ color: 'white' }}
+              >
+                <span style={{ color: 'white' }}>📞</span>
+                <span style={{ color: 'white' }}>Call</span>
+              </a>
+            )}
+            {camp.contactType === ContactType.WHATSAPP && (
+              <a
+                href={`https://wa.me/${camp.contact.replace(/[^0-9]/g, '')}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200 text-sm text-center flex items-center justify-center gap-1"
+              >
+                <span>💬</span>
+                <span>WhatsApp</span>
+              </a>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // Popup Content Component
 const PopupContent: React.FC<{
   request: HelpRequestResponseDto
@@ -231,40 +335,7 @@ const Map: React.FC<MapProps> = ({
           return (
             <Marker key={`camp-${camp.id}`} position={[lat, lng]} icon={campIcon}>
             <Popup>
-              <div className={styles.popup}>
-                <h4>Camp: {camp.name}</h4>
-                <p>
-                  <strong>Type:</strong> {camp.campType}
-                </p>
-                <p>
-                  <strong>People:</strong> {camp.peopleRange}
-                </p>
-                <p>
-                  <strong>Needs:</strong> {camp.needs.join(", ")}
-                </p>
-                <p>
-                  <strong>Note:</strong> {camp.shortNote}
-                </p>
-                {camp.contact && camp.contactType !== ContactType.NONE && (
-                  <div className={styles.contactButtons}>
-                    {camp.contactType === ContactType.PHONE && (
-                      <a href={`tel:${camp.contact}`} className={styles.contactButton}>
-                        📞 Call
-                      </a>
-                    )}
-                    {camp.contactType === ContactType.WHATSAPP && (
-                      <a
-                        href={`https://wa.me/${camp.contact.replace(/[^0-9]/g, "")}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={styles.contactButton}
-                      >
-                        💬 WhatsApp
-                      </a>
-                    )}
-                  </div>
-                )}
-              </div>
+              <CampPopupContent camp={camp} />
             </Popup>
           </Marker>
             )

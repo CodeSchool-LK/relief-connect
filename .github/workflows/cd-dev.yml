@@ -102,7 +102,7 @@ jobs:
             DB_NAME=${{ secrets.DEV_DB_NAME }}
             DB_USER=${{ secrets.DEV_DB_USER }}
             DB_PASSWORD=${{ secrets.DEV_DB_PASSWORD }}
-            CORS_ORIGIN=https://dev-web.pasindusampath.com
+            CORS_ORIGIN=https://dev-web.pasindusampath.com,http://localhost:3001,http://localhost:3002
             JWT_SECRET=${{ secrets.DEV_JWT_SECRET }}
             JWT_REFRESH_SECRET=${{ secrets.DEV_JWT_REFRESH_SECRET }}
             JWT_ACCESS_TOKEN_EXPIRES_IN=15m

@@ -16,11 +16,13 @@ import {
   Package,
   HandHeart,
   Building2,
-  AlertCircle
+  ArrowLeft
 } from 'lucide-react';
+import LanguageSwitcher from '../components/LanguageSwitcher';
 import { CampStatus } from '@nx-mono-repo-deployment-test/shared/src/enums';
 import CampDonationModal from '../components/CampDonationModal';
 import { ICampInventoryItem } from '@nx-mono-repo-deployment-test/shared/src/interfaces/camp/ICampInventoryItem';
+import { RATION_ITEMS } from '../components/EmergencyRequestForm';
 
 interface CampWithClub extends CampResponseDto {
   clubName?: string;
@@ -154,23 +156,70 @@ export default function CampsPage() {
 
       <div className="min-h-screen bg-gray-50 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">All Active Camps</h1>
-            <p className="text-gray-600">
-              Browse all active camps and make donation requests. Once approved by club admins, you&apos;ll be automatically registered as a member.
-            </p>
+          {/* Header with Language Switcher, Back Button, and Navigation Buttons */}
+          <div className="mb-6 sm:mb-8">
+            {/* Language Switcher - Top and Centered */}
+            <div className="flex justify-center mb-4 sm:mb-6">
+              <LanguageSwitcher variant="light" />
+            </div>
+
+            {/* Top Bar - Mobile optimized */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 mb-4 sm:mb-6 pb-4 border-b border-gray-200">
+              {/* Back Button */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => router.push('/')}
+                className="flex items-center gap-2 flex-shrink-0 -ml-2 sm:ml-0"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                <span className="hidden sm:inline">Back</span>
+              </Button>
+              
+              {/* Navigation Buttons - Two lines on mobile */}
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
+                <Button
+                  onClick={() => router.push('/clubs')}
+                  variant="outline"
+                  className="border-2 border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white text-sm sm:text-sm px-4 h-10 sm:h-10 whitespace-nowrap w-full sm:w-auto transition-all duration-200"
+                >
+                  <Building2 className="h-4 w-4 mr-2" />
+                  Clubs
+                </Button>
+                <Button
+                  onClick={() => router.push('/drop-off-locations')}
+                  variant="outline"
+                  className="border-2 border-purple-600 bg-purple-600 text-white text-sm sm:text-sm px-4 h-10 sm:h-10 whitespace-nowrap w-full sm:w-auto transition-all duration-200 relative overflow-hidden shadow-lg hover:shadow-xl group"
+                >
+                  {/* Glittering effect overlay - always visible */}
+                  <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent translate-x-[-100%] animate-[shimmer-sweep_3s_ease-in-out_infinite]"></span>
+                  <span className="absolute inset-0 bg-[linear-gradient(45deg,transparent_30%,rgba(255,255,255,0.5)_50%,transparent_70%)] bg-[length:200%_200%] animate-[shimmer_2s_linear_infinite]"></span>
+                  
+                  <MapPin className="h-4 w-4 mr-2 relative z-10 animate-pulse" />
+                  <span className="font-semibold relative z-10">Drop-off Locations</span>
+                </Button>
+              </div>
+            </div>
+
+            {/* Title Section */}
+            <div className="px-0 sm:px-0">
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-2">All Active Camps</h1>
+              <p className="text-xs sm:text-sm md:text-base text-gray-600 leading-relaxed">
+                Browse all active camps and make donation requests. Once approved by club admins, you&apos;ll be automatically registered as a member.
+              </p>
+            </div>
           </div>
 
           {/* Search Bar */}
-          <div className="mb-6">
+          <div className="mb-4 sm:mb-6">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
               <Input
                 type="text"
-                placeholder="Search camps by name, location, description, or club..."
+                placeholder="Search camps..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
+                className="pl-9 sm:pl-10 h-9 sm:h-10 text-sm sm:text-base"
               />
             </div>
           </div>
@@ -191,87 +240,110 @@ export default function CampsPage() {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {filteredCamps.map((camp) => {
                 const inventory = campInventories[camp.id!] || [];
                 const hasRequestedItems = inventory.some(item => item.quantityNeeded > 0);
 
+                // Map inventory items to RATION_ITEMS for proper labels and icons
+                // itemName is the code/id (e.g., 'dry_rations', 'bottled_water')
+                const itemsWithMetadata = inventory
+                  .filter(item => item.quantityNeeded > 0)
+                  .map((item) => {
+                    const remaining = Math.max(0, item.quantityNeeded - item.quantityDonated - item.quantityPending);
+                    // Match by id (itemName is the code/id from RATION_ITEMS)
+                    const rationItem = RATION_ITEMS.find((ri) => ri.id === item.itemName);
+                    return {
+                      id: item.id,
+                      label: rationItem ? rationItem.label : item.itemName,
+                      icon: rationItem ? rationItem.icon : '📦',
+                      remaining,
+                    };
+                  });
+
+                // Calculate items to show (limit to 2 lines)
+                // Approximately 4-5 tags per line on mobile, 6-7 on desktop
+                const maxItemsToShow = 8; // Approximately 2 lines
+                const itemsToShow = itemsWithMetadata.slice(0, maxItemsToShow);
+                const remainingCount = itemsWithMetadata.length - maxItemsToShow;
+
                 return (
-                  <Card key={camp.id} className="hover:shadow-lg transition-shadow flex flex-col">
-                    <CardHeader>
+                  <Card key={camp.id} className="hover:shadow-lg transition-shadow flex flex-col h-full">
+                    <CardHeader className="p-4 sm:p-6 flex-shrink-0">
                       <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <CardTitle className="text-xl mb-1">{camp.name}</CardTitle>
+                        <div className="flex-1 min-w-0">
+                          <CardTitle className="text-lg sm:text-xl mb-1 line-clamp-2">{camp.name}</CardTitle>
                           {camp.clubName && (
-                            <div className="flex items-center gap-1 text-sm text-gray-600 mt-1">
-                              <Building2 className="w-4 h-4" />
-                              <span>{camp.clubName}</span>
+                            <div className="flex items-center gap-1 text-xs sm:text-sm text-gray-600 mt-1">
+                              <Building2 className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                              <span className="truncate">{camp.clubName}</span>
                             </div>
                           )}
                         </div>
                       </div>
                       {camp.shortNote && (
-                        <p className="text-sm text-gray-600 mt-2 line-clamp-2">{camp.shortNote}</p>
+                        <p className="text-xs sm:text-sm text-gray-600 mt-2 line-clamp-2">{camp.shortNote}</p>
                       )}
                     </CardHeader>
-                    <CardContent className="space-y-4 flex-1 flex flex-col">
+                    <CardContent className="space-y-3 sm:space-y-4 flex-1 flex flex-col p-4 sm:p-6 pt-0">
                       {camp.description && (
-                        <p className="text-sm text-gray-600 line-clamp-3 flex-1">{camp.description}</p>
+                        <p className="text-xs sm:text-sm text-gray-600 line-clamp-3 flex-1">{camp.description}</p>
                       )}
 
-                      <div className="space-y-2 text-sm">
+                      <div className="space-y-2 text-xs sm:text-sm">
                         {camp.location && (
                           <div className="flex items-start gap-2 text-gray-600">
-                            <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                            <span className="line-clamp-2">{camp.location}</span>
+                            <MapPin className="w-3 h-3 sm:w-4 sm:h-4 mt-0.5 flex-shrink-0" />
+                            <span className="line-clamp-2 break-words">{camp.location}</span>
                           </div>
                         )}
                         {camp.peopleRange && (
                           <div className="flex items-center gap-2 text-gray-600">
-                            <Users className="w-4 h-4 flex-shrink-0" />
+                            <Users className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
                             <span>{camp.peopleRange}</span>
                           </div>
                         )}
                       </div>
 
-                      {/* Inventory Summary */}
-                      {inventory.length > 0 && (
-                        <div className="pt-2 border-t">
-                          <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
-                            <Package className="w-4 h-4" />
+                      {/* Items Needed - Tag Style */}
+                      {itemsWithMetadata.length > 0 && (
+                        <div className="pt-2 border-t flex-shrink-0">
+                          <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600 mb-2">
+                            <Package className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
                             <span className="font-medium">Items Needed:</span>
                           </div>
-                          <div className="grid grid-cols-2 gap-2">
-                            {inventory
-                              .filter(item => item.quantityNeeded > 0)
-                              .slice(0, 4)
-                              .map((item) => {
-                                const remaining = Math.max(0, item.quantityNeeded - item.quantityDonated - item.quantityPending);
-                                return (
-                                  <div key={item.id} className="text-xs bg-gray-50 p-2 rounded">
-                                    <div className="font-medium truncate">{item.itemName}</div>
-                                    <div className="text-gray-500">Need: {remaining}</div>
-                                  </div>
-                                );
-                              })}
+                          <div className="relative">
+                            <div className="flex flex-wrap gap-1.5 sm:gap-2 min-h-[2.5rem] max-h-[5rem] overflow-hidden">
+                              {itemsToShow.map((item) => (
+                                <div
+                                  key={item.id}
+                                  className="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 hover:bg-purple-200 text-purple-700 rounded-md text-xs font-medium transition-colors duration-200 flex-shrink-0"
+                                >
+                                  <span>{item.icon}</span>
+                                  <span className="whitespace-nowrap">{item.label}</span>
+                                  <span className="font-bold">×{item.remaining}</span>
+                                </div>
+                              ))}
+                            </div>
                           </div>
-                          {inventory.filter(item => item.quantityNeeded > 0).length > 4 && (
-                            <p className="text-xs text-gray-500 mt-1">
-                              +{inventory.filter(item => item.quantityNeeded > 0).length - 4} more items
+                          {remainingCount > 0 && (
+                            <p className="text-xs text-purple-600 font-semibold mt-2">
+                              +{remainingCount} more items
                             </p>
                           )}
                         </div>
                       )}
 
-                      <div className="pt-2 border-t mt-auto">
+                      <div className="pt-2 border-t mt-auto flex-shrink-0">
                         {hasRequestedItems ? (
                           <Button
                             onClick={() => handleDonateClick(camp)}
-                            className="w-full"
+                            className="w-full h-9 sm:h-10 text-xs sm:text-sm"
                             variant="default"
                           >
-                            <HandHeart className="w-4 h-4 mr-2" />
-                            Make Donation Request
+                            <HandHeart className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
+                            <span className="hidden xs:inline">Make Donation Request</span>
+                            <span className="xs:hidden">Donate</span>
                           </Button>
                         ) : (
                           <div className="text-center py-2">
@@ -282,7 +354,7 @@ export default function CampsPage() {
                         )}
                         <Button
                           onClick={() => router.push(`/clubs/camps/${camp.id}`)}
-                          className="w-full mt-2"
+                          className="w-full mt-2 h-9 sm:h-10 text-xs sm:text-sm"
                           variant="outline"
                         >
                           View Details

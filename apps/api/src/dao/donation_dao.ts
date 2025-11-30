@@ -57,23 +57,32 @@ class DonationDao {
 
   /**
    * Find all donations made by a specific donator
-   * Includes help request information
+   * Includes help request and camp information
    */
-  public async findByDonatorId(donatorId: number): Promise<Array<IDonation & { helpRequest?: any }>> {
+  public async findByDonatorId(donatorId: number): Promise<Array<IDonation & { helpRequest?: any; camp?: any }>> {
     try {
       const donations = await DonationModel.findAll({
         where: {
           [DonationModel.DONATION_DONATOR_ID]: donatorId,
         },
-        include: [{
-          model: HelpRequestModel,
-          as: 'helpRequest',
-          attributes: ['id', 'lat', 'lng', 'urgency', 'shortNote', 'approxArea', 'contactType', 'contact', 'name', 'totalPeople', 'elders', 'children', 'pets', 'rationItems', 'status', 'createdAt', 'updatedAt'],
-        }],
+        include: [
+          {
+            model: HelpRequestModel,
+            as: 'helpRequest',
+            attributes: ['id', 'lat', 'lng', 'urgency', 'shortNote', 'approxArea', 'contactType', 'contact', 'name', 'totalPeople', 'elders', 'children', 'pets', 'rationItems', 'status', 'createdAt', 'updatedAt'],
+            required: false,
+          },
+          {
+            model: CampModel,
+            as: 'camp',
+            attributes: ['id', 'name', 'description', 'location', 'volunteerClubId', 'status', 'createdAt', 'updatedAt'],
+            required: false,
+          },
+        ],
         order: [[DonationModel.DONATION_CREATED_AT, 'DESC']],
       });
       return donations.map(d => {
-        const donation = d.toJSON() as IDonation & { helpRequest?: any };
+        const donation = d.toJSON() as IDonation & { helpRequest?: any; camp?: any };
         return donation;
       });
     } catch (error) {

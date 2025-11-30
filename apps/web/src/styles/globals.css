@@ -200,3 +200,38 @@ button {
 .font-sub {
   font-family: var(--font-sub);
 }
+
+/* Placeholder styles - low opacity for better UX */
+input::placeholder,
+textarea::placeholder {
+  color: rgba(0, 0, 0, 0.4) !important;
+  opacity: 1 !important;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: rgba(255, 255, 255, 0.4) !important;
+  opacity: 1 !important;
+}
+
+/* Glittering animation for important buttons */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@keyframes shimmer-sweep {
+  0% {
+    transform: translateX(-100%);
+  }
+  50% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}

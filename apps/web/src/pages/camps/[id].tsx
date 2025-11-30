@@ -9,6 +9,7 @@ import { campService } from '../../services';
 import { CampResponseDto } from '@nx-mono-repo-deployment-test/shared/src/dtos/camp/response/camp_response_dto';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
+import MyCampDonations from '../../components/MyCampDonations';
 import { 
   ArrowLeft, 
   Loader2, 
@@ -30,8 +31,8 @@ const CampMap = dynamic(() => import('../../components/CampMap'), { ssr: false }
 
 export default function CampDetailsPage() {
   const router = useRouter();
-  const { id } = router.query;
-  const { isAuthenticated, loading: authLoading } = useAuth();
+  const { id, clubId } = router.query;
+  const { isAuthenticated, loading: authLoading, user } = useAuth();
   const [camp, setCamp] = useState<CampResponseDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -101,7 +102,22 @@ export default function CampDetailsPage() {
     );
   }
 
+  // Determine back URL based on context
+  const getBackUrl = (campData?: CampResponseDto | null) => {
+    // If clubId query param exists, go back to that club
+    if (clubId) {
+      return `/clubs/${clubId}`;
+    }
+    // If camp has volunteerClubId, go back to that club
+    if (campData?.volunteerClubId) {
+      return `/clubs/${campData.volunteerClubId}`;
+    }
+    // Fallback to camps list
+    return '/camps';
+  };
+
   if (error || !camp) {
+    const backUrl = getBackUrl(null);
     return (
       <>
         <Head>
@@ -109,10 +125,10 @@ export default function CampDetailsPage() {
         </Head>
         <div className="min-h-screen bg-gray-50 py-8">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-            <Link href="/clubs/dashboard">
+            <Link href={backUrl}>
               <Button variant="outline" className="mb-6">
                 <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Dashboard
+                Back
               </Button>
             </Link>
             <Card>
@@ -121,8 +137,8 @@ export default function CampDetailsPage() {
                   <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                   <h2 className="text-xl font-semibold text-gray-900 mb-2">Camp Not Found</h2>
                   <p className="text-gray-600 mb-6">{error || 'The camp you are looking for does not exist or you do not have permission to view it.'}</p>
-                  <Link href="/clubs/dashboard">
-                    <Button>Go to Dashboard</Button>
+                  <Link href={backUrl}>
+                    <Button>Go Back</Button>
                   </Link>
                 </div>
               </CardContent>
@@ -132,6 +148,8 @@ export default function CampDetailsPage() {
       </>
     );
   }
+
+  const backUrl = getBackUrl(camp);
 
   const getPeopleRangeLabel = (range: PeopleRange): string => {
     switch (range) {
@@ -175,10 +193,10 @@ export default function CampDetailsPage() {
 
       <div className="min-h-screen bg-gray-50 py-8">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <Link href="/clubs/dashboard">
+          <Link href={backUrl}>
             <Button variant="outline" className="mb-6">
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Dashboard
+              Back
             </Button>
           </Link>
 
@@ -441,6 +459,13 @@ export default function CampDetailsPage() {
               )}
             </CardContent>
           </Card>
+
+          {/* My Donations Component - Only visible to logged-in users */}
+          {isAuthenticated && user && camp && (
+            <div className="mt-6">
+              <MyCampDonations camp={camp} currentUserId={user.id} />
+            </div>
+          )}
         </div>
       </div>
     </>

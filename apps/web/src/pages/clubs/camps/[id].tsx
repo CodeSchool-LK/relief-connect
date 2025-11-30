@@ -10,11 +10,12 @@ import { IVolunteerClub } from '../../../types/volunteer-club';
 import { IMembership } from '../../../types/membership';
 import { Card, CardContent, CardHeader, CardTitle } from '../../../components/ui/card';
 import { Button } from '../../../components/ui/button';
-import { MapPin, Package, Users, ArrowLeft, Loader2, Phone, Mail } from 'lucide-react';
+import { MapPin, Package, Users, ArrowLeft, Loader2, Phone, Mail, Building2 } from 'lucide-react';
 import Link from 'next/link';
 import CampInventoryDisplay from '../../../components/CampInventoryDisplay';
 import CampDonationModal from '../../../components/CampDonationModal';
 import dynamic from 'next/dynamic';
+import { RATION_ITEMS } from '../../../components/EmergencyRequestForm';
 
 const DropOffLocationsMap = dynamic(() => import('../../../components/DropOffLocationsMap'), { ssr: false });
 
@@ -94,6 +95,11 @@ export default function CampDetailPage() {
     }
   };
 
+  const handleBackToCamps = () => {
+    // Navigate to camps page and force a full page reload to fetch fresh data
+    window.location.href = '/camps';
+  };
+
   if (authLoading || loading) {
     return (
       <>
@@ -107,17 +113,14 @@ export default function CampDetailPage() {
     );
   }
 
-  if (!isAuthenticated || (!isClubAdmin && (!membership || membership.status !== 'APPROVED'))) {
+  // Only require authentication - no membership needed to view camp details and donate
+  if (!isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold mb-2">Access Denied</h1>
-          <p className="text-gray-600 mb-4">You must be an approved member or club admin to view camp details.</p>
-          {camp?.volunteerClubId && (
-            <Link href={`/clubs/camps?clubId=${camp.volunteerClubId}`}>
-              <Button>Back to Camps</Button>
-            </Link>
-          )}
+          <h1 className="text-2xl font-bold mb-2">Authentication Required</h1>
+          <p className="text-gray-600 mb-4">Please log in to view camp details.</p>
+          <Button onClick={() => router.push('/login')}>Go to Login</Button>
         </div>
       </div>
     );
@@ -147,14 +150,14 @@ export default function CampDetailPage() {
       <div className="min-h-screen bg-gray-50 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="mb-6">
-            {camp?.volunteerClubId && (
-              <Link href={`/clubs/camps?clubId=${camp.volunteerClubId}`}>
-                <Button variant="outline">
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Back to Camps
-                </Button>
-              </Link>
-            )}
+            <Button 
+              variant="ghost" 
+              onClick={handleBackToCamps}
+              className="flex items-center gap-2 -ml-2 sm:ml-0"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Back to Camps</span>
+            </Button>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -272,38 +275,59 @@ export default function CampDetailPage() {
             <div className="space-y-6">
               <Card>
                 <CardHeader>
-                  <CardTitle>Club Information</CardTitle>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Building2 className="w-5 h-5 text-blue-600" />
+                    Club Information
+                  </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-3">
+                <CardContent className="space-y-5">
                   {club?.name && (
-                    <div>
-                      <span className="font-medium text-gray-700">Club:</span>
-                      <p className="text-gray-600">{club.name}</p>
+                    <div className="pb-4 border-b border-gray-200">
+                      <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Club Name</div>
+                      <p className="text-lg font-bold text-gray-900">{club.name}</p>
                     </div>
                   )}
                   {club?.address && (
-                    <div className="flex items-start gap-2">
-                      <MapPin className="w-4 h-4 mt-0.5 text-gray-500" />
-                      <div>
-                        <span className="font-medium text-gray-700">Address:</span>
-                        <p className="text-sm text-gray-600">{club.address}</p>
+                    <div className="flex items-start gap-3">
+                      <div className="flex-shrink-0 w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                        <MapPin className="w-5 h-5 text-blue-600" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Address</div>
+                        <p className="text-sm text-gray-700 break-words leading-relaxed">{club.address}</p>
                       </div>
                     </div>
                   )}
                   {club?.contactNumber && (
-                    <div className="flex items-center gap-2">
-                      <Phone className="w-4 h-4 text-gray-500" />
-                      <a href={`tel:${club.contactNumber}`} className="text-sm text-blue-600 hover:underline">
-                        {club.contactNumber}
-                      </a>
+                    <div className="flex items-start gap-3">
+                      <div className="flex-shrink-0 w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                        <Phone className="w-5 h-5 text-green-600" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Contact Number</div>
+                        <a 
+                          href={`tel:${club.contactNumber}`} 
+                          className="text-sm font-medium text-green-700 hover:text-green-900 transition-colors inline-block"
+                        >
+                          {club.contactNumber}
+                        </a>
+                      </div>
                     </div>
                   )}
                   {club?.email && (
-                    <div className="flex items-center gap-2">
-                      <Mail className="w-4 h-4 text-gray-500" />
-                      <a href={`mailto:${club.email}`} className="text-sm text-blue-600 hover:underline">
-                        {club.email}
-                      </a>
+                    <div className="flex items-start gap-3">
+                      <div className="flex-shrink-0 w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                        <Mail className="w-5 h-5 text-purple-600" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Email</div>
+                        <a 
+                          href={`mailto:${club.email}`} 
+                          className="text-sm font-medium text-purple-700 hover:text-purple-900 transition-colors break-all"
+                        >
+                          {club.email}
+                        </a>
+                      </div>
                     </div>
                   )}
                 </CardContent>

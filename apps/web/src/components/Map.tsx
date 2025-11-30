@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useEffect } from "react"
+import { useEffect, useRef } from "react"
 import { useRouter } from "next/router"
 import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from "react-leaflet"
 import L from "leaflet"
@@ -48,10 +48,16 @@ interface MapProps {
 
 const MapUpdater: React.FC<{ center: [number, number]; zoom: number }> = ({ center, zoom }) => {
   const map = useMap()
+  const hasInitialized = useRef(false)
 
   useEffect(() => {
-    map.setView(center, zoom)
-  }, [map, center, zoom])
+    // Only set the view on initial mount, not on every render
+    // This prevents the map from resetting when user zooms/pans
+    if (!hasInitialized.current) {
+      map.setView(center, zoom)
+      hasInitialized.current = true
+    }
+  }, [map, center, zoom]) // Include center/zoom in deps but only set once
 
   return null
 }
@@ -195,9 +201,10 @@ const CampPopupContent: React.FC<{
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200 text-sm text-center flex items-center justify-center gap-1"
+                style={{ color: 'white' }}
               >
-                <span>💬</span>
-                <span>WhatsApp</span>
+                <span style={{ color: 'white' }}>💬</span>
+                <span style={{ color: 'white' }}>WhatsApp</span>
               </a>
             )}
           </div>
@@ -311,9 +318,10 @@ const PopupContent: React.FC<{
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200 text-sm text-center flex items-center justify-center gap-1"
+                style={{ color: 'white' }}
               >
-                <span>💬</span>
-                <span>WhatsApp</span>
+                <span style={{ color: 'white' }}>💬</span>
+                <span style={{ color: 'white' }}>WhatsApp</span>
               </a>
             )}
           </div>

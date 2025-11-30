@@ -25,7 +25,7 @@ services:
       context: .
       dockerfile: apps/web/Dockerfile
       args:
-        NEXT_PUBLIC_API_URL: https://prod-api.pasindusampath.com
+        NEXT_PUBLIC_API_URL: https://api.rebuildsl.com
     container_name: nx-web-prod
     expose:
       - "3023"

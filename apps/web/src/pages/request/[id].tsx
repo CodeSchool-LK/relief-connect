@@ -58,7 +58,7 @@ const dummyPhotos = [
 
 export default function RequestDetailsPage() {
   const router = useRouter()
-  const { id } = router.query
+  const { id, from } = router.query
   const [request, setRequest] = useState<HelpRequestWithOwnershipResponseDto | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -67,6 +67,14 @@ export default function RequestDetailsPage() {
   const [donationRequests, setDonationRequests] = useState<DonationRequest[]>([])
   const [loadingDonations, setLoadingDonations] = useState(false)
   const [showDonationModal, setShowDonationModal] = useState(false)
+
+  const handleBack = () => {
+    if (from === 'dashboard') {
+      router.push('/clubs/dashboard')
+    } else {
+      router.back()
+    }
+  }
 
   // Load donations from API
   useEffect(() => {
@@ -342,7 +350,7 @@ export default function RequestDetailsPage() {
         <div className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-200/50 shadow-sm">
           <div className="container mx-auto px-4 py-4">
             <div className="flex items-center justify-between">
-              <Button variant="ghost" size="sm" onClick={() => router.back()}>
+              <Button variant="ghost" size="sm" onClick={handleBack}>
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back
               </Button>

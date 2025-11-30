@@ -76,11 +76,9 @@ export class CampRouter extends BaseRouter {
       controller.getCampById
     );
 
-    // GET /api/camps/:id/inventory - Get inventory items for a camp
+    // GET /api/camps/:id/inventory - Get inventory items for a camp (public - needed for viewing camps)
     this.router.get(
       '/:id/inventory',
-      authenticate,
-      requireAuthenticated(),
       controller.getCampInventoryItems
     );
 

@@ -1,23 +1,29 @@
-import React, { useState, useEffect } from 'react';
-import Head from 'next/head';
-import { useRouter } from 'next/router';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
-import { useAuth } from '../../hooks/useAuth';
-import { helpRequestService, donationService, campService, volunteerClubService, membershipService } from '../../services';
-import { IHelpRequest } from '../../types/help-request';
-import { ICamp } from '../../types/camp';
-import { DonationWithDonatorResponseDto } from '@nx-mono-repo-deployment-test/shared/src/dtos/donation/response/donation_with_donator_response_dto';
-import { IVolunteerClub } from '../../types/volunteer-club';
-import { IMembership } from '../../types/membership';
-import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
-import { Button } from '../../components/ui/button';
-import { Input } from '../../components/ui/input';
-import { 
-  Loader2, 
-  Users, 
-  Package, 
-  MapPin, 
-  Search, 
+import React, { useState, useEffect } from 'react'
+import Head from 'next/head'
+import { useRouter } from 'next/router'
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations'
+import { useAuth } from '../../hooks/useAuth'
+import {
+  helpRequestService,
+  donationService,
+  campService,
+  volunteerClubService,
+  membershipService,
+} from '../../services'
+import { IHelpRequest } from '../../types/help-request'
+import { ICamp } from '../../types/camp'
+import { DonationWithDonatorResponseDto } from '@nx-mono-repo-deployment-test/shared/src/dtos/donation/response/donation_with_donator_response_dto'
+import { IVolunteerClub } from '../../types/volunteer-club'
+import { IMembership } from '../../types/membership'
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card'
+import { Button } from '../../components/ui/button'
+import { Input } from '../../components/ui/input'
+import {
+  Loader2,
+  Users,
+  Package,
+  MapPin,
+  Search,
   Filter,
   AlertCircle,
   CheckCircle,
@@ -25,10 +31,10 @@ import {
   Building2,
   Plus,
   XCircle,
-  HandHeart
-} from 'lucide-react';
-import CreateCampDonationModal from '../../components/CreateCampDonationModal';
-import Link from 'next/link';
+  HandHeart,
+} from 'lucide-react'
+import CreateCampDonationModal from '../../components/CreateCampDonationModal'
+import Link from 'next/link'
 
 export default function VolunteerClubDashboard() {
   const router = useRouter();
@@ -37,12 +43,11 @@ export default function VolunteerClubDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [club, setClub] = useState<IVolunteerClub | null>(null);
   const [helpRequests, setHelpRequests] = useState<IHelpRequest[]>([]);
-  const [donations, setDonations] = useState<DonationWithDonatorResponseDto[]>([]);
   const [campDonations, setCampDonations] = useState<DonationWithDonatorResponseDto[]>([]);
   const [camps, setCamps] = useState<ICamp[]>([]);
   const [memberships, setMemberships] = useState<IMembership[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeTab, setActiveTab] = useState<'help-requests' | 'donations' | 'camps' | 'memberships' | 'camp-donations'>('help-requests');
+  const [activeTab, setActiveTab] = useState<'help-requests' | 'camps' | 'memberships' | 'camp-donations'>('help-requests');
   const [reviewingMembershipId, setReviewingMembershipId] = useState<number | null>(null);
   const [acceptingDonationId, setAcceptingDonationId] = useState<number | null>(null);
   const [showCreateDonationModal, setShowCreateDonationModal] = useState(false);
@@ -50,92 +55,74 @@ export default function VolunteerClubDashboard() {
   useEffect(() => {
     // Wait for auth to finish loading before checking
     if (authLoading) {
-      return;
+      return
     }
 
     // Check authentication and role after loading is complete
     if (!isAuthenticated || !isVolunteerClub()) {
-      router.push('/login');
-      return;
+      router.push('/login')
+      return
     }
-    
-    loadDashboardData();
-  }, [isAuthenticated, isVolunteerClub, authLoading, router]);
+
+    loadDashboardData()
+  }, [isAuthenticated, isVolunteerClub, authLoading, router])
 
   const loadDashboardData = async () => {
-    setLoading(true);
+    setLoading(true)
     try {
       // Load club info
-      const clubResponse = await volunteerClubService.getMyClub();
+      const clubResponse = await volunteerClubService.getMyClub()
       if (clubResponse.success && clubResponse.data) {
-        setClub(clubResponse.data);
+        setClub(clubResponse.data)
       }
 
       // Load help requests
-      const helpRequestsResponse = await helpRequestService.getAllHelpRequests();
+      const helpRequestsResponse = await helpRequestService.getAllHelpRequests()
       if (helpRequestsResponse.success && helpRequestsResponse.data) {
-        setHelpRequests(helpRequestsResponse.data);
-      }
-
-      // Load donations (we'll need to get donations from all help requests)
-      // For now, we'll show a summary - in a real implementation, you might want a dedicated endpoint
-      const donationsResponse = await helpRequestService.getAllHelpRequests();
-      if (donationsResponse.success && donationsResponse.data) {
-        // Get donations for each help request
-        const allDonations: DonationWithDonatorResponseDto[] = [];
-        for (const hr of donationsResponse.data.slice(0, 10)) { // Limit to first 10 for performance
-          try {
-            const hrDonations = await donationService.getDonationsByHelpRequestId(hr.id!);
-            if (hrDonations.success && hrDonations.data) {
-              allDonations.push(...hrDonations.data);
-            }
-          } catch (error) {
-            console.error(`Error loading donations for help request ${hr.id}:`, error);
-          }
-        }
-        setDonations(allDonations);
+        setHelpRequests(helpRequestsResponse.data)
       }
 
       // Load camps
-      const campsResponse = await campService.getAllCamps();
+      const campsResponse = await campService.getAllCamps()
       if (campsResponse.success && campsResponse.data) {
-        const clubCamps = clubResponse.success && clubResponse.data
-          ? campsResponse.data.filter(camp => camp.volunteerClubId === clubResponse.data!.id)
-          : [];
-        setCamps(clubCamps);
+        const clubCamps =
+          clubResponse.success && clubResponse.data
+            ? campsResponse.data.filter((camp) => camp.volunteerClubId === clubResponse.data!.id)
+            : []
+        setCamps(clubCamps)
 
         // Load camp donations
-        const allCampDonations: DonationWithDonatorResponseDto[] = [];
+        const allCampDonations: DonationWithDonatorResponseDto[] = []
         for (const camp of clubCamps) {
           try {
-            const campDonations = await donationService.getDonationsByCampId(camp.id!);
+            const campDonations = await donationService.getDonationsByCampId(camp.id!)
             if (campDonations.success && campDonations.data) {
-              allCampDonations.push(...campDonations.data);
+              allCampDonations.push(...campDonations.data)
             }
           } catch (error) {
-            console.error(`Error loading donations for camp ${camp.id}:`, error);
+            console.error(`Error loading donations for camp ${camp.id}:`, error)
           }
         }
-        setCampDonations(allCampDonations);
+        setCampDonations(allCampDonations)
       }
 
       // Load memberships for this club
       if (clubResponse.success && clubResponse.data && clubResponse.data.id) {
-        const membershipsResponse = await membershipService.getClubMemberships(clubResponse.data.id);
+        const membershipsResponse = await membershipService.getClubMemberships(clubResponse.data.id)
         if (membershipsResponse.success && membershipsResponse.data) {
-          setMemberships(membershipsResponse.data);
+          setMemberships(membershipsResponse.data)
         }
       }
     } catch (error) {
-      console.error('Error loading dashboard data:', error);
+      console.error('Error loading dashboard data:', error)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
-  const filteredHelpRequests = helpRequests.filter(hr => {
-    if (!searchTerm) return true;
-    const search = searchTerm.toLowerCase();
+  const filteredHelpRequests = helpRequests.filter((hr) => {
+    if (!searchTerm) return true
+    const search = searchTerm.toLowerCase()
     return (
       hr.shortNote?.toLowerCase().includes(search) ||
       hr.approxArea?.toLowerCase().includes(search) ||
@@ -144,130 +131,122 @@ export default function VolunteerClubDashboard() {
     );
   });
 
-  const filteredDonations = donations.filter(d => {
-    if (!searchTerm) return true;
-    const search = searchTerm.toLowerCase();
-    return (
-      d.donatorName?.toLowerCase().includes(search) ||
-      d.donatorMobileNumber?.toLowerCase().includes(search) ||
-      d.donatorUsername?.toLowerCase().includes(search)
-    );
-  });
-
-  const filteredCamps = camps.filter(c => {
-    if (!searchTerm) return true;
-    const search = searchTerm.toLowerCase();
+  const filteredCamps = camps.filter((c) => {
+    if (!searchTerm) return true
+    const search = searchTerm.toLowerCase()
     return (
       c.name?.toLowerCase().includes(search) ||
       c.location?.toLowerCase().includes(search) ||
       c.shortNote?.toLowerCase().includes(search) ||
       c.description?.toLowerCase().includes(search)
-    );
-  });
+    )
+  })
 
-  const filteredMemberships = memberships.filter(m => {
-    if (!searchTerm) return true;
-    const search = searchTerm.toLowerCase();
-    return (
-      m.status?.toLowerCase().includes(search)
-    );
-  });
+  const filteredMemberships = memberships.filter((m) => {
+    if (!searchTerm) return true
+    const search = searchTerm.toLowerCase()
+    return m.status?.toLowerCase().includes(search)
+  })
 
-  const filteredCampDonations = campDonations.filter(d => {
-    if (!searchTerm) return true;
-    const search = searchTerm.toLowerCase();
+  const filteredCampDonations = campDonations.filter((d) => {
+    if (!searchTerm) return true
+    const search = searchTerm.toLowerCase()
     return (
       d.donatorName?.toLowerCase().includes(search) ||
       d.donatorMobileNumber?.toLowerCase().includes(search) ||
       d.donatorUsername?.toLowerCase().includes(search)
-    );
-  });
+    )
+  })
 
   const handleAcceptCampDonation = async (campId: number, donationId: number) => {
-    setAcceptingDonationId(donationId);
+    setAcceptingDonationId(donationId)
     try {
-      const response = await donationService.acceptCampDonation(campId, donationId);
+      const response = await donationService.acceptCampDonation(campId, donationId)
       if (response.success) {
         // Reload camp donations
         if (club?.id) {
-          const campsResponse = await campService.getAllCamps();
+          const campsResponse = await campService.getAllCamps()
           if (campsResponse.success && campsResponse.data) {
-            const clubCamps = campsResponse.data.filter(camp => camp.volunteerClubId === club.id);
-            const allCampDonations: DonationWithDonatorResponseDto[] = [];
+            const clubCamps = campsResponse.data.filter((camp) => camp.volunteerClubId === club.id)
+            const allCampDonations: DonationWithDonatorResponseDto[] = []
             for (const camp of clubCamps) {
               try {
-                const campDonations = await donationService.getDonationsByCampId(camp.id!);
+                const campDonations = await donationService.getDonationsByCampId(camp.id!)
                 if (campDonations.success && campDonations.data) {
-                  allCampDonations.push(...campDonations.data);
+                  allCampDonations.push(...campDonations.data)
                 }
               } catch (error) {
-                console.error(`Error loading donations for camp ${camp.id}:`, error);
+                console.error(`Error loading donations for camp ${camp.id}:`, error)
               }
             }
-            setCampDonations(allCampDonations);
+            setCampDonations(allCampDonations)
           }
         }
       } else {
-        setError(response.error || 'Failed to accept donation');
+        setError(response.error || 'Failed to accept donation')
       }
     } catch (err) {
-      console.error('Error accepting camp donation:', err);
-      setError('Failed to accept donation');
+      console.error('Error accepting camp donation:', err)
+      setError('Failed to accept donation')
     } finally {
-      setAcceptingDonationId(null);
+      setAcceptingDonationId(null)
     }
-  };
+  }
 
-  const handleReviewMembership = async (membershipId: number, status: 'APPROVED' | 'REJECTED', notes?: string) => {
-    setReviewingMembershipId(membershipId);
+  const handleReviewMembership = async (
+    membershipId: number,
+    status: 'APPROVED' | 'REJECTED',
+    notes?: string
+  ) => {
+    setReviewingMembershipId(membershipId)
     try {
-      const response = await membershipService.reviewMembership(membershipId, { status, notes });
+      const response = await membershipService.reviewMembership(membershipId, { status, notes })
       if (response.success) {
         // Reload memberships
         if (club?.id) {
-          const membershipsResponse = await membershipService.getClubMemberships(club.id);
+          const membershipsResponse = await membershipService.getClubMemberships(club.id)
           if (membershipsResponse.success && membershipsResponse.data) {
-            setMemberships(membershipsResponse.data);
+            setMemberships(membershipsResponse.data)
           }
         }
       } else {
-        setError(response.error || 'Failed to review membership');
+        setError(response.error || 'Failed to review membership')
       }
     } catch (err) {
-      console.error('Error reviewing membership:', err);
-      setError('Failed to review membership');
+      console.error('Error reviewing membership:', err)
+      setError('Failed to review membership')
     } finally {
-      setReviewingMembershipId(null);
+      setReviewingMembershipId(null)
     }
-  };
+  }
 
   const getUrgencyColor = (urgency?: string) => {
     switch (urgency) {
       case 'CRITICAL':
-        return 'bg-red-100 text-red-800 border-red-200';
+        return 'bg-red-100 text-red-800 border-red-200'
       case 'HIGH':
-        return 'bg-orange-100 text-orange-800 border-orange-200';
+        return 'bg-orange-100 text-orange-800 border-orange-200'
       case 'MEDIUM':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200'
       case 'LOW':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
+        return 'bg-blue-100 text-blue-800 border-blue-200'
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return 'bg-gray-100 text-gray-800 border-gray-200'
     }
-  };
+  }
 
   const getStatusColor = (status?: string) => {
     switch (status) {
       case 'COMPLETED':
-        return 'bg-green-100 text-green-800';
+        return 'bg-green-100 text-green-800'
       case 'SCHEDULED':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-blue-100 text-blue-800'
       case 'PENDING':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'bg-yellow-100 text-yellow-800'
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-gray-100 text-gray-800'
     }
-  };
+  }
 
   // Show loading while auth is loading or dashboard data is loading
   if (authLoading || loading) {
@@ -285,12 +264,12 @@ export default function VolunteerClubDashboard() {
           </div>
         </div>
       </>
-    );
+    )
   }
 
   // If not authenticated or not volunteer club, don't render (redirect will happen)
   if (!isAuthenticated || !isVolunteerClub()) {
-    return null;
+    return null
   }
 
   return (
@@ -302,23 +281,25 @@ export default function VolunteerClubDashboard() {
       <div className="min-h-screen bg-gray-50">
         {/* Header */}
         <div className="bg-white shadow-sm border-b">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            <div className="flex items-center justify-between">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">
                   {club?.name || 'Volunteer Club'} Dashboard
                 </h1>
-                <p className="text-gray-600 mt-1">Manage your volunteer activities</p>
+                <p className="text-sm sm:text-base text-gray-600 mt-1">
+                  Manage your volunteer activities
+                </p>
               </div>
-              <div className="flex gap-2">
-                <Link href="/clubs/camps/create">
-                  <Button>
+              <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                <Link href="/clubs/camps/create" className="w-full sm:w-auto">
+                  <Button className="w-full sm:w-auto">
                     <Plus className="w-4 h-4 mr-2" />
                     Create Camp
                   </Button>
                 </Link>
-                <Link href="/clubs/my-club">
-                  <Button variant="outline">
+                <Link href="/clubs/my-club" className="w-full sm:w-auto">
+                  <Button variant="outline" className="w-full sm:w-auto">
                     <Building2 className="w-4 h-4 mr-2" />
                     View Club Info
                   </Button>
@@ -328,62 +309,52 @@ export default function VolunteerClubDashboard() {
           </div>
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
             <Card>
-              <CardContent className="pt-6">
+              <CardContent className="pt-4 sm:pt-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Help Requests</p>
-                    <p className="text-2xl font-bold text-gray-900 mt-1">{helpRequests.length}</p>
-                  </div>
-                  <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
-                    <Users className="w-6 h-6 text-blue-600" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Donations</p>
-                    <p className="text-2xl font-bold text-gray-900 mt-1">{donations.length}</p>
-                  </div>
-                  <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
-                    <Package className="w-6 h-6 text-green-600" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Active Camps</p>
-                    <p className="text-2xl font-bold text-gray-900 mt-1">{camps.length}</p>
-                  </div>
-                  <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center">
-                    <MapPin className="w-6 h-6 text-purple-600" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">Pending Requests</p>
-                    <p className="text-2xl font-bold text-gray-900 mt-1">
-                      {helpRequests.filter(hr => hr.status === 'OPEN').length}
+                    <p className="text-xs sm:text-sm font-medium text-gray-600">Help Requests</p>
+                    <p className="text-xl sm:text-2xl font-bold text-gray-900 mt-1">
+                      {helpRequests.length}
                     </p>
                   </div>
-                  <div className="w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center">
-                    <Clock className="w-6 h-6 text-yellow-600" />
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                    <Users className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="pt-4 sm:pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs sm:text-sm font-medium text-gray-600">Active Camps</p>
+                    <p className="text-xl sm:text-2xl font-bold text-gray-900 mt-1">
+                      {camps.length}
+                    </p>
+                  </div>
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0">
+                    <MapPin className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="pt-4 sm:pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs sm:text-sm font-medium text-gray-600">Pending Requests</p>
+                    <p className="text-xl sm:text-2xl font-bold text-gray-900 mt-1">
+                      {helpRequests.filter((hr) => hr.status === 'OPEN').length}
+                    </p>
+                  </div>
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-yellow-100 flex items-center justify-center flex-shrink-0">
+                    <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-600" />
                   </div>
                 </div>
               </CardContent>
@@ -392,88 +363,84 @@ export default function VolunteerClubDashboard() {
 
           {/* Tabs */}
           <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex space-x-1 border-b border-gray-200">
-                  <button
-                    onClick={() => setActiveTab('help-requests')}
-                    className={`px-4 py-2 font-medium text-sm ${
-                      activeTab === 'help-requests'
-                        ? 'text-blue-600 border-b-2 border-blue-600'
-                        : 'text-gray-600 hover:text-gray-900'
-                    }`}
-                  >
-                    Help Requests
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('donations')}
-                    className={`px-4 py-2 font-medium text-sm ${
-                      activeTab === 'donations'
-                        ? 'text-blue-600 border-b-2 border-blue-600'
-                        : 'text-gray-600 hover:text-gray-900'
-                    }`}
-                  >
-                    Donations
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('camps')}
-                    className={`px-4 py-2 font-medium text-sm ${
-                      activeTab === 'camps'
-                        ? 'text-blue-600 border-b-2 border-blue-600'
-                        : 'text-gray-600 hover:text-gray-900'
-                    }`}
-                  >
-                    Camps
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('memberships')}
-                    className={`px-4 py-2 font-medium text-sm ${
-                      activeTab === 'memberships'
-                        ? 'text-blue-600 border-b-2 border-blue-600'
-                        : 'text-gray-600 hover:text-gray-900'
-                    }`}
-                  >
-                    Memberships
-                    {memberships.filter(m => m.status === 'PENDING').length > 0 && (
-                      <span className="ml-2 px-2 py-0.5 text-xs bg-yellow-100 text-yellow-800 rounded-full">
-                        {memberships.filter(m => m.status === 'PENDING').length}
-                      </span>
-                    )}
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('camp-donations')}
-                    className={`px-4 py-2 font-medium text-sm ${
-                      activeTab === 'camp-donations'
-                        ? 'text-blue-600 border-b-2 border-blue-600'
-                        : 'text-gray-600 hover:text-gray-900'
-                    }`}
-                  >
-                    Camp Donations
-                    {campDonations.filter(d => !d.ownerMarkedCompleted).length > 0 && (
-                      <span className="ml-2 px-2 py-0.5 text-xs bg-yellow-100 text-yellow-800 rounded-full">
-                        {campDonations.filter(d => !d.ownerMarkedCompleted).length}
-                      </span>
-                    )}
-                  </button>
+            <CardHeader className="p-3 sm:p-4 lg:p-6 overflow-hidden">
+              <div className="flex flex-col gap-4 mb-4">
+                <div className="overflow-x-auto scroll-smooth -mx-3 sm:-mx-4 lg:-mx-6 px-3 sm:px-4 lg:px-6" style={{ WebkitOverflowScrolling: 'touch' }}>
+                  <div className="flex space-x-1 border-b border-gray-200 pb-1 pr-6 sm:pr-8 lg:pr-12" style={{ width: 'max-content' }}>
+                    <button
+                      onClick={() => setActiveTab('help-requests')}
+                      className={`px-3 sm:px-4 py-2 font-medium text-xs sm:text-sm whitespace-nowrap flex items-center justify-center flex-shrink-0 ${
+                        activeTab === 'help-requests'
+                          ? 'text-blue-600 border-b-2 border-blue-600'
+                          : 'text-gray-600 hover:text-gray-900'
+                      }`}
+                    >
+                      <Users className="w-5 h-5 sm:hidden" />
+                      <span className="hidden sm:inline">Help Requests</span>
+                    </button>
+                    <button
+                      onClick={() => setActiveTab('camps')}
+                      className={`px-3 sm:px-4 py-2 font-medium text-xs sm:text-sm whitespace-nowrap flex items-center justify-center flex-shrink-0 ${
+                        activeTab === 'camps'
+                          ? 'text-blue-600 border-b-2 border-blue-600'
+                          : 'text-gray-600 hover:text-gray-900'
+                      }`}
+                    >
+                      <MapPin className="w-5 h-5 sm:hidden" />
+                      <span className="hidden sm:inline">Camps</span>
+                    </button>
+                    <button
+                      onClick={() => setActiveTab('memberships')}
+                      className={`px-3 sm:px-4 py-2 font-medium text-xs sm:text-sm whitespace-nowrap flex items-center justify-center flex-shrink-0 ${
+                        activeTab === 'memberships'
+                          ? 'text-blue-600 border-b-2 border-blue-600'
+                          : 'text-gray-600 hover:text-gray-900'
+                      }`}
+                    >
+                      <Building2 className="w-5 h-5 sm:hidden" />
+                      <span className="hidden sm:inline">Memberships</span>
+                      {memberships.filter((m) => m.status === 'PENDING').length > 0 && (
+                        <span className="ml-1.5 sm:ml-2 px-1.5 sm:px-2 py-0.5 text-xs bg-yellow-100 text-yellow-800 rounded-full">
+                          {memberships.filter((m) => m.status === 'PENDING').length}
+                        </span>
+                      )}
+                    </button>
+                    <button
+                      onClick={() => setActiveTab('camp-donations')}
+                      className={`px-3 sm:px-4 py-2 font-medium text-xs sm:text-sm whitespace-nowrap flex items-center justify-center flex-shrink-0 ${
+                        activeTab === 'camp-donations'
+                          ? 'text-blue-600 border-b-2 border-blue-600'
+                          : 'text-gray-600 hover:text-gray-900'
+                      }`}
+                    >
+                      <HandHeart className="w-5 h-5 sm:hidden" />
+                      <span className="hidden sm:inline">Camp Donations</span>
+                      {campDonations.filter((d) => !d.ownerMarkedCompleted).length > 0 && (
+                        <span className="ml-1.5 sm:ml-2 px-1.5 sm:px-2 py-0.5 text-xs bg-yellow-100 text-yellow-800 rounded-full">
+                          {campDonations.filter((d) => !d.ownerMarkedCompleted).length}
+                        </span>
+                      )}
+                    </button>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="relative">
+                <div className="flex items-center gap-2 w-full">
+                  <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                     <Input
                       type="text"
                       placeholder="Search..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10 w-64"
+                      className="pl-10 w-full h-9 sm:h-10 text-sm sm:text-base"
                     />
                   </div>
                 </div>
               </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-4 sm:p-6">
               {error && (
-                <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-                  <p className="text-red-800">{error}</p>
+                <div className="mb-4 p-3 sm:p-4 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-sm sm:text-base text-red-800">{error}</p>
                 </div>
               )}
               {/* Help Requests Tab */}
@@ -487,120 +454,59 @@ export default function VolunteerClubDashboard() {
                   ) : (
                     filteredHelpRequests.map((hr) => (
                       <Card key={hr.id} className="hover:shadow-md transition-shadow">
-                        <CardContent className="pt-6">
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-2">
-                                <h3 className="font-semibold text-lg">{hr.shortNote || 'Help Request'}</h3>
+                        <CardContent className="pt-4 sm:pt-6">
+                          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex flex-wrap items-center gap-2 mb-2">
+                                <h3 className="font-semibold text-base sm:text-lg break-words">
+                                  {hr.shortNote || 'Help Request'}
+                                </h3>
                                 {hr.urgency && (
-                                  <span className={`px-2 py-1 text-xs rounded border ${getUrgencyColor(hr.urgency)}`}>
+                                  <span
+                                    className={`px-2 py-1 text-xs rounded border flex-shrink-0 ${getUrgencyColor(hr.urgency)}`}
+                                  >
                                     {hr.urgency}
                                   </span>
                                 )}
                               </div>
-                              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600 mb-4">
+                              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 text-xs sm:text-sm text-gray-600 mb-4">
                                 {hr.approxArea && (
-                                  <div>
+                                  <div className="break-words">
                                     <span className="font-medium">Area:</span> {hr.approxArea}
                                   </div>
                                 )}
                                 {hr.name && (
-                                  <div>
+                                  <div className="break-words">
                                     <span className="font-medium">Requester:</span> {hr.name}
                                   </div>
                                 )}
                                 {hr.contact && (
-                                  <div>
+                                  <div className="break-words">
                                     <span className="font-medium">Contact:</span> {hr.contact}
                                   </div>
                                 )}
                                 {hr.status && (
                                   <div>
                                     <span className="font-medium">Status:</span>{' '}
-                                    <span className={`px-2 py-1 text-xs rounded ${getStatusColor(hr.status)}`}>
+                                    <span
+                                      className={`px-2 py-1 text-xs rounded ${getStatusColor(hr.status)}`}
+                                    >
                                       {hr.status}
                                     </span>
                                   </div>
                                 )}
                               </div>
                             </div>
-                            <div className="flex flex-col gap-2 ml-4">
-                              <Link href={`/help-requests/${hr.id}`}>
-                                <Button variant="outline" size="sm">
-                                  View Details
-                                </Button>
-                              </Link>
-                              <Link href={`/help-requests/${hr.id}/donations`}>
-                                <Button variant="outline" size="sm">
-                                  View Donations
-                                </Button>
-                              </Link>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))
-                  )}
-                </div>
-              )}
-
-              {/* Donations Tab */}
-              {activeTab === 'donations' && (
-                <div className="space-y-4">
-                  {filteredDonations.length === 0 ? (
-                    <div className="text-center py-12">
-                      <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                      <p className="text-gray-600">No donations found</p>
-                    </div>
-                  ) : (
-                    filteredDonations.map((donation) => (
-                      <Card key={donation.id} className="hover:shadow-md transition-shadow">
-                        <CardContent className="pt-6">
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-2">
-                                <h3 className="font-semibold text-lg">
-                                  Donation from {donation.donatorName || 'Unknown'}
-                                </h3>
-                                {(donation.ownerMarkedCompleted || donation.donatorMarkedCompleted) && (
-                                  <span className={`px-2 py-1 text-xs rounded ${getStatusColor('COMPLETED')}`}>
-                                    Completed
-                                  </span>
-                                )}
-                                {donation.donatorMarkedScheduled && !donation.ownerMarkedCompleted && (
-                                  <span className={`px-2 py-1 text-xs rounded ${getStatusColor('SCHEDULED')}`}>
-                                    Scheduled
-                                  </span>
-                                )}
-                              </div>
-                              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm text-gray-600 mb-4">
-                                {donation.donatorName && (
-                                  <div>
-                                    <span className="font-medium">Donator:</span> {donation.donatorName}
-                                  </div>
-                                )}
-                                {donation.donatorMobileNumber && (
-                                  <div>
-                                    <span className="font-medium">Contact:</span> {donation.donatorMobileNumber}
-                                  </div>
-                                )}
-                                {donation.createdAt && (
-                                  <div>
-                                    <span className="font-medium">Created:</span>{' '}
-                                    {new Date(donation.createdAt).toLocaleDateString()}
-                                  </div>
-                                )}
-                              </div>
-                              {Object.keys(donation.rationItems || {}).length > 0 && (
-                                <p className="text-sm text-gray-600 mb-4">
-                                  <Package className="w-4 h-4 inline mr-1" />
-                                  Items: {Object.entries(donation.rationItems).map(([item, qty]) => `${item} (${qty})`).join(', ')}
-                                </p>
-                              )}
-                            </div>
-                            <div className="flex flex-col gap-2 ml-4">
-                              <Link href={`/help-requests/${donation.helpRequestId}/donations/${donation.id}`}>
-                                <Button variant="outline" size="sm">
+                            <div className="flex flex-row sm:flex-col gap-2 sm:ml-4 flex-shrink-0">
+                              <Link
+                                href={`/request/${hr.id}?from=dashboard`}
+                                className="flex-1 sm:flex-none"
+                              >
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="w-full sm:w-auto text-xs sm:text-sm"
+                                >
                                   View Details
                                 </Button>
                               </Link>
@@ -624,41 +530,53 @@ export default function VolunteerClubDashboard() {
                   ) : (
                     filteredCamps.map((camp) => (
                       <Card key={camp.id} className="hover:shadow-md transition-shadow">
-                        <CardContent className="pt-6">
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-2">
-                                <h3 className="font-semibold text-lg">{camp.name || 'Camp'}</h3>
+                        <CardContent className="pt-4 sm:pt-6">
+                          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex flex-wrap items-center gap-2 mb-2">
+                                <h3 className="font-semibold text-base sm:text-lg break-words">
+                                  {camp.name || 'Camp'}
+                                </h3>
                                 {camp.status && (
-                                  <span className={`px-2 py-1 text-xs rounded ${getStatusColor(camp.status)}`}>
+                                  <span
+                                    className={`px-2 py-1 text-xs rounded flex-shrink-0 ${getStatusColor(camp.status)}`}
+                                  >
                                     {camp.status}
                                   </span>
                                 )}
                               </div>
-                              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm text-gray-600 mb-4">
+                              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 text-xs sm:text-sm text-gray-600 mb-4">
                                 {camp.location && (
-                                  <div>
+                                  <div className="break-words">
                                     <span className="font-medium">Location:</span> {camp.location}
                                   </div>
                                 )}
                                 {camp.peopleRange && (
                                   <div>
-                                    <span className="font-medium">People Range:</span> {camp.peopleRange}
+                                    <span className="font-medium">People Range:</span>{' '}
+                                    {camp.peopleRange}
                                   </div>
                                 )}
                                 {camp.peopleCount && (
                                   <div>
-                                    <span className="font-medium">People Count:</span> {camp.peopleCount}
+                                    <span className="font-medium">People Count:</span>{' '}
+                                    {camp.peopleCount}
                                   </div>
                                 )}
                               </div>
                               {camp.description && (
-                                <p className="text-sm text-gray-600 mb-4">{camp.description}</p>
+                                <p className="text-xs sm:text-sm text-gray-600 mb-4 break-words">
+                                  {camp.description}
+                                </p>
                               )}
                             </div>
-                            <div className="flex flex-col gap-2 ml-4">
-                              <Link href={`/camps/${camp.id}`}>
-                                <Button variant="outline" size="sm">
+                            <div className="flex flex-row sm:flex-col gap-2 sm:ml-4 flex-shrink-0">
+                              <Link href={`/camps/${camp.id}`} className="flex-1 sm:flex-none">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="w-full sm:w-auto text-xs sm:text-sm"
+                                >
                                   View Details
                                 </Button>
                               </Link>
@@ -682,137 +600,173 @@ export default function VolunteerClubDashboard() {
                   ) : (
                     <div className="space-y-4">
                       {/* Pending Memberships */}
-                      {filteredMemberships.filter(m => m.status === 'PENDING').length > 0 && (
+                      {filteredMemberships.filter((m) => m.status === 'PENDING').length > 0 && (
                         <div>
-                          <h3 className="text-lg font-semibold text-gray-900 mb-3">Pending Requests</h3>
-                          {filteredMemberships.filter(m => m.status === 'PENDING').map((membership) => (
-                            <Card key={membership.id} className="mb-4 border-l-4 border-l-yellow-500">
-                              <CardContent className="pt-6">
-                                <div className="flex items-start justify-between">
-                                  <div className="flex-1">
-                                    <div className="flex items-center gap-2 mb-2">
-                                      <h4 className="font-semibold text-lg">Membership Request #{membership.id}</h4>
-                                      <span className="px-2 py-1 text-xs rounded bg-yellow-100 text-yellow-800">
-                                        PENDING
-                                      </span>
-                                    </div>
-                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm text-gray-600 mb-4">
-                                      <div>
-                                        <span className="font-medium">User ID:</span> {membership.userId}
+                          <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3">
+                            Pending Requests
+                          </h3>
+                          {filteredMemberships
+                            .filter((m) => m.status === 'PENDING')
+                            .map((membership) => (
+                              <Card
+                                key={membership.id}
+                                className="mb-4 border-l-4 border-l-yellow-500"
+                              >
+                                <CardContent className="pt-4 sm:pt-6">
+                                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex flex-wrap items-center gap-2 mb-2">
+                                        <h4 className="font-semibold text-base sm:text-lg break-words">
+                                          Membership Request #{membership.id}
+                                        </h4>
+                                        <span className="px-2 py-1 text-xs rounded bg-yellow-100 text-yellow-800 flex-shrink-0">
+                                          PENDING
+                                        </span>
                                       </div>
-                                      {membership.requestedAt && (
+                                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 text-xs sm:text-sm text-gray-600 mb-4">
                                         <div>
-                                          <span className="font-medium">Requested:</span>{' '}
-                                          {new Date(membership.requestedAt).toLocaleDateString()}
+                                          <span className="font-medium">User ID:</span>{' '}
+                                          {membership.userId}
                                         </div>
+                                        {membership.requestedAt && (
+                                          <div>
+                                            <span className="font-medium">Requested:</span>{' '}
+                                            {new Date(membership.requestedAt).toLocaleDateString()}
+                                          </div>
+                                        )}
+                                      </div>
+                                      {membership.notes && (
+                                        <p className="text-xs sm:text-sm text-gray-600 mb-4 break-words">
+                                          {membership.notes}
+                                        </p>
                                       )}
                                     </div>
-                                    {membership.notes && (
-                                      <p className="text-sm text-gray-600 mb-4">{membership.notes}</p>
-                                    )}
+                                    <div className="flex flex-row sm:flex-col gap-2 sm:ml-4 flex-shrink-0">
+                                      <Button
+                                        size="sm"
+                                        onClick={() =>
+                                          handleReviewMembership(membership.id, 'APPROVED')
+                                        }
+                                        disabled={reviewingMembershipId === membership.id}
+                                        className="bg-green-600 hover:bg-green-700 text-white flex-1 sm:flex-none text-xs sm:text-sm"
+                                      >
+                                        {reviewingMembershipId === membership.id ? (
+                                          <>
+                                            <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 animate-spin" />
+                                            Processing...
+                                          </>
+                                        ) : (
+                                          <>
+                                            <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
+                                            Approve
+                                          </>
+                                        )}
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() =>
+                                          handleReviewMembership(membership.id, 'REJECTED')
+                                        }
+                                        disabled={reviewingMembershipId === membership.id}
+                                        className="border-red-300 text-red-700 hover:bg-red-50 flex-1 sm:flex-none text-xs sm:text-sm"
+                                      >
+                                        <XCircle className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
+                                        Reject
+                                      </Button>
+                                    </div>
                                   </div>
-                                  <div className="flex flex-col gap-2 ml-4">
-                                    <Button
-                                      size="sm"
-                                      onClick={() => handleReviewMembership(membership.id, 'APPROVED')}
-                                      disabled={reviewingMembershipId === membership.id}
-                                      className="bg-green-600 hover:bg-green-700 text-white"
-                                    >
-                                      {reviewingMembershipId === membership.id ? (
-                                        <>
-                                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                          Processing...
-                                        </>
-                                      ) : (
-                                        <>
-                                          <CheckCircle className="w-4 h-4 mr-2" />
-                                          Approve
-                                        </>
-                                      )}
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={() => handleReviewMembership(membership.id, 'REJECTED')}
-                                      disabled={reviewingMembershipId === membership.id}
-                                      className="border-red-300 text-red-700 hover:bg-red-50"
-                                    >
-                                      <XCircle className="w-4 h-4 mr-2" />
-                                      Reject
-                                    </Button>
-                                  </div>
-                                </div>
-                              </CardContent>
-                            </Card>
-                          ))}
+                                </CardContent>
+                              </Card>
+                            ))}
                         </div>
                       )}
 
                       {/* Approved Memberships */}
-                      {filteredMemberships.filter(m => m.status === 'APPROVED').length > 0 && (
+                      {filteredMemberships.filter((m) => m.status === 'APPROVED').length > 0 && (
                         <div>
-                          <h3 className="text-lg font-semibold text-gray-900 mb-3">Approved Members</h3>
-                          {filteredMemberships.filter(m => m.status === 'APPROVED').map((membership) => (
-                            <Card key={membership.id} className="mb-4 border-l-4 border-l-green-500">
-                              <CardContent className="pt-6">
-                                <div className="flex items-center justify-between">
-                                  <div className="flex-1">
-                                    <div className="flex items-center gap-2 mb-2">
-                                      <h4 className="font-semibold text-lg">Member #{membership.id}</h4>
-                                      <span className="px-2 py-1 text-xs rounded bg-green-100 text-green-800">
-                                        APPROVED
-                                      </span>
-                                    </div>
-                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm text-gray-600">
-                                      <div>
-                                        <span className="font-medium">User ID:</span> {membership.userId}
+                          <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3">
+                            Approved Members
+                          </h3>
+                          {filteredMemberships
+                            .filter((m) => m.status === 'APPROVED')
+                            .map((membership) => (
+                              <Card
+                                key={membership.id}
+                                className="mb-4 border-l-4 border-l-green-500"
+                              >
+                                <CardContent className="pt-4 sm:pt-6">
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex flex-wrap items-center gap-2 mb-2">
+                                        <h4 className="font-semibold text-base sm:text-lg">
+                                          Member #{membership.id}
+                                        </h4>
+                                        <span className="px-2 py-1 text-xs rounded bg-green-100 text-green-800 flex-shrink-0">
+                                          APPROVED
+                                        </span>
                                       </div>
-                                      {membership.reviewedAt && (
+                                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 text-xs sm:text-sm text-gray-600">
                                         <div>
-                                          <span className="font-medium">Approved:</span>{' '}
-                                          {new Date(membership.reviewedAt).toLocaleDateString()}
+                                          <span className="font-medium">User ID:</span>{' '}
+                                          {membership.userId}
                                         </div>
-                                      )}
+                                        {membership.reviewedAt && (
+                                          <div>
+                                            <span className="font-medium">Approved:</span>{' '}
+                                            {new Date(membership.reviewedAt).toLocaleDateString()}
+                                          </div>
+                                        )}
+                                      </div>
                                     </div>
                                   </div>
-                                </div>
-                              </CardContent>
-                            </Card>
-                          ))}
+                                </CardContent>
+                              </Card>
+                            ))}
                         </div>
                       )}
 
                       {/* Rejected Memberships */}
-                      {filteredMemberships.filter(m => m.status === 'REJECTED').length > 0 && (
+                      {filteredMemberships.filter((m) => m.status === 'REJECTED').length > 0 && (
                         <div>
-                          <h3 className="text-lg font-semibold text-gray-900 mb-3">Rejected Requests</h3>
-                          {filteredMemberships.filter(m => m.status === 'REJECTED').map((membership) => (
-                            <Card key={membership.id} className="mb-4 border-l-4 border-l-red-500">
-                              <CardContent className="pt-6">
-                                <div className="flex items-center justify-between">
-                                  <div className="flex-1">
-                                    <div className="flex items-center gap-2 mb-2">
-                                      <h4 className="font-semibold text-lg">Request #{membership.id}</h4>
-                                      <span className="px-2 py-1 text-xs rounded bg-red-100 text-red-800">
-                                        REJECTED
-                                      </span>
-                                    </div>
-                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm text-gray-600">
-                                      <div>
-                                        <span className="font-medium">User ID:</span> {membership.userId}
+                          <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3">
+                            Rejected Requests
+                          </h3>
+                          {filteredMemberships
+                            .filter((m) => m.status === 'REJECTED')
+                            .map((membership) => (
+                              <Card
+                                key={membership.id}
+                                className="mb-4 border-l-4 border-l-red-500"
+                              >
+                                <CardContent className="pt-4 sm:pt-6">
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex flex-wrap items-center gap-2 mb-2">
+                                        <h4 className="font-semibold text-base sm:text-lg">
+                                          Request #{membership.id}
+                                        </h4>
+                                        <span className="px-2 py-1 text-xs rounded bg-red-100 text-red-800 flex-shrink-0">
+                                          REJECTED
+                                        </span>
                                       </div>
-                                      {membership.reviewedAt && (
+                                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 text-xs sm:text-sm text-gray-600">
                                         <div>
-                                          <span className="font-medium">Rejected:</span>{' '}
-                                          {new Date(membership.reviewedAt).toLocaleDateString()}
+                                          <span className="font-medium">User ID:</span>{' '}
+                                          {membership.userId}
                                         </div>
-                                      )}
+                                        {membership.reviewedAt && (
+                                          <div>
+                                            <span className="font-medium">Rejected:</span>{' '}
+                                            {new Date(membership.reviewedAt).toLocaleDateString()}
+                                          </div>
+                                        )}
+                                      </div>
                                     </div>
                                   </div>
-                                </div>
-                              </CardContent>
-                            </Card>
-                          ))}
+                                </CardContent>
+                              </Card>
+                            ))}
                         </div>
                       )}
                     </div>
@@ -827,7 +781,7 @@ export default function VolunteerClubDashboard() {
                   <div className="flex justify-end mb-4">
                     <Button
                       onClick={() => setShowCreateDonationModal(true)}
-                      className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg"
+                      className="w-full sm:w-auto bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg text-sm sm:text-base"
                     >
                       <HandHeart className="w-4 h-4 mr-2" />
                       Create Camp Donation
@@ -842,135 +796,170 @@ export default function VolunteerClubDashboard() {
                   ) : (
                     <div className="space-y-4">
                       {/* Pending Donations */}
-                      {filteredCampDonations.filter(d => !d.ownerMarkedCompleted).length > 0 && (
+                      {filteredCampDonations.filter((d) => !d.ownerMarkedCompleted).length > 0 && (
                         <div>
-                          <h3 className="text-lg font-semibold text-gray-900 mb-3">Pending Donations</h3>
-                          {filteredCampDonations.filter(d => !d.ownerMarkedCompleted).map((donation) => {
-                            const camp = camps.find(c => c.id === donation.campId);
-                            return (
-                              <Card key={donation.id} className="mb-4 border-l-4 border-l-yellow-500">
-                                <CardContent className="pt-6">
-                                  <div className="flex items-start justify-between">
-                                    <div className="flex-1">
-                                      <div className="flex items-center gap-2 mb-2">
-                                        <h4 className="font-semibold text-lg">
-                                          Donation #{donation.id} - {camp?.name || 'Camp'}
-                                        </h4>
-                                        <span className="px-2 py-1 text-xs rounded bg-yellow-100 text-yellow-800">
-                                          PENDING
-                                        </span>
-                                      </div>
-                                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm text-gray-600 mb-4">
-                                        {donation.donatorName && (
-                                          <div>
-                                            <span className="font-medium">Donator:</span> {donation.donatorName}
-                                          </div>
-                                        )}
-                                        {donation.donatorMobileNumber && (
-                                          <div>
-                                            <span className="font-medium">Contact:</span> {donation.donatorMobileNumber}
-                                          </div>
-                                        )}
-                                        {donation.createdAt && (
-                                          <div>
-                                            <span className="font-medium">Created:</span>{' '}
-                                            {new Date(donation.createdAt).toLocaleDateString()}
-                                          </div>
-                                        )}
-                                      </div>
-                                      {Object.keys(donation.rationItems || {}).length > 0 && (
-                                        <div className="mb-4">
-                                          <p className="text-sm font-medium text-gray-700 mb-2">Items:</p>
-                                          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                                            {Object.entries(donation.rationItems).map(([itemId, qty]) => (
-                                              <div key={itemId} className="bg-gray-50 p-2 rounded text-sm">
-                                                <span className="font-medium">{itemId}:</span> {qty}
-                                              </div>
-                                            ))}
-                                          </div>
+                          <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3">
+                            Pending Donations
+                          </h3>
+                          {filteredCampDonations
+                            .filter((d) => !d.ownerMarkedCompleted)
+                            .map((donation) => {
+                              const camp = camps.find((c) => c.id === donation.campId)
+                              return (
+                                <Card
+                                  key={donation.id}
+                                  className="mb-4 border-l-4 border-l-yellow-500"
+                                >
+                                  <CardContent className="pt-4 sm:pt-6">
+                                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                                      <div className="flex-1 min-w-0">
+                                        <div className="flex flex-wrap items-center gap-2 mb-2">
+                                          <h4 className="font-semibold text-base sm:text-lg break-words">
+                                            Donation #{donation.id} - {camp?.name || 'Camp'}
+                                          </h4>
+                                          <span className="px-2 py-1 text-xs rounded bg-yellow-100 text-yellow-800 flex-shrink-0">
+                                            PENDING
+                                          </span>
                                         </div>
-                                      )}
-                                    </div>
-                                    <div className="flex flex-col gap-2 ml-4">
-                                      {camp && (
-                                        <Button
-                                          size="sm"
-                                          onClick={() => handleAcceptCampDonation(camp.id!, donation.id)}
-                                          disabled={acceptingDonationId === donation.id}
-                                          className="bg-green-600 hover:bg-green-700 text-white"
-                                        >
-                                          {acceptingDonationId === donation.id ? (
-                                            <>
-                                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                              Accepting...
-                                            </>
-                                          ) : (
-                                            <>
-                                              <CheckCircle className="w-4 h-4 mr-2" />
-                                              Accept
-                                            </>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 text-xs sm:text-sm text-gray-600 mb-4">
+                                          {donation.donatorName && (
+                                            <div className="break-words">
+                                              <span className="font-medium">Donator:</span>{' '}
+                                              {donation.donatorName}
+                                            </div>
                                           )}
-                                        </Button>
-                                      )}
+                                          {donation.donatorMobileNumber && (
+                                            <div className="break-words">
+                                              <span className="font-medium">Contact:</span>{' '}
+                                              {donation.donatorMobileNumber}
+                                            </div>
+                                          )}
+                                          {donation.createdAt && (
+                                            <div>
+                                              <span className="font-medium">Created:</span>{' '}
+                                              {new Date(donation.createdAt).toLocaleDateString()}
+                                            </div>
+                                          )}
+                                        </div>
+                                        {Object.keys(donation.rationItems || {}).length > 0 && (
+                                          <div className="mb-4">
+                                            <p className="text-xs sm:text-sm font-medium text-gray-700 mb-2">
+                                              Items:
+                                            </p>
+                                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                              {Object.entries(donation.rationItems).map(
+                                                ([itemId, qty]) => (
+                                                  <div
+                                                    key={itemId}
+                                                    className="bg-gray-50 p-2 rounded text-xs sm:text-sm break-words"
+                                                  >
+                                                    <span className="font-medium">{itemId}:</span>{' '}
+                                                    {qty}
+                                                  </div>
+                                                )
+                                              )}
+                                            </div>
+                                          </div>
+                                        )}
+                                      </div>
+                                      <div className="flex flex-row sm:flex-col gap-2 sm:ml-4 flex-shrink-0">
+                                        {camp && (
+                                          <Button
+                                            size="sm"
+                                            onClick={() =>
+                                              handleAcceptCampDonation(camp.id!, donation.id)
+                                            }
+                                            disabled={acceptingDonationId === donation.id}
+                                            className="bg-green-600 hover:bg-green-700 text-white w-full sm:w-auto text-xs sm:text-sm"
+                                          >
+                                            {acceptingDonationId === donation.id ? (
+                                              <>
+                                                <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 animate-spin" />
+                                                Accepting...
+                                              </>
+                                            ) : (
+                                              <>
+                                                <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
+                                                Accept
+                                              </>
+                                            )}
+                                          </Button>
+                                        )}
+                                      </div>
                                     </div>
-                                  </div>
-                                </CardContent>
-                              </Card>
-                            );
-                          })}
+                                  </CardContent>
+                                </Card>
+                              )
+                            })}
                         </div>
                       )}
 
                       {/* Accepted Donations */}
-                      {filteredCampDonations.filter(d => d.ownerMarkedCompleted).length > 0 && (
+                      {filteredCampDonations.filter((d) => d.ownerMarkedCompleted).length > 0 && (
                         <div>
-                          <h3 className="text-lg font-semibold text-gray-900 mb-3">Accepted Donations</h3>
-                          {filteredCampDonations.filter(d => d.ownerMarkedCompleted).map((donation) => {
-                            const camp = camps.find(c => c.id === donation.campId);
-                            return (
-                              <Card key={donation.id} className="mb-4 border-l-4 border-l-green-500">
-                                <CardContent className="pt-6">
-                                  <div className="flex items-start justify-between">
-                                    <div className="flex-1">
-                                      <div className="flex items-center gap-2 mb-2">
-                                        <h4 className="font-semibold text-lg">
-                                          Donation #{donation.id} - {camp?.name || 'Camp'}
-                                        </h4>
-                                        <span className="px-2 py-1 text-xs rounded bg-green-100 text-green-800">
-                                          ACCEPTED
-                                        </span>
-                                      </div>
-                                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm text-gray-600">
-                                        {donation.donatorName && (
-                                          <div>
-                                            <span className="font-medium">Donator:</span> {donation.donatorName}
-                                          </div>
-                                        )}
-                                        {donation.createdAt && (
-                                          <div>
-                                            <span className="font-medium">Created:</span>{' '}
-                                            {new Date(donation.createdAt).toLocaleDateString()}
-                                          </div>
-                                        )}
-                                      </div>
-                                      {Object.keys(donation.rationItems || {}).length > 0 && (
-                                        <div className="mt-4">
-                                          <p className="text-sm font-medium text-gray-700 mb-2">Items:</p>
-                                          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                                            {Object.entries(donation.rationItems).map(([itemId, qty]) => (
-                                              <div key={itemId} className="bg-gray-50 p-2 rounded text-sm">
-                                                <span className="font-medium">{itemId}:</span> {qty}
-                                              </div>
-                                            ))}
-                                          </div>
+                          <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3">
+                            Accepted Donations
+                          </h3>
+                          {filteredCampDonations
+                            .filter((d) => d.ownerMarkedCompleted)
+                            .map((donation) => {
+                              const camp = camps.find((c) => c.id === donation.campId)
+                              return (
+                                <Card
+                                  key={donation.id}
+                                  className="mb-4 border-l-4 border-l-green-500"
+                                >
+                                  <CardContent className="pt-4 sm:pt-6">
+                                    <div className="flex items-start justify-between">
+                                      <div className="flex-1 min-w-0">
+                                        <div className="flex flex-wrap items-center gap-2 mb-2">
+                                          <h4 className="font-semibold text-base sm:text-lg break-words">
+                                            Donation #{donation.id} - {camp?.name || 'Camp'}
+                                          </h4>
+                                          <span className="px-2 py-1 text-xs rounded bg-green-100 text-green-800 flex-shrink-0">
+                                            ACCEPTED
+                                          </span>
                                         </div>
-                                      )}
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 text-xs sm:text-sm text-gray-600">
+                                          {donation.donatorName && (
+                                            <div className="break-words">
+                                              <span className="font-medium">Donator:</span>{' '}
+                                              {donation.donatorName}
+                                            </div>
+                                          )}
+                                          {donation.createdAt && (
+                                            <div>
+                                              <span className="font-medium">Created:</span>{' '}
+                                              {new Date(donation.createdAt).toLocaleDateString()}
+                                            </div>
+                                          )}
+                                        </div>
+                                        {Object.keys(donation.rationItems || {}).length > 0 && (
+                                          <div className="mt-4">
+                                            <p className="text-xs sm:text-sm font-medium text-gray-700 mb-2">
+                                              Items:
+                                            </p>
+                                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                              {Object.entries(donation.rationItems).map(
+                                                ([itemId, qty]) => (
+                                                  <div
+                                                    key={itemId}
+                                                    className="bg-gray-50 p-2 rounded text-xs sm:text-sm break-words"
+                                                  >
+                                                    <span className="font-medium">{itemId}:</span>{' '}
+                                                    {qty}
+                                                  </div>
+                                                )
+                                              )}
+                                            </div>
+                                          </div>
+                                        )}
+                                      </div>
                                     </div>
-                                  </div>
-                                </CardContent>
-                              </Card>
-                            );
-                          })}
+                                  </CardContent>
+                                </Card>
+                              )
+                            })}
                         </div>
                       )}
                     </div>
@@ -990,12 +979,12 @@ export default function VolunteerClubDashboard() {
           onClose={() => setShowCreateDonationModal(false)}
           currentUserId={user?.id}
           onDonationCreated={async () => {
-            await loadDashboardData();
+            await loadDashboardData()
           }}
         />
       )}
     </>
-  );
+  )
 }
 
 export async function getStaticProps({ locale }: { locale: string }) {
@@ -1003,6 +992,5 @@ export async function getStaticProps({ locale }: { locale: string }) {
     props: {
       ...(await serverSideTranslations(locale || 'en', ['common'])),
     },
-  };
+  }
 }
-

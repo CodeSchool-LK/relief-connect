@@ -14,6 +14,10 @@ import RefreshTokenModel from './refresh-token.model';
 import DonationModel from './donation.model';
 import VolunteerClubModel from './volunteer-club.model';
 import UserVolunteerClubMembershipModel from './user-volunteer-club-membership.model';
+import CampDropOffLocationModel from './camp-drop-off-location.model';
+import CampItemModel from './camp-item.model';
+import CampHelpRequestModel from './camp-help-request.model';
+import CampDonationModel from './camp-donation.model';
 
 /**
  * Initialize model associations here
@@ -90,6 +94,54 @@ export const initializeAssociations = (): void => {
     foreignKey: UserVolunteerClubMembershipModel.MEMBERSHIP_REVIEWED_BY, 
     as: 'reviewedMemberships' 
   });
+
+  // VolunteerClub-Camp association
+  VolunteerClubModel.hasMany(CampModel, {
+    foreignKey: CampModel.CAMP_VOLUNTEER_CLUB_ID,
+    as: 'camps'
+  });
+
+  // Camp-DropOffLocation association
+  CampModel.hasMany(CampDropOffLocationModel, {
+    foreignKey: CampDropOffLocationModel.LOCATION_CAMP_ID,
+    as: 'dropOffLocations'
+  });
+
+  // Camp-Item association
+  CampModel.hasMany(CampItemModel, {
+    foreignKey: CampItemModel.ITEM_CAMP_ID,
+    as: 'items'
+  });
+
+  // Camp-HelpRequest association (many-to-many)
+  CampModel.belongsToMany(HelpRequestModel, {
+    through: CampHelpRequestModel,
+    foreignKey: CampHelpRequestModel.CAMP_ID,
+    otherKey: CampHelpRequestModel.HELP_REQUEST_ID,
+    as: 'helpRequests'
+  });
+
+  HelpRequestModel.belongsToMany(CampModel, {
+    through: CampHelpRequestModel,
+    foreignKey: CampHelpRequestModel.HELP_REQUEST_ID,
+    otherKey: CampHelpRequestModel.CAMP_ID,
+    as: 'camps'
+  });
+
+  // Camp-Donation association (many-to-many)
+  CampModel.belongsToMany(DonationModel, {
+    through: CampDonationModel,
+    foreignKey: CampDonationModel.CAMP_ID,
+    otherKey: CampDonationModel.DONATION_ID,
+    as: 'donations'
+  });
+
+  DonationModel.belongsToMany(CampModel, {
+    through: CampDonationModel,
+    foreignKey: CampDonationModel.DONATION_ID,
+    otherKey: CampDonationModel.CAMP_ID,
+    as: 'camps'
+  });
 };
 
 // Export individual models (constants are accessible via ItemModel.TABLE_NAME, etc.)
@@ -102,6 +154,10 @@ export { default as RefreshTokenModel } from './refresh-token.model';
 export { default as DonationModel } from './donation.model';
 export { default as VolunteerClubModel } from './volunteer-club.model';
 export { default as UserVolunteerClubMembershipModel } from './user-volunteer-club-membership.model';
+export { default as CampDropOffLocationModel } from './camp-drop-off-location.model';
+export { default as CampItemModel } from './camp-item.model';
+export { default as CampHelpRequestModel } from './camp-help-request.model';
+export { default as CampDonationModel } from './camp-donation.model';
 
 // Export sequelize instance
 export { sequelize };
@@ -117,7 +173,10 @@ export const models = {
   Donation: DonationModel,
   VolunteerClub: VolunteerClubModel,
   UserVolunteerClubMembership: UserVolunteerClubMembershipModel,
-  // Add more models here
+  CampDropOffLocation: CampDropOffLocationModel,
+  CampItem: CampItemModel,
+  CampHelpRequest: CampHelpRequestModel,
+  CampDonation: CampDonationModel,
 };
 
 export default models;

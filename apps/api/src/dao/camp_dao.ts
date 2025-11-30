@@ -75,7 +75,7 @@ class CampDao {
     }
   }
 
-  public async create(createCampDto: CreateCampDto): Promise<ICamp> {
+  public async create(createCampDto: CreateCampDto, volunteerClubId?: number): Promise<ICamp> {
     try {
       const camp = await CampModel.create({
         [CampModel.CAMP_LAT]: createCampDto.lat,
@@ -83,14 +83,48 @@ class CampDao {
         [CampModel.CAMP_TYPE]: createCampDto.campType,
         [CampModel.CAMP_NAME]: createCampDto.name,
         [CampModel.CAMP_PEOPLE_RANGE]: createCampDto.peopleRange,
+        [CampModel.CAMP_PEOPLE_COUNT]: createCampDto.peopleCount,
         [CampModel.CAMP_NEEDS]: createCampDto.needs,
         [CampModel.CAMP_SHORT_NOTE]: createCampDto.shortNote,
+        [CampModel.CAMP_DESCRIPTION]: createCampDto.description,
+        [CampModel.CAMP_LOCATION]: createCampDto.location,
         [CampModel.CAMP_CONTACT_TYPE]: createCampDto.contactType,
         [CampModel.CAMP_CONTACT]: createCampDto.contact,
+        [CampModel.CAMP_VOLUNTEER_CLUB_ID]: volunteerClubId,
       });
       return camp.toJSON() as ICamp;
     } catch (error) {
       console.error('Error in CampDao.create:', error);
+      throw error;
+    }
+  }
+
+  public async update(id: number, updateData: Partial<ICamp>): Promise<ICamp | null> {
+    try {
+      const camp = await CampModel.findByPk(id);
+      if (!camp) {
+        return null;
+      }
+
+      const updateFields: any = {};
+      if (updateData.lat !== undefined) updateFields[CampModel.CAMP_LAT] = updateData.lat;
+      if (updateData.lng !== undefined) updateFields[CampModel.CAMP_LNG] = updateData.lng;
+      if (updateData.campType !== undefined) updateFields[CampModel.CAMP_TYPE] = updateData.campType;
+      if (updateData.name !== undefined) updateFields[CampModel.CAMP_NAME] = updateData.name;
+      if (updateData.peopleRange !== undefined) updateFields[CampModel.CAMP_PEOPLE_RANGE] = updateData.peopleRange;
+      if (updateData.peopleCount !== undefined) updateFields[CampModel.CAMP_PEOPLE_COUNT] = updateData.peopleCount;
+      if (updateData.needs !== undefined) updateFields[CampModel.CAMP_NEEDS] = updateData.needs;
+      if (updateData.shortNote !== undefined) updateFields[CampModel.CAMP_SHORT_NOTE] = updateData.shortNote;
+      if (updateData.description !== undefined) updateFields[CampModel.CAMP_DESCRIPTION] = updateData.description;
+      if (updateData.location !== undefined) updateFields[CampModel.CAMP_LOCATION] = updateData.location;
+      if (updateData.contactType !== undefined) updateFields[CampModel.CAMP_CONTACT_TYPE] = updateData.contactType;
+      if (updateData.contact !== undefined) updateFields[CampModel.CAMP_CONTACT] = updateData.contact;
+      if (updateData.status !== undefined) updateFields[CampModel.CAMP_STATUS] = updateData.status;
+
+      await camp.update(updateFields);
+      return camp.toJSON() as ICamp;
+    } catch (error) {
+      console.error(`Error in CampDao.update (${id}):`, error);
       throw error;
     }
   }

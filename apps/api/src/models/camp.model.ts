@@ -1,6 +1,7 @@
-import { Table, Column, Model, DataType, CreatedAt, UpdatedAt, PrimaryKey, AutoIncrement } from 'sequelize-typescript';
+import { Table, Column, Model, DataType, CreatedAt, UpdatedAt, PrimaryKey, AutoIncrement, ForeignKey, BelongsTo, HasMany } from 'sequelize-typescript';
 import { ICamp } from '@nx-mono-repo-deployment-test/shared/src/interfaces/camp/ICamp';
-import { CampType, PeopleRange, CampNeed, ContactType } from '@nx-mono-repo-deployment-test/shared/src/enums';
+import { CampType, PeopleRange, CampNeed, ContactType, CampStatus } from '@nx-mono-repo-deployment-test/shared/src/enums';
+import VolunteerClubModel from './volunteer-club.model';
 
 @Table({
   tableName: CampModel.TABLE_NAME,
@@ -19,6 +20,11 @@ export default class CampModel extends Model<ICamp> implements ICamp {
   public static readonly CAMP_SHORT_NOTE = 'shortNote';
   public static readonly CAMP_CONTACT_TYPE = 'contactType';
   public static readonly CAMP_CONTACT = 'contact';
+  public static readonly CAMP_VOLUNTEER_CLUB_ID = 'volunteerClubId';
+  public static readonly CAMP_PEOPLE_COUNT = 'peopleCount';
+  public static readonly CAMP_DESCRIPTION = 'description';
+  public static readonly CAMP_LOCATION = 'location';
+  public static readonly CAMP_STATUS = 'status';
   public static readonly CAMP_CREATED_AT = 'createdAt';
   public static readonly CAMP_UPDATED_AT = 'updatedAt';
 
@@ -98,6 +104,46 @@ export default class CampModel extends Model<ICamp> implements ICamp {
     field: CampModel.CAMP_CONTACT,
   })
   contact?: string;
+
+  @ForeignKey(() => VolunteerClubModel)
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: true,
+    field: CampModel.CAMP_VOLUNTEER_CLUB_ID,
+  })
+  volunteerClubId?: number;
+
+  @BelongsTo(() => VolunteerClubModel)
+  volunteerClub?: VolunteerClubModel;
+
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: true,
+    field: CampModel.CAMP_PEOPLE_COUNT,
+  })
+  peopleCount?: number;
+
+  @Column({
+    type: DataType.TEXT,
+    allowNull: true,
+    field: CampModel.CAMP_DESCRIPTION,
+  })
+  description?: string;
+
+  @Column({
+    type: DataType.STRING(500),
+    allowNull: true,
+    field: CampModel.CAMP_LOCATION,
+  })
+  location?: string;
+
+  @Column({
+    type: DataType.STRING(20),
+    allowNull: false,
+    defaultValue: CampStatus.ACTIVE,
+    field: CampModel.CAMP_STATUS,
+  })
+  status!: CampStatus;
 
   @CreatedAt
   @Column({

@@ -8,9 +8,12 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ArrowLeft, User } from 'lucide-react'
 import apiClient from '../services/api-client'
+import { useAuth } from '../hooks/useAuth'
+import { UserRole } from '../types/user'
 
 export default function LoginPage() {
   const router = useRouter()
+  const { login: authLogin } = useAuth()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -65,19 +68,27 @@ export default function LoginPage() {
       console.log('Login response:', response)
 
       if (response.success && response.data) {
-        // Store tokens using apiClient.setTokens()
-        apiClient.setTokens(response.data.accessToken, response.data.refreshToken)
-
-        // Store user info
-        const userData = {
-          name: response.data.user.username,
-          identifier: response.data.user.username,
-          loggedIn: true,
-        }
-        localStorage.setItem('donor_user', JSON.stringify(userData))
+        // Update auth context - cast role to UserRole type
+        authLogin(
+          response.data.accessToken,
+          response.data.refreshToken,
+          {
+            ...response.data.user,
+            role: response.data.user.role as UserRole,
+          }
+        )
         
         setLoading(false)
-        router.push('/')
+        
+        // Redirect based on user role
+        const userRole = response.data.user.role
+        if (userRole === 'ADMIN' || userRole === 'SYSTEM_ADMINISTRATOR') {
+          router.push('/admin/dashboard')
+        } else if (userRole === 'VOLUNTEER_CLUB') {
+          router.push('/clubs/dashboard')
+        } else {
+          router.push('/')
+        }
       } else {
         // Handle validation errors
         let errorMessage = response.error || 'Login failed. Please try again.'

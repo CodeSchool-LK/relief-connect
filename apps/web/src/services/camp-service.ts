@@ -53,6 +53,46 @@ class CampService {
   }
 
   /**
+   * Get a single camp by ID
+   */
+  public async getCampById(id: number): Promise<IApiResponse<CampResponseDto>> {
+    try {
+      const response = await apiClient.get<IApiResponse<CampResponseDto>>(
+        `${this.basePath}/${id}`
+      );
+      return response;
+    } catch (error) {
+      console.error('Error in CampService.getCampById:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to fetch camp',
+      };
+    }
+  }
+
+  /**
+   * Update an existing camp
+   */
+  public async updateCamp(
+    id: number,
+    updateCampDto: Partial<ICreateCamp>
+  ): Promise<IApiResponse<CampResponseDto>> {
+    try {
+      const response = await apiClient.put<IApiResponse<CampResponseDto>>(
+        `${this.basePath}/${id}`,
+        updateCampDto
+      );
+      return response;
+    } catch (error) {
+      console.error('Error in CampService.updateCamp:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to update camp',
+      };
+    }
+  }
+
+  /**
    * Create a new camp
    */
   public async createCamp(

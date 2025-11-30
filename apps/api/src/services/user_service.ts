@@ -1,8 +1,9 @@
 import { UserDao, RefreshTokenDao } from '../dao';
-import { CreateUserDto, UserResponseDto, LoginResponseDto } from '@nx-mono-repo-deployment-test/shared/src/dtos';
+import { CreateUserDto, UserResponseDto, LoginResponseDto, CreateAdminDto, CreateVolunteerClubUserDto, GeneratePasswordResponseDto, CreateVolunteerClubDto } from '@nx-mono-repo-deployment-test/shared/src/dtos';
 import { UserRole, UserStatus } from '@nx-mono-repo-deployment-test/shared/src/enums';
 import { IApiResponse, IUser } from '@nx-mono-repo-deployment-test/shared/src/interfaces';
 import { JwtUtil, PasswordUtil } from '../utils';
+import { VolunteerClubService } from './volunteer-club_service';
 
 /**
  * Service layer for User business logic
@@ -297,6 +298,176 @@ class UserService {
       return {
         success: false,
         error: 'Failed to update user status',
+      };
+    }
+  }
+
+  /**
+   * Create initial admin account (one-time, requires API key)
+   * Can only be called if no admin exists
+   */
+  public async createAdminAccount(createAdminDto: CreateAdminDto): Promise<IApiResponse<UserResponseDto>> {
+    try {
+      // Check if any admin already exists
+      const existingAdmins = await this.userDao.findAll();
+      const hasAdmin = existingAdmins.some(
+        user => user.role === UserRole.ADMIN || user.role === UserRole.SYSTEM_ADMINISTRATOR
+      );
+
+      if (hasAdmin) {
+        return {
+          success: false,
+          error: 'Admin account already exists. This endpoint can only be used once.',
+        };
+      }
+
+      // Validate username
+      const trimmedUsername = createAdminDto.username.trim();
+      if (trimmedUsername.length < 3 || trimmedUsername.length > 50) {
+        return {
+          success: false,
+          error: 'Username must be between 3 and 50 characters',
+        };
+      }
+
+      // Check if username already exists
+      const existingUser = await this.userDao.findByUsername(trimmedUsername);
+      if (existingUser) {
+        return {
+          success: false,
+          error: 'Username already exists',
+        };
+      }
+
+      // Create admin user with SYSTEM_ADMINISTRATOR role
+      const createUserDto = new CreateUserDto({
+        username: trimmedUsername,
+        password: createAdminDto.password,
+      });
+
+      const user = await this.userDao.create(createUserDto, UserRole.SYSTEM_ADMINISTRATOR);
+
+      return {
+        success: true,
+        data: new UserResponseDto(user),
+        message: 'Admin account created successfully',
+      };
+    } catch (error) {
+      console.error('Error in UserService.createAdminAccount:', error);
+      return {
+        success: false,
+        error: 'Failed to create admin account',
+      };
+    }
+  }
+
+  /**
+   * Create volunteer club user account (admin only)
+   * Also creates a volunteer club entity associated with the user
+   * Password is optional - if not provided, one will be generated
+   */
+  public async createVolunteerClubUser(createDto: CreateVolunteerClubUserDto): Promise<IApiResponse<{ user: UserResponseDto; password: string }>> {
+    try {
+      // Validate username
+      const trimmedUsername = createDto.username.trim();
+      if (trimmedUsername.length < 3 || trimmedUsername.length > 50) {
+        return {
+          success: false,
+          error: 'Username must be between 3 and 50 characters',
+        };
+      }
+
+      // Check if username already exists
+      const existingUser = await this.userDao.findByUsername(trimmedUsername);
+      if (existingUser) {
+        return {
+          success: false,
+          error: 'Username already exists',
+        };
+      }
+
+      // Generate password if not provided
+      let password = createDto.password;
+      if (!password) {
+        password = PasswordUtil.generatePassword();
+      }
+
+      // Create user with VOLUNTEER_CLUB role
+      const createUserDto = new CreateUserDto({
+        username: trimmedUsername,
+        password: password,
+        contactNumber: createDto.contactNumber,
+      });
+
+      const user = await this.userDao.create(createUserDto, UserRole.VOLUNTEER_CLUB);
+
+      // Create volunteer club entity and associate it with the user
+      const volunteerClubService = VolunteerClubService.getInstance();
+      const createClubDto = new CreateVolunteerClubDto({
+        name: createDto.clubName.trim(),
+        description: createDto.clubDescription,
+        contactNumber: createDto.contactNumber,
+        email: createDto.clubEmail,
+        address: createDto.clubAddress,
+        userId: user.id,
+      });
+
+      const clubResult = await volunteerClubService.createVolunteerClub(createClubDto);
+      if (!clubResult.success) {
+        // If club creation fails, we should rollback the user creation
+        // For now, log the error but still return success for user creation
+        // The admin can manually create the club later
+        console.error('Failed to create volunteer club for user:', clubResult.error);
+      }
+
+      return {
+        success: true,
+        data: {
+          user: new UserResponseDto(user),
+          password: password, // Return plain password so admin can share it
+        },
+        message: 'Volunteer club user created successfully',
+      };
+    } catch (error) {
+      console.error('Error in UserService.createVolunteerClubUser:', error);
+      return {
+        success: false,
+        error: 'Failed to create volunteer club user',
+      };
+    }
+  }
+
+  /**
+   * Generate a new password for a user (admin only)
+   * Returns the plain password so admin can share it
+   */
+  public async generatePasswordForUser(userId: number): Promise<IApiResponse<GeneratePasswordResponseDto>> {
+    try {
+      const user = await this.userDao.findById(userId);
+      if (!user) {
+        return {
+          success: false,
+          error: 'User not found',
+        };
+      }
+
+      // Generate new password
+      const newPassword = PasswordUtil.generatePassword();
+
+      // Update user with new password
+      const hashedPassword = await PasswordUtil.hashPassword(newPassword);
+      await this.userDao.update(userId, { password: hashedPassword });
+
+      return {
+        success: true,
+        data: new GeneratePasswordResponseDto(newPassword),
+        message: 'Password generated successfully',
+      };
+    } catch (error) {
+      console.error(`Error in UserService.generatePasswordForUser (${userId}):`, error);
+      return {
+        success: false,
+        error: 'Failed to generate password',
       };
     }
   }

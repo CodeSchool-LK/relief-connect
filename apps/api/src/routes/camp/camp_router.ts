@@ -1,8 +1,11 @@
 import { BaseRouter } from '../common/base_router';
 import { CampController } from '../../controllers';
+import { DonationController } from '../../controllers';
+import { DonationService } from '../../services';
 import { CampService } from '../../services';
-import { ValidationMiddleware, authenticate, requireVolunteerClub, requireAuthenticated } from '../../middleware';
+import { ValidationMiddleware, authenticate, requireVolunteerClub, requireAuthenticated, requireAdminOrVolunteerClub } from '../../middleware';
 import { CreateCampDto, UpdateCampDto } from '@nx-mono-repo-deployment-test/shared/src/dtos/camp/request';
+import { CreateCampDonationDto } from '@nx-mono-repo-deployment-test/shared/src/dtos/donation/request/create_camp_donation_dto';
 
 // Route path constants
 const CAMP_BASE_PATH = '/camps'; // Full path: /api/camps (api prefix added by RouterManager)
@@ -19,6 +22,7 @@ const CAMP_BASE_PATH = '/camps'; // Full path: /api/camps (api prefix added by R
  */
 export class CampRouter extends BaseRouter {
   private campController!: CampController;
+  private donationController!: DonationController;
 
   constructor() {
     // Call parent constructor first (this will call initializeRoutes)
@@ -34,6 +38,17 @@ export class CampRouter extends BaseRouter {
       this.campController = new CampController(campService);
     }
     return this.campController;
+  }
+
+  /**
+   * Get or create the donation controller instance (lazy initialization)
+   */
+  private getDonationController(): DonationController {
+    if (!this.donationController) {
+      const donationService = DonationService.getInstance();
+      this.donationController = new DonationController(donationService);
+    }
+    return this.donationController;
   }
 
   /**
@@ -57,6 +72,14 @@ export class CampRouter extends BaseRouter {
       controller.getCampById
     );
 
+    // GET /api/camps/:id/inventory - Get inventory items for a camp
+    this.router.get(
+      '/:id/inventory',
+      authenticate,
+      requireAuthenticated(),
+      controller.getCampInventoryItems
+    );
+
     // PUT /api/camps/:id - Update an existing camp (requires authentication - only accessible by admins or owning volunteer club)
     this.router.put(
       '/:id',
@@ -73,6 +96,34 @@ export class CampRouter extends BaseRouter {
       requireVolunteerClub(),
       ValidationMiddleware.body(CreateCampDto),
       controller.createCamp
+    );
+
+    // Camp donation routes (nested under camps)
+    const donationController = this.getDonationController();
+
+    // GET /api/camps/:campId/donations - Get all donations for a camp
+    this.router.get(
+      '/:campId/donations',
+      authenticate,
+      requireAuthenticated(),
+      donationController.getDonationsByCampId
+    );
+
+    // POST /api/camps/:campId/donations - Create a new donation for a camp (requires authentication)
+    this.router.post(
+      '/:campId/donations',
+      authenticate,
+      requireAuthenticated(),
+      ValidationMiddleware.body(CreateCampDonationDto),
+      donationController.createCampDonation
+    );
+
+    // PUT /api/camps/:campId/donations/:donationId/accept - Accept a camp donation (club admin only)
+    this.router.put(
+      '/:campId/donations/:donationId/accept',
+      authenticate,
+      requireAdminOrVolunteerClub(),
+      donationController.acceptCampDonation
     );
   }
 
@@ -92,7 +143,10 @@ export class CampRouter extends BaseRouter {
     // Note: Full paths will be /api/camps (api prefix added by RouterManager)
     return [
       { path: CAMP_BASE_PATH, methods: ['GET', 'POST'] },
-      { path: `${CAMP_BASE_PATH}/:id`, methods: ['GET', 'PUT'] }
+      { path: `${CAMP_BASE_PATH}/:id`, methods: ['GET', 'PUT'] },
+      { path: `${CAMP_BASE_PATH}/:id/inventory`, methods: ['GET'] },
+      { path: `${CAMP_BASE_PATH}/:campId/donations`, methods: ['GET', 'POST'] },
+      { path: `${CAMP_BASE_PATH}/:campId/donations/:donationId/accept`, methods: ['PUT'] }
     ];
   }
 

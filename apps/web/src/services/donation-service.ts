@@ -1,6 +1,7 @@
 import apiClient from './api-client';
 import { IApiResponse } from '@nx-mono-repo-deployment-test/shared/src/interfaces';
 import { ICreateDonation } from '@nx-mono-repo-deployment-test/shared/src/interfaces/donation/ICreateDonation';
+import { ICreateCampDonation } from '@nx-mono-repo-deployment-test/shared/src/interfaces/donation/ICreateCampDonation';
 import { DonationWithDonatorResponseDto } from '@nx-mono-repo-deployment-test/shared/src/dtos/donation/response/donation_with_donator_response_dto';
 import { DonationResponseDto } from '@nx-mono-repo-deployment-test/shared/src/dtos/donation/response/donation_response_dto';
 import { DonationWithHelpRequestResponseDto } from '@nx-mono-repo-deployment-test/shared/src/dtos/donation/response/donation_with_help_request_response_dto';
@@ -173,6 +174,68 @@ class DonationService {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Failed to fetch my donations',
+      };
+    }
+  }
+
+  /**
+   * Get all donations for a camp
+   */
+  public async getDonationsByCampId(campId: number): Promise<IApiResponse<DonationWithDonatorResponseDto[]>> {
+    try {
+      const response = await apiClient.get<IApiResponse<DonationWithDonatorResponseDto[]>>(
+        `/api/camps/${campId}/donations`
+      );
+      return response;
+    } catch (error) {
+      console.error(`Error in DonationService.getDonationsByCampId (${campId}):`, error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to retrieve camp donations',
+      };
+    }
+  }
+
+  /**
+   * Create a new camp donation
+   */
+  public async createCampDonation(
+    campId: number,
+    createCampDonationDto: ICreateCampDonation
+  ): Promise<IApiResponse<DonationResponseDto>> {
+    try {
+      const response = await apiClient.post<IApiResponse<DonationResponseDto>>(
+        `/api/camps/${campId}/donations`,
+        createCampDonationDto
+      );
+      return response;
+    } catch (error) {
+      console.error('Error in DonationService.createCampDonation:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to create camp donation',
+      };
+    }
+  }
+
+  /**
+   * Accept a camp donation (club admin only)
+   */
+  public async acceptCampDonation(
+    campId: number,
+    donationId: number
+  ): Promise<IApiResponse<DonationResponseDto>> {
+    try {
+      const response = await apiClient.put<IApiResponse<DonationResponseDto>>(
+        `/api/camps/${campId}/donations/${donationId}/accept`,
+        {}
+      );
+      return response;
+    } catch (error) {
+      console.error(`Error in DonationService.acceptCampDonation (${donationId}):`, error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to accept camp donation',
       };
     }
   }

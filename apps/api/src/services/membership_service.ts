@@ -237,9 +237,10 @@ class MembershipService {
   /**
    * Get membership by ID (with authorization check)
    */
-  public async getMembershipById(id: number, requesterId: number): Promise<IApiResponse<MembershipResponseDto>> {
+  public async getMembershipById(id: number, requesterId: number , isClubAdmin?: boolean): Promise<IApiResponse<MembershipResponseDto>> {
     try {
       const membership = await this.membershipDao.findById(id);
+      console.log('membership', membership);
       if (!membership) {
         return {
           success: false,
@@ -250,7 +251,7 @@ class MembershipService {
       // User can view their own membership, or if they're admin/club admin
       // For now, allow user to view their own membership
       // Authorization for club admins will be handled at controller level
-      if (membership.userId !== requesterId) {
+      if (!isClubAdmin && membership.userId !== requesterId) {
         // Check if requester is club admin or system admin (handled at controller level)
         // For now, return error - controller will check permissions
         return {

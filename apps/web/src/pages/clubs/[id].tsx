@@ -187,8 +187,15 @@ export default function ClubDetailPage() {
                       <p className="text-sm text-gray-600 mt-1">Your request is being reviewed.</p>
                     </div>
                   ) : membership.status === 'APPROVED' ? (
-                    <div className="text-center py-2">
-                      <p className="text-green-600 font-medium">You are a member of this club</p>
+                    <div className="space-y-2">
+                      <div className="text-center py-2">
+                        <p className="text-green-600 font-medium">You are a member of this club</p>
+                      </div>
+                      <Link href={`/clubs/${club.id}/camps`}>
+                        <Button className="w-full" variant="default">
+                          View Camps & Inventory
+                        </Button>
+                      </Link>
                     </div>
                   ) : (
                     <Button onClick={handleRequestJoin} disabled={requesting} variant="outline" className="w-full">

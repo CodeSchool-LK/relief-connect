@@ -118,7 +118,10 @@ export default function MyRequestsPage() {
           const response = await donationService.getMyDonations()
           console.log('[MyRequestsPage] My donations response:', response)
           if (response.success && response.data) {
-            const userDonations = response.data.map((donation): DonorRequest => {
+            // Filter out camp donations - only show help request donations
+            const helpRequestDonations = response.data.filter(donation => donation.helpRequestId !== undefined);
+            
+            const userDonations = helpRequestDonations.map((donation): DonorRequest => {
               const helpRequest = donation.helpRequest
               
               // Convert rationItems object to readable string
@@ -141,7 +144,7 @@ export default function MyRequestsPage() {
               
               return {
                 id: donation.id,
-                requestId: donation.helpRequestId,
+                requestId: donation.helpRequestId!,
                 requestTitle: helpRequest?.name || helpRequest?.shortNote?.split(',')[0]?.replace('Name:', '').trim() || `Request #${donation.helpRequestId}`,
                 location: helpRequest?.approxArea || 'Unknown',
                 category: HelpRequestCategory.OTHER, // Category not available in DTO
@@ -241,7 +244,10 @@ export default function MyRequestsPage() {
         try {
           const response = await donationService.getMyDonations()
           if (response.success && response.data) {
-            const userDonations = response.data.map((donation): DonorRequest => {
+            // Filter out camp donations - only show help request donations
+            const helpRequestDonations = response.data.filter(donation => donation.helpRequestId !== undefined);
+            
+            const userDonations = helpRequestDonations.map((donation): DonorRequest => {
               const helpRequest = donation.helpRequest
               
               const itemsList = Object.entries(donation.rationItems || {})
@@ -262,7 +268,7 @@ export default function MyRequestsPage() {
               
               return {
                 id: donation.id,
-                requestId: donation.helpRequestId,
+                requestId: donation.helpRequestId!,
                 requestTitle: helpRequest?.name || helpRequest?.shortNote?.split(',')[0]?.replace('Name:', '').trim() || `Request #${donation.helpRequestId}`,
                 location: helpRequest?.approxArea || 'Unknown',
                 category: HelpRequestCategory.OTHER,

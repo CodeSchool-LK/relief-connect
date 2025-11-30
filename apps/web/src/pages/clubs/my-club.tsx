@@ -82,10 +82,10 @@ export default function MyClubPage() {
         </Head>
         <div className="min-h-screen bg-gray-50 py-8">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-            <Link href="/clubs">
+            <Link href="/clubs/dashboard">
               <Button variant="outline" className="mb-6">
                 <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Clubs
+                Back to Club
               </Button>
             </Link>
             <Card>
@@ -110,10 +110,10 @@ export default function MyClubPage() {
 
       <div className="min-h-screen bg-gray-50 py-8">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <Link href="/clubs">
+          <Link href="/clubs/dashboard">
             <Button variant="outline" className="mb-6">
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Clubs
+              Back to Club Dashboard
             </Button>
           </Link>
 

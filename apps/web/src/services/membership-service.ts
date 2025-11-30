@@ -23,7 +23,7 @@ class MembershipService {
   }
 
   /**
-   * Request to join a volunteer club
+   * Request to support a volunteer club
    */
   public async requestMembership(data: IRequestMembership): Promise<IApiResponse<IMembership>> {
     try {

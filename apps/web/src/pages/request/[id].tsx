@@ -319,15 +319,17 @@ export default function RequestDetailsPage() {
   const kidsCount = request.children || 0
   const eldersCount = request.elders || 0
   
-  // Map rationItems array to readable labels using RATION_ITEMS
-  const items = request.rationItems && request.rationItems.length > 0
-    ? request.rationItems
-        .map((itemId) => {
-          const rationItem = RATION_ITEMS.find((item) => item.id === itemId)
-          return rationItem ? rationItem.label : itemId
-        })
-        .join(', ')
-    : request.shortNote?.match(/Items:\s*(.+)/)?.[1] || 'Various items'
+  // Map rationItems array to category cards data
+  const rationItemsList =
+    request.rationItems && request.rationItems.length > 0
+      ? request.rationItems
+          .map((itemId) => {
+            const rationItem = RATION_ITEMS.find((item) => item.id === itemId)
+            return rationItem ? { id: itemId, label: rationItem.label, icon: rationItem.icon } : null
+          })
+          .filter((item): item is { id: string; label: string; icon: string } => item !== null)
+      : []
+  const fallbackItems = request.shortNote?.match(/Items:\s*(.+)/)?.[1] || null
 
   return (
     <>
@@ -392,10 +394,6 @@ export default function RequestDetailsPage() {
               <div className="flex items-start justify-between">
                 <div>
                   <CardTitle className="text-2xl font-bold mb-2">{name}</CardTitle>
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <MapPin className="h-4 w-4" />
-                    <span>{request.approxArea || 'Unknown location'}</span>
-                  </div>
                 </div>
                 <div
                   className={`px-3 py-1 rounded-full text-xs font-semibold ${
@@ -410,37 +408,112 @@ export default function RequestDetailsPage() {
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="space-y-4">
-              {/* People Info */}
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <Users className="h-5 w-5 text-blue-600" />
-                  <span className="font-semibold">{peopleCount} people</span>
+            <CardContent className="space-y-6">
+              {/* People Info - Analytics Cards */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="relative overflow-hidden rounded-xl p-4 bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-700 shadow-lg">
+                  <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full blur-2xl -mr-12 -mt-12"></div>
+                  <div className="relative z-10">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Users className="h-4 w-4 text-white/90" />
+                      <span className="text-xs font-medium text-white/90 font-sub">Total People</span>
+                    </div>
+                    <div className="text-2xl font-bold text-white">{peopleCount}</div>
+                  </div>
                 </div>
                 {kidsCount > 0 && (
-                  <span className="text-sm text-gray-600">({kidsCount} kids)</span>
+                  <div className="relative overflow-hidden rounded-xl p-4 bg-gradient-to-br from-orange-500 via-amber-600 to-yellow-700 shadow-lg">
+                    <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full blur-2xl -mr-12 -mt-12"></div>
+                    <div className="relative z-10">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Users className="h-4 w-4 text-white/90" />
+                        <span className="text-xs font-medium text-white/90 font-sub">Children</span>
+                      </div>
+                      <div className="text-2xl font-bold text-white">{kidsCount}</div>
+                    </div>
+                  </div>
                 )}
                 {eldersCount > 0 && (
-                  <span className="text-sm text-gray-600">({eldersCount} elders)</span>
+                  <div className="relative overflow-hidden rounded-xl p-4 bg-gradient-to-br from-pink-500 via-rose-600 to-fuchsia-700 shadow-lg">
+                    <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full blur-2xl -mr-12 -mt-12"></div>
+                    <div className="relative z-10">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Users className="h-4 w-4 text-white/90" />
+                        <span className="text-xs font-medium text-white/90 font-sub">Elders</span>
+                      </div>
+                      <div className="text-2xl font-bold text-white">{eldersCount}</div>
+                    </div>
+                  </div>
                 )}
               </div>
 
-              {/* Items Needed */}
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <Package className="h-5 w-5 text-purple-600" />
-                  <span className="font-semibold">Items Needed</span>
+              {/* Items Needed - Category Cards */}
+              {rationItemsList.length > 0 ? (
+                <div className="space-y-2">
+                  <div className="text-sm font-semibold text-purple-700 flex items-center gap-2">
+                    <Package className="h-4 w-4" />
+                    Items Needed
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {rationItemsList.map((item) => (
+                      <div
+                        key={item.id}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-100 hover:bg-purple-200 text-purple-700 rounded-md text-xs font-medium transition-colors duration-200"
+                      >
+                        <span>{item.icon}</span>
+                        <span>{item.label}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <p className="text-gray-700 ml-7">{items}</p>
-              </div>
+              ) : fallbackItems ? (
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Package className="h-5 w-5 text-purple-600" />
+                    <span className="font-semibold">Items Needed</span>
+                  </div>
+                  <p className="text-gray-700 ml-7">{fallbackItems}</p>
+                </div>
+              ) : null}
 
+              {/* Location */}
+              {request.lat != null && request.lng != null ? (
+                <a
+                  href={`https://www.google.com/maps?q=${encodeURIComponent(
+                    `${Number(request.lat)},${Number(request.lng)}`
+                  )}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-colors duration-200 text-gray-900 hover:text-gray-950"
+                  style={{ backgroundColor: '#92eb34' }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = '#7dd321'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = '#92eb34'
+                  }}
+                >
+                  <MapPin className="h-3.5 w-3.5" />
+                  Click on map
+                </a>
+              ) : (
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <MapPin className="h-4 w-4 text-gray-400" />
+                  <span className="font-medium">
+                    {request.approxArea && !request.approxArea.match(/^-?\d+\.\d+,\s*-?\d+\.\d+/)
+                      ? request.approxArea
+                      : 'Unknown location'}
+                  </span>
+                </div>
+              )}
 
               {/* Contact Info */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 pt-2 border-t border-gray-200">
                 {request.contactType === 'Phone' ? (
-                  <Phone className="h-4 w-4 text-gray-600" />
+                  <Phone className="h-4 w-4 text-green-600" />
                 ) : (
-                  <Mail className="h-4 w-4 text-gray-600" />
+                  <Mail className="h-4 w-4 text-blue-600" />
                 )}
                 <span className="text-sm text-gray-600">{request.contactType}:</span>
                 <span className="text-gray-900 font-medium">{request.contact}</span>
@@ -449,18 +522,10 @@ export default function RequestDetailsPage() {
               {/* Full Details */}
               <div className="pt-4 border-t">
                 <h3 className="font-semibold mb-2">Full Details</h3>
-                <p className="text-gray-700 whitespace-pre-wrap">
+                <p className="text-gray-700 whitespace-pre-wrap font-sub">
                   {request.shortNote || 'No additional details provided.'}
                 </p>
               </div>
-
-              {/* Coordinates */}
-              {request.lat != null && request.lng != null && (
-                <div className="text-sm text-gray-600">
-                  <span className="font-semibold">Coordinates:</span> Lat:{' '}
-                  {Number(request.lat).toFixed(4)}, Lng: {Number(request.lng).toFixed(4)}
-                </div>
-              )}
             </CardContent>
           </Card>
 
@@ -468,8 +533,7 @@ export default function RequestDetailsPage() {
           <div className="flex flex-col sm:flex-row gap-3 mb-6">
             <Button
               onClick={handleCall}
-              className="flex-1 h-12 text-base font-semibold"
-              variant="outline"
+              className="flex-1 h-12 text-base font-semibold bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white"
             >
               <Phone className="h-5 w-5 mr-2" />
               Call
@@ -487,8 +551,7 @@ export default function RequestDetailsPage() {
             <Dialog>
               <DialogTrigger asChild>
                 <Button 
-                  className="flex-1 h-12 text-base font-semibold" 
-                  variant="outline"
+                  className="flex-1 h-12 text-base font-semibold bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white" 
                   disabled={loadingDonations}
                 >
                   <Users className="h-5 w-5 mr-2" />
@@ -555,6 +618,30 @@ export default function RequestDetailsPage() {
                               <Calendar className="h-4 w-4" />
                               <span>Requested: {donation.requestedDate}</span>
                             </div>
+                            {/* Location - Click on map button */}
+                            {request && request.lat != null && request.lng != null && (
+                              <div className="pt-2">
+                                <a
+                                  href={`https://www.google.com/maps?q=${encodeURIComponent(
+                                    `${Number(request.lat)},${Number(request.lng)}`
+                                  )}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-colors duration-200 text-gray-900 hover:text-gray-950"
+                                  style={{ backgroundColor: '#92eb34' }}
+                                  onMouseEnter={(e) => {
+                                    e.currentTarget.style.backgroundColor = '#7dd321'
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.currentTarget.style.backgroundColor = '#92eb34'
+                                  }}
+                                >
+                                  <MapPin className="h-3.5 w-3.5" />
+                                  Click on map
+                                </a>
+                              </div>
+                            )}
                             <div className="flex gap-2 pt-2">
                               {donation.donorContact !== 'N/A' && isOwner && (
                                 <Button
@@ -589,7 +676,7 @@ export default function RequestDetailsPage() {
                                   onClick={() => handleConfirmDonation(donation.id)}
                                 >
                                   <CheckCircle className="h-4 w-4 mr-2" />
-                                  Mark as Completed (Owner)
+                                  Mark as Completed
                                 </Button>
                               )}
                               {/* Donator (Giver) can mark their own donation as scheduled or completed */}
@@ -620,7 +707,7 @@ export default function RequestDetailsPage() {
                                         }}
                                       >
                                         <CheckCircle className="h-4 w-4 mr-2" />
-                                        Mark as Completed (Donator)
+                                        Mark as Completed
                                       </Button>
                                     </>
                                   )}
@@ -635,7 +722,7 @@ export default function RequestDetailsPage() {
                                       }}
                                     >
                                       <CheckCircle className="h-4 w-4 mr-2" />
-                                      Mark as Completed (Donator)
+                                      Mark as Completed
                                     </Button>
                                   )}
                                 </>

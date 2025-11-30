@@ -44,10 +44,13 @@ interface DonorRequest {
   urgency: Urgency
   status: 'pending' | 'in_progress' | 'completed' | 'cancelled'
   donatedItems: string
+  donatedItemsList: Array<{ id: string; label: string; icon: string; quantity: number }>
   donatedDate: string
   contact: string
   contactType: string
   shortNote: string
+  lat: number | null
+  lng: number | null
 }
 
 interface VictimRequest {
@@ -63,6 +66,9 @@ interface VictimRequest {
   shortNote: string
   peopleCount: number
   items: string
+  itemsList: Array<{ id: string; label: string; icon: string }>
+  lat: number | null
+  lng: number | null
 }
 
 // Donor requests and victim requests are now loaded from API/localStorage
@@ -121,13 +127,18 @@ export default function MyRequestsPage() {
             const userDonations = response.data.map((donation): DonorRequest => {
               const helpRequest = donation.helpRequest
               
-              // Convert rationItems object to readable string
+              // Convert rationItems object to array for tag display
               const itemsList = Object.entries(donation.rationItems || {})
                 .map(([itemId, quantity]) => {
                   const item = RATION_ITEMS.find((i) => i.id === itemId)
-                  return item ? `${item.label} (${quantity})` : `${itemId} (${quantity})`
+                  return item ? { id: itemId, label: item.label, icon: item.icon, quantity } : null
                 })
-                .join(', ') || 'Various items'
+                .filter((item): item is { id: string; label: string; icon: string; quantity: number } => item !== null)
+              
+              // Also create a readable string for fallback
+              const itemsString = itemsList.length > 0
+                ? itemsList.map((item) => `${item.label} (${item.quantity})`).join(', ')
+                : 'Various items'
               
               // Determine status based on donation flags
               let status: DonorRequest['status'] = 'pending'
@@ -147,11 +158,14 @@ export default function MyRequestsPage() {
                 category: HelpRequestCategory.OTHER, // Category not available in DTO
                 urgency: helpRequest?.urgency || Urgency.MEDIUM,
                 status,
-                donatedItems: itemsList,
+                donatedItems: itemsString,
+                donatedItemsList: itemsList,
                 donatedDate: donation.createdAt ? new Date(donation.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
                 contact: helpRequest?.contact || '',
                 contactType: helpRequest?.contactType || 'Phone',
                 shortNote: helpRequest?.shortNote || '',
+                lat: helpRequest?.lat ?? null,
+                lng: helpRequest?.lng ?? null,
               }
             })
             
@@ -192,12 +206,19 @@ export default function MyRequestsPage() {
               const name = req.name || req.shortNote?.split(',')[0]?.replace('Name:', '').trim() || 'Request'
               const peopleCount = req.totalPeople || 1
               
-              // Convert rationItems array to readable string
-              const items = req.rationItems && req.rationItems.length > 0
-                ? req.rationItems.map((itemId) => {
-                    const item = RATION_ITEMS.find((i) => i.id === itemId)
-                    return item ? item.label : itemId
-                  }).join(', ')
+              // Convert rationItems array to tag-style list
+              const itemsList = req.rationItems && req.rationItems.length > 0
+                ? req.rationItems
+                    .map((itemId) => {
+                      const item = RATION_ITEMS.find((i) => i.id === itemId)
+                      return item ? { id: itemId, label: item.label, icon: item.icon } : null
+                    })
+                    .filter((item): item is { id: string; label: string; icon: string } => item !== null)
+                : []
+              
+              // Also create a readable string for fallback
+              const items = itemsList.length > 0
+                ? itemsList.map((item) => item.label).join(', ')
                 : req.shortNote?.match(/Items:\s*(.+)/)?.[1] || 'Various items'
               
               return {
@@ -213,6 +234,9 @@ export default function MyRequestsPage() {
                 shortNote: req.shortNote || '',
                 peopleCount,
                 items,
+                itemsList,
+                lat: req.lat ?? null,
+                lng: req.lng ?? null,
               }
             })
             
@@ -244,12 +268,18 @@ export default function MyRequestsPage() {
             const userDonations = response.data.map((donation): DonorRequest => {
               const helpRequest = donation.helpRequest
               
+              // Convert rationItems object to array for tag display
               const itemsList = Object.entries(donation.rationItems || {})
                 .map(([itemId, quantity]) => {
                   const item = RATION_ITEMS.find((i) => i.id === itemId)
-                  return item ? `${item.label} (${quantity})` : `${itemId} (${quantity})`
+                  return item ? { id: itemId, label: item.label, icon: item.icon, quantity } : null
                 })
-                .join(', ') || 'Various items'
+                .filter((item): item is { id: string; label: string; icon: string; quantity: number } => item !== null)
+              
+              // Also create a readable string for fallback
+              const itemsString = itemsList.length > 0
+                ? itemsList.map((item) => `${item.label} (${item.quantity})`).join(', ')
+                : 'Various items'
               
               let status: DonorRequest['status'] = 'pending'
               if (donation.ownerMarkedCompleted) {
@@ -268,11 +298,14 @@ export default function MyRequestsPage() {
                 category: HelpRequestCategory.OTHER,
                 urgency: helpRequest?.urgency || Urgency.MEDIUM,
                 status,
-                donatedItems: itemsList,
+                donatedItems: itemsString,
+                donatedItemsList: itemsList,
                 donatedDate: donation.createdAt ? new Date(donation.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
                 contact: helpRequest?.contact || '',
                 contactType: helpRequest?.contactType || 'Phone',
                 shortNote: helpRequest?.shortNote || '',
+                lat: helpRequest?.lat ?? null,
+                lng: helpRequest?.lng ?? null,
               }
             })
             
@@ -433,9 +466,9 @@ export default function MyRequestsPage() {
                   {donorRequests.map((request) => (
                     <Card
                       key={request.id}
-                      className="transition-all hover:shadow-lg overflow-hidden border-2"
+                      className="transition-all hover:shadow-lg overflow-hidden border-2 flex flex-col"
                     >
-                      <div className="relative h-48 bg-gradient-to-br from-green-100 via-blue-50 to-purple-100">
+                      <div className="relative h-48 bg-gradient-to-br from-green-100 via-blue-50 to-purple-100 flex-shrink-0">
                         <div className="absolute inset-0 flex items-center justify-center opacity-30">
                           <Package className="h-16 w-16 text-gray-400" />
                         </div>
@@ -449,37 +482,88 @@ export default function MyRequestsPage() {
                             {getStatusText(request.status)}
                           </div>
                         </div>
-                        <div className="absolute bottom-3 left-3 right-3">
-                          <div className="bg-white/90 backdrop-blur-sm rounded-lg px-3 py-2">
-                            <div className="font-semibold text-gray-900 text-sm">
-                              {request.location}
+                        {/* Location display commented out - using "Click on map" button instead */}
+                        {/* {request.location && !request.location.match(/^-?\d+\.\d+,\s*-?\d+\.\d+/) && request.location !== 'Unknown' && (
+                          <div className="absolute bottom-3 left-3 right-3">
+                            <div className="bg-white/90 backdrop-blur-sm rounded-lg px-3 py-2">
+                              <div className="font-semibold text-gray-900 text-sm truncate">
+                                {request.location}
+                              </div>
                             </div>
                           </div>
-                        </div>
+                        )} */}
                       </div>
-                      <CardContent className="p-5">
-                        <div className="space-y-3">
+                      <CardContent className="p-5 flex-1 flex flex-col">
+                        <div className="space-y-4 flex-1">
+                          {/* Title and Contact */}
                           <div>
-                            <div className="font-bold text-lg text-gray-900 mb-1">
+                            <div className="font-bold text-lg text-gray-900 mb-1 line-clamp-2">
                               {request.requestTitle}
                             </div>
                             <div className="text-xs text-gray-500">
                               {request.contactType}: {request.contact}
                             </div>
                           </div>
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-2 text-sm text-gray-700">
-                              <Package className="h-4 w-4 text-green-600" />
-                              <span className="font-medium">{request.donatedItems}</span>
+
+                          {/* Items Section - Tag Style */}
+                          {request.donatedItemsList.length > 0 && (
+                            <div className="space-y-2 border-t border-gray-200 pt-3">
+                              <div className="text-xs font-semibold text-gray-600 flex items-center gap-1.5">
+                                <Package className="h-3.5 w-3.5 text-purple-600" />
+                                Items Donated
+                              </div>
+                              <div className="flex flex-wrap gap-2">
+                                {request.donatedItemsList.map((item) => (
+                                  <div
+                                    key={item.id}
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-100 hover:bg-purple-200 text-purple-700 rounded-md text-xs font-medium transition-colors duration-200"
+                                  >
+                                    <span>{item.icon}</span>
+                                    <span>{item.label}</span>
+                                    <span className="font-bold">×{item.quantity}</span>
+                                  </div>
+                                ))}
+                              </div>
                             </div>
+                          )}
+
+                          {/* Details Section */}
+                          <div className="space-y-2.5 border-t border-gray-200 pt-3">
                             <div className="flex items-center gap-2 text-sm text-gray-700">
-                              <Calendar className="h-4 w-4 text-blue-600" />
+                              <Calendar className="h-4 w-4 text-blue-600 flex-shrink-0" />
                               <span>{t('donated')}: {request.donatedDate}</span>
                             </div>
+                            {/* Location - Click on map button */}
+                            {request.lat != null && request.lng != null && (
+                              <div className="flex items-center gap-2">
+                                <MapPin className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                                <a
+                                  href={`https://www.google.com/maps?q=${encodeURIComponent(
+                                    `${Number(request.lat)},${Number(request.lng)}`
+                                  )}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors duration-200 text-gray-900 hover:text-gray-950"
+                                  style={{ backgroundColor: '#92eb34' }}
+                                  onMouseEnter={(e) => {
+                                    e.currentTarget.style.backgroundColor = '#7dd321'
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.currentTarget.style.backgroundColor = '#92eb34'
+                                  }}
+                                >
+                                  <MapPin className="h-3.5 w-3.5" />
+                                  Click on map
+                                </a>
+                              </div>
+                            )}
                           </div>
-<div className="flex flex-col gap-2 mt-4">
+
+                          {/* Action Buttons */}
+                          <div className="flex flex-col gap-2 pt-2 border-t border-gray-200 mt-auto">
                             <Button
-                              className="w-full"
+                              className="w-full h-10"
                               onClick={() => router.push(`/request/${request.requestId}`)}
                             >
                               {t('seeDetails')}
@@ -487,11 +571,11 @@ export default function MyRequestsPage() {
                             {request.status !== 'completed' && (
                               <Button
                                 variant="outline"
-                                className="w-full border-green-300 text-green-700 hover:bg-green-50"
+                                className="w-full h-10 border-green-300 text-green-700 hover:bg-green-50"
                                 onClick={() => handleMarkAsCompleted(request.id)}
                               >
                                 <CheckCircle className="h-4 w-4 mr-2" />
-                                {t('markAsCompleted')}
+                                Mark as Completed
                               </Button>
                             )}
                           </div>
@@ -528,9 +612,9 @@ export default function MyRequestsPage() {
                       {victimRequests.map((request) => (
                     <Card
                       key={request.id}
-                      className="transition-all hover:shadow-lg overflow-hidden border-2"
+                      className="transition-all hover:shadow-lg overflow-hidden border-2 flex flex-col"
                     >
-                      <div className="relative h-48 bg-gradient-to-br from-red-100 via-orange-50 to-pink-100">
+                      <div className="relative h-48 bg-gradient-to-br from-red-100 via-orange-50 to-pink-100 flex-shrink-0">
                         <div className="absolute inset-0 flex items-center justify-center opacity-30">
                           <HelpCircle className="h-16 w-16 text-gray-400" />
                         </div>
@@ -544,44 +628,96 @@ export default function MyRequestsPage() {
                             {getStatusText(request.status)}
                           </div>
                         </div>
-                        <div className="absolute bottom-3 left-3 right-3">
-                          <div className="bg-white/90 backdrop-blur-sm rounded-lg px-3 py-2">
-                            <div className="font-semibold text-gray-900 text-sm">
-                              {request.location}
+                        {/* Location display commented out - using "Click on map" button instead */}
+                        {/* {request.location && !request.location.match(/^-?\d+\.\d+,\s*-?\d+\.\d+/) && request.location !== 'Unknown' && (
+                          <div className="absolute bottom-3 left-3 right-3">
+                            <div className="bg-white/90 backdrop-blur-sm rounded-lg px-3 py-2">
+                              <div className="font-semibold text-gray-900 text-sm truncate">
+                                {request.location}
+                              </div>
                             </div>
                           </div>
-                        </div>
+                        )} */}
                       </div>
-                      <CardContent className="p-5">
-                        <div className="space-y-3">
+                      <CardContent className="p-5 flex-1 flex flex-col">
+                        <div className="space-y-4 flex-1">
+                          {/* Title and Contact */}
                           <div>
-                            <div className="font-bold text-lg text-gray-900 mb-1">
+                            <div className="font-bold text-lg text-gray-900 mb-1 line-clamp-2">
                               {request.title}
                             </div>
                             <div className="text-xs text-gray-500">
                               {request.contactType}: {request.contact}
                             </div>
                           </div>
-                          <div className="space-y-2">
+
+                          {/* Items Section - Tag Style */}
+                          {request.itemsList.length > 0 && (
+                            <div className="space-y-2 border-t border-gray-200 pt-3">
+                              <div className="text-xs font-semibold text-gray-600 flex items-center gap-1.5">
+                                <Package className="h-3.5 w-3.5 text-purple-600" />
+                                Items Needed
+                              </div>
+                              <div className="flex flex-wrap gap-2">
+                                {request.itemsList.map((item) => (
+                                  <div
+                                    key={item.id}
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-100 hover:bg-purple-200 text-purple-700 rounded-md text-xs font-medium transition-colors duration-200"
+                                  >
+                                    <span>{item.icon}</span>
+                                    <span>{item.label}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Details Section */}
+                          <div className="space-y-2.5 border-t border-gray-200 pt-3">
                             <div className="flex items-center gap-2 text-sm text-gray-700">
-                              <Users className="h-4 w-4 text-blue-600" />
+                              <Users className="h-4 w-4 text-blue-600 flex-shrink-0" />
                               <span className="font-medium">{request.peopleCount} {t('people')}</span>
                             </div>
                             <div className="flex items-center gap-2 text-sm text-gray-700">
-                              <Package className="h-4 w-4 text-purple-600" />
-                              <span className="line-clamp-1">{request.items}</span>
-                            </div>
-                            <div className="flex items-center gap-2 text-sm text-gray-700">
-                              <Calendar className="h-4 w-4 text-blue-600" />
+                              <Calendar className="h-4 w-4 text-blue-600 flex-shrink-0" />
                               <span>{t('created')}: {request.createdDate}</span>
                             </div>
+                            {/* Location - Click on map button */}
+                            {request.lat != null && request.lng != null && (
+                              <div className="flex items-center gap-2">
+                                <MapPin className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                                <a
+                                  href={`https://www.google.com/maps?q=${encodeURIComponent(
+                                    `${Number(request.lat)},${Number(request.lng)}`
+                                  )}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors duration-200 text-gray-900 hover:text-gray-950"
+                                  style={{ backgroundColor: '#92eb34' }}
+                                  onMouseEnter={(e) => {
+                                    e.currentTarget.style.backgroundColor = '#7dd321'
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.currentTarget.style.backgroundColor = '#92eb34'
+                                  }}
+                                >
+                                  <MapPin className="h-3.5 w-3.5" />
+                                  Click on map
+                                </a>
+                              </div>
+                            )}
                           </div>
-<Button
-                            className="w-full mt-4"
-                            onClick={() => router.push(`/request/${request.id}`)}
-                          >
-                            {t('seeDetails')}
-                          </Button>
+
+                          {/* Action Button */}
+                          <div className="pt-2 border-t border-gray-200 mt-auto">
+                            <Button
+                              className="w-full h-10"
+                              onClick={() => router.push(`/request/${request.id}`)}
+                            >
+                              {t('seeDetails')}
+                            </Button>
+                          </div>
                         </div>
                       </CardContent>
                     </Card>

@@ -2,6 +2,7 @@ import apiClient from './api-client';
 import { IApiResponse } from '@nx-mono-repo-deployment-test/shared/src/interfaces';
 import { ICreateCamp } from '@nx-mono-repo-deployment-test/shared/src/interfaces/camp/ICreateCamp';
 import { CampResponseDto } from '@nx-mono-repo-deployment-test/shared/src/dtos/camp/response/camp_response_dto';
+import { ICampInventoryItem } from '@nx-mono-repo-deployment-test/shared/src/interfaces/camp/ICampInventoryItem';
 import { CampFilters } from '../types/camp';
 
 /**
@@ -109,6 +110,24 @@ class CampService {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Failed to create camp',
+      };
+    }
+  }
+
+  /**
+   * Get inventory items for a camp
+   */
+  public async getCampInventoryItems(id: number): Promise<IApiResponse<ICampInventoryItem[]>> {
+    try {
+      const response = await apiClient.get<IApiResponse<ICampInventoryItem[]>>(
+        `${this.basePath}/${id}/inventory`
+      );
+      return response;
+    } catch (error) {
+      console.error('Error in CampService.getCampInventoryItems:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to fetch camp inventory items',
       };
     }
   }

@@ -8,7 +8,8 @@ import { IDonation } from '../../../interfaces/donation/IDonation';
  */
 export class DonationWithDonatorResponseDto {
   id: number;
-  helpRequestId: number;
+  helpRequestId?: number;
+  campId?: number;
   donatorId: number;
   donatorUsername?: string;
   donatorName: string; // Always included - stored directly in donation
@@ -26,6 +27,7 @@ export class DonationWithDonatorResponseDto {
   ) {
     this.id = donation.id!;
     this.helpRequestId = donation.helpRequestId;
+    this.campId = donation.campId;
     this.donatorId = donation.donatorId;
     this.donatorName = donation.donatorName; // Always include name
     //this.donatorUsername = donation.donator?.username; // Include username as fallback

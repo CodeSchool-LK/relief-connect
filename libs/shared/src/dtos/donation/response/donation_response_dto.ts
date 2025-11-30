@@ -5,7 +5,8 @@ import { IDonation } from '../../../interfaces/donation/IDonation';
  */
 export class DonationResponseDto implements IDonation {
   id: number;
-  helpRequestId: number;
+  helpRequestId?: number;
+  campId?: number;
   donatorId: number;
   donatorName: string;
   donatorMobileNumber: string;
@@ -19,6 +20,7 @@ export class DonationResponseDto implements IDonation {
   constructor(donation: IDonation) {
     this.id = donation.id!;
     this.helpRequestId = donation.helpRequestId;
+    this.campId = donation.campId;
     this.donatorId = donation.donatorId;
     this.donatorName = donation.donatorName;
     this.donatorMobileNumber = donation.donatorMobileNumber;

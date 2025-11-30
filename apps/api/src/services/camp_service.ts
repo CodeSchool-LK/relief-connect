@@ -1,8 +1,10 @@
-import { CampDao, CampItemDao, CampDropOffLocationDao, VolunteerClubDao } from '../dao';
+import { CampDao, CampItemDao, CampDropOffLocationDao, VolunteerClubDao, MembershipDao, CampInventoryItemDao } from '../dao';
 import { CreateCampDto, UpdateCampDto, CampResponseDto } from '@nx-mono-repo-deployment-test/shared/src/dtos/camp';
 import { IApiResponse } from '@nx-mono-repo-deployment-test/shared/src/interfaces';
 import { ICamp } from '@nx-mono-repo-deployment-test/shared/src/interfaces/camp/ICamp';
+import { ICampInventoryItem } from '@nx-mono-repo-deployment-test/shared/src/interfaces/camp/ICampInventoryItem';
 import { CampType, CampNeed, UserRole } from '@nx-mono-repo-deployment-test/shared/src/enums';
+import { MembershipStatus } from '@nx-mono-repo-deployment-test/shared/src/enums';
 import { CampItemModel, CampHelpRequestModel, CampDonationModel, CampDropOffLocationModel } from '../models';
 import { sequelize } from '../models';
 
@@ -84,7 +86,7 @@ class CampService {
         };
       }
 
-      // Authorization check: Only admins or the owning volunteer club can view the camp
+      // Authorization check: Only admins, club owners, or approved members can view the camp
       if (userId && userRole) {
         const isAdmin = userRole === UserRole.SYSTEM_ADMINISTRATOR || userRole === UserRole.ADMIN;
         
@@ -92,11 +94,25 @@ class CampService {
           // Check if user is the owner of the camp's volunteer club
           const volunteerClubDao = VolunteerClubDao.getInstance();
           const volunteerClub = await volunteerClubDao.findByUserId(userId);
+          const isClubOwner = volunteerClub && volunteerClub.id === camp.volunteerClubId;
           
-          if (!volunteerClub || volunteerClub.id !== camp.volunteerClubId) {
+          // If not club owner, check if user is an approved member of the club
+          if (!isClubOwner && camp.volunteerClubId) {
+            const membershipDao = MembershipDao.getInstance();
+            const membership = await membershipDao.findByUserAndClub(userId, camp.volunteerClubId);
+            const isApprovedMember = membership && membership.status === MembershipStatus.APPROVED;
+            
+            if (!isApprovedMember) {
+              return {
+                success: false,
+                error: 'Access denied. You must be an approved member of the volunteer club to view this camp.',
+              };
+            }
+          } else if (!isClubOwner && !camp.volunteerClubId) {
+            // Camp has no volunteer club associated, deny access
             return {
               success: false,
-              error: 'Access denied. You can only view camps owned by your volunteer club.',
+              error: 'Access denied. Camp is not associated with a volunteer club.',
             };
           }
         }
@@ -235,6 +251,14 @@ class CampService {
             campItemDao.create(camp.id!, item.itemType, item.quantity, item.notes)
           )
         );
+
+        // Initialize inventory items with needed quantities
+        const campInventoryItemDao = CampInventoryItemDao.getInstance();
+        const inventoryItems: Record<string, number> = {};
+        createCampDto.items.forEach(item => {
+          inventoryItems[item.itemType] = (inventoryItems[item.itemType] || 0) + item.quantity;
+        });
+        await campInventoryItemDao.createInventoryItems(camp.id!, inventoryItems);
       }
 
       // Create drop-off locations
@@ -512,6 +536,30 @@ class CampService {
       return {
         success: false,
         error: 'Failed to update camp',
+      };
+    }
+  }
+
+  /**
+   * Get inventory items for a camp
+   * @param campId - The camp ID
+   */
+  public async getCampInventoryItems(campId: number): Promise<IApiResponse<ICampInventoryItem[]>> {
+    try {
+      const campInventoryItemDao = CampInventoryItemDao.getInstance();
+      
+      const inventoryItems = await campInventoryItemDao.findByCampId(campId);
+      
+      return {
+        success: true,
+        data: inventoryItems,
+        message: 'Camp inventory items retrieved successfully',
+      };
+    } catch (error) {
+      console.error(`Error in CampService.getCampInventoryItems (${campId}):`, error);
+      return {
+        success: false,
+        error: 'Failed to retrieve camp inventory items',
       };
     }
   }

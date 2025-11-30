@@ -199,7 +199,7 @@ class MembershipController {
       // If volunteer club user, verify they own the club for this membership
       if (isClubAdmin && !isSystemAdmin) {
         // Get membership to check club ownership
-        const membershipResult = await this.membershipService.getMembershipById(id, req.user.id!);
+        const membershipResult = await this.membershipService.getMembershipById(id, req.user.id! , isClubAdmin);
         if (!membershipResult.success || !membershipResult.data) {
           res.sendError('Membership not found', 404);
           return;

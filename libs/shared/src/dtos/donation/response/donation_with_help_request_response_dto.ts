@@ -8,7 +8,8 @@ import { IHelpRequest } from '../../../interfaces/help-request/IHelpRequest';
  */
 export class DonationWithHelpRequestResponseDto {
   id: number;
-  helpRequestId: number;
+  helpRequestId?: number;
+  campId?: number;
   donatorId: number;
   donatorName: string; // Always shown since user is viewing their own donations
   donatorMobileNumber: string; // Always shown since user is viewing their own donations
@@ -26,6 +27,7 @@ export class DonationWithHelpRequestResponseDto {
   ) {
     this.id = donation.id!;
     this.helpRequestId = donation.helpRequestId;
+    this.campId = donation.campId;
     this.donatorId = donation.donatorId;
     this.donatorName = donation.donatorName; // Always show since user is viewing their own donations
     this.donatorMobileNumber = donation.donatorMobileNumber; // Always show since user is viewing their own donations

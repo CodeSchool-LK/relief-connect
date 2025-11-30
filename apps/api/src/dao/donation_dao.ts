@@ -1,5 +1,6 @@
 import DonationModel from '../models/donation.model';
 import HelpRequestModel from '../models/help-request.model';
+import CampModel from '../models/camp.model';
 import UserModel from '../models/user.model';
 import { IDonation } from '@nx-mono-repo-deployment-test/shared/src/interfaces/donation/IDonation';
 
@@ -85,15 +86,15 @@ class DonationDao {
    * Create a new donation
    */
   public async create(
-    helpRequestId: number,
+    helpRequestId: number | undefined,
     donatorId: number,
     donatorName: string,
     donatorMobileNumber: string,
-    rationItems: Record<string, number>
+    rationItems: Record<string, number>,
+    campId?: number
   ): Promise<IDonation> {
     try {
-      const donation = await DonationModel.create({
-        [DonationModel.DONATION_HELP_REQUEST_ID]: helpRequestId,
+      const donationData: any = {
         [DonationModel.DONATION_DONATOR_ID]: donatorId,
         [DonationModel.DONATION_DONATOR_NAME]: donatorName,
         [DonationModel.DONATION_DONATOR_MOBILE_NUMBER]: donatorMobileNumber,
@@ -101,10 +102,45 @@ class DonationDao {
         [DonationModel.DONATION_DONATOR_MARKED_SCHEDULED]: false,
         [DonationModel.DONATION_DONATOR_MARKED_COMPLETED]: false,
         [DonationModel.DONATION_OWNER_MARKED_COMPLETED]: false,
-      });
+      };
+
+      if (helpRequestId) {
+        donationData[DonationModel.DONATION_HELP_REQUEST_ID] = helpRequestId;
+      }
+      if (campId) {
+        donationData[DonationModel.DONATION_CAMP_ID] = campId;
+      }
+
+      const donation = await DonationModel.create(donationData);
       return donation.toJSON() as IDonation;
     } catch (error) {
       console.error('Error in DonationDao.create:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Find all donations for a camp with donator information
+   */
+  public async findByCampId(campId: number): Promise<Array<IDonation & { donator?: { id: number; username: string; contactNumber?: string } }>> {
+    try {
+      const donations = await DonationModel.findAll({
+        where: {
+          [DonationModel.DONATION_CAMP_ID]: campId,
+        },
+        include: [{
+          model: UserModel,
+          as: 'donator',
+          attributes: ['id', 'username', 'contactNumber'],
+        }],
+        order: [[DonationModel.DONATION_CREATED_AT, 'DESC']],
+      });
+      return donations.map(d => {
+        const donation = d.toJSON() as IDonation & { donator?: { id: number; username: string; contactNumber?: string } };
+        return donation;
+      });
+    } catch (error) {
+      console.error(`Error in DonationDao.findByCampId (${campId}):`, error);
       throw error;
     }
   }

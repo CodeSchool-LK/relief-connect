@@ -1,6 +1,7 @@
-import { DonationDao, HelpRequestDao, HelpRequestInventoryItemDao } from '../dao';
+import { DonationDao, HelpRequestDao, HelpRequestInventoryItemDao, CampDao, CampInventoryItemDao } from '../dao';
 import { CreateDonationDto, DonationResponseDto, DonationWithHelpRequestResponseDto } from '@nx-mono-repo-deployment-test/shared/src/dtos/donation';
 import { DonationWithDonatorResponseDto } from '@nx-mono-repo-deployment-test/shared/src/dtos/donation/response/donation_with_donator_response_dto';
+import { CreateCampDonationDto } from '@nx-mono-repo-deployment-test/shared/src/dtos/donation/request/create_camp_donation_dto';
 import { IApiResponse } from '@nx-mono-repo-deployment-test/shared/src/interfaces';
 
 /**
@@ -12,15 +13,21 @@ class DonationService {
   private donationDao: DonationDao;
   private helpRequestDao: HelpRequestDao;
   private inventoryItemDao: HelpRequestInventoryItemDao;
+  private campDao: CampDao;
+  private campInventoryItemDao: CampInventoryItemDao;
 
   private constructor(
     donationDao: DonationDao,
     helpRequestDao: HelpRequestDao,
-    inventoryItemDao: HelpRequestInventoryItemDao
+    inventoryItemDao: HelpRequestInventoryItemDao,
+    campDao: CampDao,
+    campInventoryItemDao: CampInventoryItemDao
   ) {
     this.donationDao = donationDao;
     this.helpRequestDao = helpRequestDao;
     this.inventoryItemDao = inventoryItemDao;
+    this.campDao = campDao;
+    this.campInventoryItemDao = campInventoryItemDao;
   }
 
   /**
@@ -28,10 +35,13 @@ class DonationService {
    */
   public static getInstance(): DonationService {
     if (!DonationService.instance) {
+      const { CampDao, CampInventoryItemDao } = require('../dao');
       DonationService.instance = new DonationService(
         DonationDao.getInstance(),
         HelpRequestDao.getInstance(),
-        HelpRequestInventoryItemDao.getInstance()
+        HelpRequestInventoryItemDao.getInstance(),
+        CampDao.getInstance(),
+        CampInventoryItemDao.getInstance()
       );
     }
     return DonationService.instance;
@@ -147,7 +157,8 @@ class DonationService {
         donatorId,
         createDonationDto.donatorName,
         createDonationDto.donatorMobileNumber,
-        createDonationDto.rationItems
+        createDonationDto.rationItems,
+        undefined
       );
 
       // Add pending quantities to inventory
@@ -244,10 +255,17 @@ class DonationService {
 
       // If both donator and receiver have confirmed, move pending to donated
       if (updatedDonation.donatorMarkedCompleted && updatedDonation.ownerMarkedCompleted) {
-        await this.inventoryItemDao.confirmPendingQuantities(
-          updatedDonation.helpRequestId,
-          updatedDonation.rationItems
-        );
+        if (updatedDonation.helpRequestId) {
+          await this.inventoryItemDao.confirmPendingQuantities(
+            updatedDonation.helpRequestId,
+            updatedDonation.rationItems
+          );
+        } else if (updatedDonation.campId) {
+          await this.campInventoryItemDao.confirmPendingQuantities(
+            updatedDonation.campId,
+            updatedDonation.rationItems
+          );
+        }
       }
 
       return {
@@ -277,6 +295,14 @@ class DonationService {
         };
       }
 
+      // Verify this is a help request donation (not a camp donation)
+      if (!donation.helpRequestId) {
+        return {
+          success: false,
+          error: 'This donation is not associated with a help request. Use the camp donation completion endpoint instead.',
+        };
+      }
+
       // Verify the owner owns the help request
       const helpRequest = await this.helpRequestDao.findById(donation.helpRequestId);
       if (!helpRequest) {
@@ -303,10 +329,17 @@ class DonationService {
 
       // If both donator and receiver have confirmed, move pending to donated
       if (updatedDonation.donatorMarkedCompleted && updatedDonation.ownerMarkedCompleted) {
-        await this.inventoryItemDao.confirmPendingQuantities(
-          updatedDonation.helpRequestId,
-          updatedDonation.rationItems
-        );
+        if (updatedDonation.helpRequestId) {
+          await this.inventoryItemDao.confirmPendingQuantities(
+            updatedDonation.helpRequestId,
+            updatedDonation.rationItems
+          );
+        } else if (updatedDonation.campId) {
+          await this.campInventoryItemDao.confirmPendingQuantities(
+            updatedDonation.campId,
+            updatedDonation.rationItems
+          );
+        }
       }
 
       return {
@@ -320,6 +353,206 @@ class DonationService {
         success: false,
         error: 'Failed to mark donation as completed',
       };
+    }
+  }
+
+  /**
+   * Get all donations for a camp
+   * @param campId - The camp ID
+   * @param requesterUserId - Optional user ID of the requester (to check permissions)
+   */
+  public async getDonationsByCampId(
+    campId: number,
+    requesterUserId?: number
+  ): Promise<IApiResponse<DonationWithDonatorResponseDto[]>> {
+    try {
+      // Verify camp exists
+      const camp = await this.campDao.findById(campId);
+      if (!camp) {
+        return {
+          success: false,
+          error: 'Camp not found',
+        };
+      }
+
+      // Check if requester is club admin or member
+      const isClubAdmin = requesterUserId !== undefined && camp.volunteerClubId && 
+        await this.isClubAdmin(camp.volunteerClubId, requesterUserId);
+
+      const donations = await this.donationDao.findByCampId(campId);
+      const donationDtos = donations.map(d => {
+        // Show contact info if requester is club admin OR if requester is the donator
+        const isDonator = requesterUserId !== undefined && d.donatorId === requesterUserId;
+        const showContactInfo = isClubAdmin || isDonator;
+        return new DonationWithDonatorResponseDto(d, showContactInfo);
+      });
+
+      return {
+        success: true,
+        data: donationDtos,
+        count: donationDtos.length,
+      };
+    } catch (error) {
+      console.error(`Error in DonationService.getDonationsByCampId (${campId}):`, error);
+      return {
+        success: false,
+        error: 'Failed to retrieve donations',
+      };
+    }
+  }
+
+  /**
+   * Create a new camp donation
+   * @param createCampDonationDto - Camp donation data
+   * @param donatorId - User ID of the donator
+   */
+  public async createCampDonation(createCampDonationDto: CreateCampDonationDto, donatorId: number): Promise<IApiResponse<DonationResponseDto>> {
+    try {
+      // Verify camp exists
+      const camp = await this.campDao.findById(createCampDonationDto.campId);
+      if (!camp) {
+        return {
+          success: false,
+          error: 'Camp not found',
+        };
+      }
+
+      // Validate ration items
+      if (!createCampDonationDto.rationItems || Object.keys(createCampDonationDto.rationItems).length === 0) {
+        return {
+          success: false,
+          error: 'At least one ration item with count is required',
+        };
+      }
+
+      // Validate counts are positive numbers
+      for (const [itemId, count] of Object.entries(createCampDonationDto.rationItems)) {
+        if (typeof count !== 'number' || count <= 0) {
+          return {
+            success: false,
+            error: `Invalid count for ration item ${itemId}. Count must be a positive number`,
+          };
+        }
+      }
+
+      const donation = await this.donationDao.create(
+        undefined,
+        donatorId,
+        createCampDonationDto.donatorName,
+        createCampDonationDto.donatorMobileNumber,
+        createCampDonationDto.rationItems,
+        createCampDonationDto.campId
+      );
+
+      // Add pending quantities to camp inventory
+      await this.campInventoryItemDao.addPendingQuantities(
+        createCampDonationDto.campId,
+        createCampDonationDto.rationItems
+      );
+
+      return {
+        success: true,
+        data: new DonationResponseDto(donation),
+        message: 'Camp donation created successfully',
+      };
+    } catch (error) {
+      console.error('Error in DonationService.createCampDonation:', error);
+      return {
+        success: false,
+        error: 'Failed to create camp donation',
+      };
+    }
+  }
+
+  /**
+   * Accept a camp donation (club admin only)
+   * @param donationId - The donation ID
+   * @param campId - The camp ID
+   * @param clubAdminId - User ID of the club admin
+   */
+  public async acceptCampDonation(donationId: number, campId: number, clubAdminId: number): Promise<IApiResponse<DonationResponseDto>> {
+    try {
+      const donation = await this.donationDao.findById(donationId);
+      if (!donation) {
+        return {
+          success: false,
+          error: 'Donation not found',
+        };
+      }
+
+      // Verify donation belongs to this camp
+      if (donation.campId !== campId) {
+        return {
+          success: false,
+          error: 'Donation does not belong to this camp',
+        };
+      }
+
+      // Verify camp exists and user is club admin
+      const camp = await this.campDao.findById(campId);
+      if (!camp) {
+        return {
+          success: false,
+          error: 'Camp not found',
+        };
+      }
+
+      if (!camp.volunteerClubId) {
+        return {
+          success: false,
+          error: 'Camp does not belong to a volunteer club',
+        };
+      }
+
+      const isClubAdmin = await this.isClubAdmin(camp.volunteerClubId, clubAdminId);
+      if (!isClubAdmin) {
+        return {
+          success: false,
+          error: 'Only club admins can accept donations',
+        };
+      }
+
+      // Mark donation as completed by owner (club admin)
+      const updatedDonation = await this.donationDao.markAsCompletedByOwner(donationId);
+      if (!updatedDonation) {
+        return {
+          success: false,
+          error: 'Failed to update donation',
+        };
+      }
+
+      // Move pending quantities to donated in camp inventory
+      await this.campInventoryItemDao.confirmPendingQuantities(
+        campId,
+        donation.rationItems
+      );
+
+      return {
+        success: true,
+        data: new DonationResponseDto(updatedDonation),
+        message: 'Camp donation accepted successfully',
+      };
+    } catch (error) {
+      console.error(`Error in DonationService.acceptCampDonation (${donationId}):`, error);
+      return {
+        success: false,
+        error: 'Failed to accept camp donation',
+      };
+    }
+  }
+
+  /**
+   * Helper method to check if user is club admin
+   */
+  private async isClubAdmin(volunteerClubId: number, userId: number): Promise<boolean> {
+    try {
+      const { VolunteerClubDao } = require('../dao');
+      const volunteerClubDao = VolunteerClubDao.getInstance();
+      const club = await volunteerClubDao.findByUserId(userId);
+      return club !== null && club.id === volunteerClubId;
+    } catch (error) {
+      console.error(`Error in DonationService.isClubAdmin (${volunteerClubId}, ${userId}):`, error);
+      return false;
     }
   }
 }

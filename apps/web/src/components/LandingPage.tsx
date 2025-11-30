@@ -38,6 +38,7 @@ import {
   Baby,
   UserCog,
   FileText,
+  X,
 } from 'lucide-react'
 import LanguageSwitcher from './LanguageSwitcher'
 import { HelpRequestResponseDto } from '@nx-mono-repo-deployment-test/shared/src/dtos/help-request/response/help_request_response_dto'
@@ -53,6 +54,84 @@ import apiClient from '../services/api-client'
 import { helpRequestService } from '../services'
 
 type ViewMode = 'initial' | 'need-help' | 'can-help'
+
+// Helper function to convert errors to user-friendly messages
+const getErrorMessage = (error: unknown): string => {
+  // Handle Error objects
+  if (error instanceof Error) {
+    const message = error.message.toLowerCase()
+
+    // Network errors
+    if (message.includes('network') || message.includes('fetch') || message.includes('connection')) {
+      return 'Unable to connect to the server. Please check your internet connection and try again.'
+    }
+
+    // Timeout errors
+    if (message.includes('timeout')) {
+      return 'The request took too long. Please try again.'
+    }
+
+    // API errors
+    if (message.includes('401') || message.includes('unauthorized')) {
+      return 'You are not authorized. Please try again.'
+    }
+    if (message.includes('403') || message.includes('forbidden')) {
+      return 'You do not have permission to perform this action.'
+    }
+    if (message.includes('404') || message.includes('not found')) {
+      return 'The requested resource was not found. Please try again.'
+    }
+    if (message.includes('500') || message.includes('internal server error')) {
+      return 'Server error occurred. Please try again later.'
+    }
+    if (message.includes('503') || message.includes('service unavailable')) {
+      return 'Service is temporarily unavailable. Please try again later.'
+    }
+
+    // Validation errors (already user-friendly from backend)
+    if (message.includes('username') || message.includes('must be')) {
+      return error.message // Keep validation messages as-is
+    }
+
+    // Generic error message
+    return 'An unexpected error occurred. Please try again.'
+  }
+
+  // Handle string errors
+  if (typeof error === 'string') {
+    // Check if it's already a user-friendly message
+    const lowerError = error.toLowerCase()
+    if (
+      lowerError.includes('must be') ||
+      lowerError.includes('please') ||
+      lowerError.includes('username') ||
+      lowerError.includes('at least') ||
+      lowerError.includes('less than')
+    ) {
+      return error // Keep validation messages as-is
+    }
+    return error
+  }
+
+  // Handle API response errors
+  if (error && typeof error === 'object') {
+    const errorObj = error as Record<string, unknown>
+    
+    // Check for common API error formats
+    if (errorObj.message && typeof errorObj.message === 'string') {
+      return getErrorMessage(errorObj.message)
+    }
+    if (errorObj.error && typeof errorObj.error === 'string') {
+      return getErrorMessage(errorObj.error)
+    }
+    if (errorObj.details && typeof errorObj.details === 'string') {
+      return errorObj.details
+    }
+  }
+
+  // Default fallback
+  return 'An unexpected error occurred. Please try again.'
+}
 
 export default function LandingPage() {
   const router = useRouter()
@@ -280,19 +359,19 @@ export default function LandingPage() {
     e.preventDefault()
     const trimmedIdentifier = identifier.trim()
 
-    // Frontend validation
+    // Frontend validation with user-friendly messages
     if (!trimmedIdentifier) {
-      setError('Please enter a username, email, or phone number')
+      setError('Please enter your email address or phone number to continue.')
       return
     }
 
     if (trimmedIdentifier.length < 3) {
-      setError('Username must be at least 3 characters long')
+      setError('Your identifier must be at least 3 characters long. Please enter a valid email or phone number.')
       return
     }
 
     if (trimmedIdentifier.length > 50) {
-      setError('Username must be less than 50 characters')
+      setError('Your identifier is too long. Please enter a valid email or phone number (maximum 50 characters).')
       return
     }
 
@@ -366,7 +445,8 @@ export default function LandingPage() {
             errorMessage = constraintMessages[0]
           }
         }
-        setError(errorMessage)
+        // Convert to user-friendly message
+        setError(getErrorMessage(errorMessage))
       }
     } catch (err) {
       console.error('[LandingPage] Registration error caught:', err)
@@ -379,12 +459,10 @@ export default function LandingPage() {
         err instanceof Error ? err.message : String(err)
       )
 
-      // Try to extract error details from the error
-      let errorMessage = 'Failed to register. Please check your connection and try again.'
+      // Extract error details and convert to user-friendly message
+      let errorMessage: string | null = null
 
       if (err instanceof Error) {
-        errorMessage = err.message
-
         // Check if it's a validation error with details
         const errorObj = err as Error & { details?: unknown }
         if (errorObj.details) {
@@ -403,13 +481,17 @@ export default function LandingPage() {
               }
             }
           } catch (parseErr) {
-            // If parsing fails, use the original error message
+            // If parsing fails, use the error object itself
             console.error('Error parsing error details:', parseErr)
+            errorMessage = err.message
           }
+        } else {
+          errorMessage = err.message
         }
       }
 
-      setError(errorMessage)
+      // Convert to user-friendly message using helper function
+      setError(getErrorMessage(errorMessage || err))
     } finally {
       setLoading(false)
     }
@@ -640,12 +722,19 @@ export default function LandingPage() {
           <CardContent>
             <form onSubmit={handleIdentifierSubmit} className="space-y-4">
               {error && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-                  <div className="font-semibold mb-1">Error:</div>
-                  <div>{error}</div>
-                  <div className="mt-2 text-xs text-red-600">
-                    API URL: {process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}
+                <div className="bg-red-50 border-l-4 border-red-500 text-red-700 px-4 py-3 rounded-r-lg flex items-start gap-3">
+                  <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5 text-red-600" />
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-sm mb-1">Error</div>
+                    <div className="text-sm break-words">{error}</div>
                   </div>
+                  <button
+                    onClick={() => setError(null)}
+                    className="flex-shrink-0 text-red-600 hover:text-red-800 transition-colors p-1 rounded hover:bg-red-100"
+                    aria-label="Dismiss error"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
                 </div>
               )}
               <div className="space-y-2">

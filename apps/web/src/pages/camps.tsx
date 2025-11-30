@@ -18,7 +18,6 @@ import {
   Building2,
   ArrowLeft
 } from 'lucide-react';
-import LanguageSwitcher from '../components/LanguageSwitcher';
 import { CampStatus } from '@nx-mono-repo-deployment-test/shared/src/enums';
 import CampDonationModal from '../components/CampDonationModal';
 import { ICampInventoryItem } from '@nx-mono-repo-deployment-test/shared/src/interfaces/camp/ICampInventoryItem';
@@ -154,13 +153,8 @@ export default function CampsPage() {
 
       <div className="min-h-screen bg-gray-50 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Header with Language Switcher, Back Button, and Navigation Buttons */}
+          {/* Header with Back Button and Navigation Buttons */}
           <div className="mb-6 sm:mb-8">
-            {/* Language Switcher - Top and Centered */}
-            <div className="flex justify-center mb-4 sm:mb-6">
-              <LanguageSwitcher variant="light" />
-            </div>
-
             {/* Top Bar - Mobile optimized */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 mb-4 sm:mb-6 pb-4 border-b border-gray-200">
               {/* Back Button */}

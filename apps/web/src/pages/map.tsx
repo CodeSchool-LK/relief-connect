@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import Head from 'next/head'
 import { useRouter } from 'next/router'
 import { useTranslation } from 'next-i18next'
@@ -46,6 +46,7 @@ export default function MapDashboard() {
   const [mapZoom, setMapZoom] = useState(8)
   const [mapBounds, setMapBounds] = useState<{ minLat: number; maxLat: number; minLng: number; maxLng: number } | null>(null)
   const [debouncedBounds, setDebouncedBounds] = useState<{ minLat: number; maxLat: number; minLng: number; maxLng: number } | null>(null)
+  const isInitialLoadRef = useRef(true)
 
   useEffect(() => {
     const handleResize = () => {
@@ -75,9 +76,9 @@ export default function MapDashboard() {
     return helpRequests
   }, [helpRequests])
 
-  // Debounce bounds changes
+  // Debounce bounds changes - but skip on initial load
   useEffect(() => {
-    if (!mapBounds) return
+    if (!mapBounds || isInitialLoadRef.current) return
 
     const timer = setTimeout(() => {
       setDebouncedBounds(mapBounds)
@@ -86,12 +87,12 @@ export default function MapDashboard() {
     return () => clearTimeout(timer)
   }, [mapBounds])
 
-  const fetchData = useCallback(async () => {
+  // Fetch data function for filter changes (shows loading)
+  const fetchDataWithFilters = useCallback(async () => {
     setLoading(true)
     setError(null)
 
     try {
-      // Use bounds if available (will be null on initial load, then set after map initializes)
       // Fetch help requests from API
       const helpRequestsResponse = await helpRequestService.getAllHelpRequests({
         urgency: appliedFilters.emergencyLevel,
@@ -120,12 +121,57 @@ export default function MapDashboard() {
       setError(err instanceof Error ? err.message : 'Failed to load data')
     } finally {
       setLoading(false)
+      // Mark initial load as complete after first fetch
+      if (isInitialLoadRef.current) {
+        isInitialLoadRef.current = false
+      }
     }
   }, [appliedFilters.emergencyLevel, debouncedBounds])
 
+  // Fetch data function for bounds changes (doesn't show loading)
+  const fetchDataWithBounds = useCallback(async () => {
+    setError(null)
+
+    try {
+      // Fetch help requests from API
+      const helpRequestsResponse = await helpRequestService.getAllHelpRequests({
+        urgency: appliedFilters.emergencyLevel,
+        bounds: debouncedBounds || undefined,
+      })
+
+      // Fetch camps from API
+      const campsResponse = await campService.getAllCamps({
+        bounds: debouncedBounds || undefined,
+      })
+
+      if (helpRequestsResponse.success && helpRequestsResponse.data) {
+        setHelpRequests(helpRequestsResponse.data)
+      } else {
+        console.error('[MapPage] Failed to load help requests:', helpRequestsResponse.error)
+        setHelpRequests([])
+      }
+
+      if (campsResponse.success && campsResponse.data) {
+        setCamps(campsResponse.data)
+      } else {
+        console.error('[MapPage] Failed to load camps:', campsResponse.error)
+        setCamps([])
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load data')
+    }
+  }, [appliedFilters.emergencyLevel, debouncedBounds])
+
+  // Initial load and filter changes - show loading
   useEffect(() => {
-    fetchData()
-  }, [fetchData])
+    fetchDataWithFilters()
+  }, [appliedFilters.emergencyLevel])
+
+  // Fetch when bounds change (but not on initial load) - don't show loading
+  useEffect(() => {
+    if (isInitialLoadRef.current || !debouncedBounds) return
+    fetchDataWithBounds()
+  }, [debouncedBounds, fetchDataWithBounds])
 
   const handleBoundsChange = useCallback((bounds: { minLat: number; maxLat: number; minLng: number; maxLng: number }) => {
     setMapBounds(bounds)
@@ -384,7 +430,7 @@ export default function MapDashboard() {
           {!loading && !error && (
             <div className="h-full w-full">
               <Map
-                key={`map-${filteredRequests.length}-${appliedFilters.emergencyLevel || 'all'}-${appliedFilters.type || 'all'}`}
+                key={`map-${appliedFilters.emergencyLevel || 'all'}-${appliedFilters.type || 'all'}`}
                 helpRequests={filteredRequests}
                 camps={camps}
                 center={mapCenter}

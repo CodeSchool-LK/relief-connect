@@ -107,6 +107,7 @@ jobs:
             JWT_REFRESH_SECRET=${{ secrets.DEV_JWT_REFRESH_SECRET }}
             JWT_ACCESS_TOKEN_EXPIRES_IN=15m
             JWT_REFRESH_TOKEN_EXPIRES_IN=7d
+            ADMIN_API_KEY=${{ secrets.DEV_ADMIN_API_KEY }}
             EOF
             
             # Web env file

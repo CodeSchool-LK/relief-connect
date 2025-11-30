@@ -9,5 +9,8 @@ export { Urgency, ContactType };
 export interface HelpRequestFilters {
   urgency?: Urgency;
   district?: string;
+  bounds?: { minLat: number; maxLat: number; minLng: number; maxLng: number };
+  page?: number;
+  limit?: number;
 }
 

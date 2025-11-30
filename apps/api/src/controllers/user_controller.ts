@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { UserService } from '../services';
-import { CreateUserDto, LoginResponseDto, UserResponseDto, CreateAdminDto, CreateVolunteerClubUserDto, GeneratePasswordResponseDto } from '@nx-mono-repo-deployment-test/shared/src/dtos';
+import { CreateUserDto,UserResponseDto, CreateAdminDto, CreateVolunteerClubUserDto } from '@nx-mono-repo-deployment-test/shared/src/dtos';
 
 /**
  * Controller for User endpoints

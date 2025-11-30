@@ -10,5 +10,6 @@ export interface CampFilters {
   campType?: CampType;
   needs?: CampNeed[];
   district?: string;
+  bounds?: { minLat: number; maxLat: number; minLng: number; maxLng: number };
 }
 

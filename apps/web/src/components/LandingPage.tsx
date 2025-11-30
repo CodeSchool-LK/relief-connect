@@ -31,6 +31,8 @@ import {
   ArrowRight,
   ChevronDown,
   ChevronUp,
+  ChevronLeft,
+  ChevronRight,
   Home,
   Building2,
   Baby,
@@ -68,6 +70,10 @@ export default function LandingPage() {
   const [selectedLevel, setSelectedLevel] = useState<Urgency | undefined>(undefined)
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
   const [selectedRequest, setSelectedRequest] = useState<HelpRequestResponseDto | null>(null)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage] = useState(9) // 3 columns × 3 rows
+  const [totalCount, setTotalCount] = useState(0)
+  const [loadingRequests, setLoadingRequests] = useState(false)
 
   // Check for existing authentication
   useEffect(() => {
@@ -100,24 +106,44 @@ export default function LandingPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router.query])
 
-  // Load requests from API
+  // Load requests from API with pagination and filters
   useEffect(() => {
     const loadData = async () => {
+      setLoadingRequests(true)
       try {
-        const response = await helpRequestService.getAllHelpRequests()
+        const filters: {
+          urgency?: Urgency
+          page?: number
+          limit?: number
+        } = {
+          page: currentPage,
+          limit: itemsPerPage,
+        }
+        
+        if (selectedLevel) {
+          filters.urgency = selectedLevel
+        }
+
+        const response = await helpRequestService.getAllHelpRequests(filters)
         if (response.success && response.data) {
           setHelpRequests(response.data)
+          // Use count from API response for total count
+          setTotalCount(response.count || response.data.length)
         } else {
           console.error('[LandingPage] Failed to load help requests:', response.error)
           setHelpRequests([])
+          setTotalCount(0)
         }
       } catch (error) {
         console.error('[LandingPage] Error loading help requests:', error)
         setHelpRequests([])
+        setTotalCount(0)
+      } finally {
+        setLoadingRequests(false)
       }
     }
     loadData()
-  }, [])
+  }, [currentPage, selectedLevel, itemsPerPage])
 
   // Load summary statistics from API (for Donation Requests cards)
   useEffect(() => {
@@ -140,9 +166,25 @@ export default function LandingPage() {
   }, [])
 
   // Use requests as-is (coordinates should come from API)
+  // Note: Client-side location sorting is removed since we're using backend pagination
   const requestsWithMockCoords = useMemo(() => {
+    // If user has location, sort by distance on client side (for current page only)
+    if (userLocation && helpRequests.length > 0) {
+      const { lat: userLat, lng: userLng } = userLocation
+
+      const distanceSq = (req: HelpRequestResponseDto) => {
+        const lat = Number(req.lat)
+        const lng = Number(req.lng)
+        if (Number.isNaN(lat) || Number.isNaN(lng)) return Number.POSITIVE_INFINITY
+        const dLat = lat - userLat
+        const dLng = lng - userLng
+        return dLat * dLat + dLng * dLng
+      }
+
+      return [...helpRequests].sort((a, b) => distanceSq(a) - distanceSq(b))
+    }
     return helpRequests
-  }, [helpRequests])
+  }, [helpRequests, userLocation])
 
   const handleIdentifierSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -333,32 +375,20 @@ export default function LandingPage() {
     }
   }, [helpRequests])
 
+  // Use requests directly (filtering is done on backend)
   const filteredRequests = useMemo(() => {
-    let filtered = requestsWithMockCoords
+    return requestsWithMockCoords
+  }, [requestsWithMockCoords])
 
-    // Filter by selected priority level (Medium / High)
-    if (selectedLevel) {
-      filtered = filtered.filter((request) => request.urgency === selectedLevel)
-    }
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [selectedLevel])
 
-    // If we have the user's location, sort requests by distance (nearest first)
-    if (userLocation) {
-      const { lat: userLat, lng: userLng } = userLocation
-
-      const distanceSq = (req: HelpRequestResponseDto) => {
-        const lat = Number(req.lat)
-        const lng = Number(req.lng)
-        if (Number.isNaN(lat) || Number.isNaN(lng)) return Number.POSITIVE_INFINITY
-        const dLat = lat - userLat
-        const dLng = lng - userLng
-        return dLat * dLat + dLng * dLng
-      }
-
-      filtered = [...filtered].sort((a, b) => distanceSq(a) - distanceSq(b))
-    }
-
-    return filtered
-  }, [requestsWithMockCoords, selectedLevel, userLocation])
+  // Calculate pagination from backend data
+  const totalPages = Math.ceil(totalCount / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = Math.min(startIndex + itemsPerPage, totalCount)
 
   // Calculate analytics for requests section
   // - When NO level or location is applied: use summary API data (overall picture)
@@ -393,7 +423,9 @@ export default function LandingPage() {
 
     // Fallback: calculate from filtered requests (used when filters/search are applied
     // or when summary is not available)
-    const totalRequests = filteredRequests.length
+    // Note: When using backend pagination, totalRequests uses totalCount from API
+    // Other metrics (people, kids, etc.) are calculated from current page only
+    const totalRequests = totalCount > 0 ? totalCount : filteredRequests.length
     const totalPeople = filteredRequests.reduce((sum, req) => {
       // Use real API field first, fallback to parsing shortNote
       return (
@@ -465,7 +497,7 @@ export default function LandingPage() {
       totalRations,
       primaryLocation,
     }
-  }, [filteredRequests, summary, selectedLevel, userLocation])
+  }, [filteredRequests, summary, selectedLevel, userLocation, totalCount])
 
   const handleNeedHelp = () => {
     router.push('/need-help')
@@ -1000,8 +1032,14 @@ export default function LandingPage() {
                 </CardContent>
               </Card>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredRequests.map((request) => {
+              <>
+                {loadingRequests ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="text-gray-500">Loading requests...</div>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {filteredRequests.map((request) => {
                   // Use real data from API response fields
                   const name =
                     request.name ||
@@ -1191,7 +1229,73 @@ export default function LandingPage() {
                     </Card>
                   )
                 })}
-              </div>
+                  </div>
+                )}
+
+                {/* Pagination Controls */}
+                {totalPages > 1 && (
+                  <div className="mt-8 flex items-center justify-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                      disabled={currentPage === 1}
+                      className="h-9 px-3"
+                    >
+                      <ChevronLeft className="h-4 w-4 mr-1" />
+                      Previous
+                    </Button>
+
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                        // Show first page, last page, current page, and pages around current
+                        if (
+                          page === 1 ||
+                          page === totalPages ||
+                          (page >= currentPage - 1 && page <= currentPage + 1)
+                        ) {
+                          return (
+                            <Button
+                              key={page}
+                              variant={currentPage === page ? 'default' : 'outline'}
+                              size="sm"
+                              onClick={() => setCurrentPage(page)}
+                              className="h-9 w-9 p-0"
+                            >
+                              {page}
+                            </Button>
+                          )
+                        } else if (page === currentPage - 2 || page === currentPage + 2) {
+                          return (
+                            <span key={page} className="px-2 text-gray-500">
+                              ...
+                            </span>
+                          )
+                        }
+                        return null
+                      })}
+                    </div>
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                      disabled={currentPage === totalPages}
+                      className="h-9 px-3"
+                    >
+                      Next
+                      <ChevronRight className="h-4 w-4 ml-1" />
+                    </Button>
+                  </div>
+                )}
+
+                {/* Pagination Info */}
+                {totalPages > 1 && (
+                  <div className="mt-4 text-center text-sm text-gray-600">
+                    Showing {startIndex + 1} to {endIndex} of {totalCount} requests
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>

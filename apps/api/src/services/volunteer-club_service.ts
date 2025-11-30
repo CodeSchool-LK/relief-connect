@@ -3,7 +3,6 @@ import {
   CreateVolunteerClubDto, 
   UpdateVolunteerClubDto, 
   VolunteerClubResponseDto,
-  IVolunteerClub,
   IApiResponse
 } from '@nx-mono-repo-deployment-test/shared';
 

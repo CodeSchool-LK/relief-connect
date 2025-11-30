@@ -26,7 +26,7 @@ class HelpRequestService {
   }
 
   /**
-   * Get all help requests with optional filters
+   * Get all help requests with optional filters and pagination
    */
   public async getAllHelpRequests(
     filters?: HelpRequestFilters
@@ -35,6 +35,14 @@ class HelpRequestService {
       const params: Record<string, string> = {};
       if (filters?.urgency) params.urgency = filters.urgency;
       if (filters?.district) params.district = filters.district;
+      if (filters?.bounds) {
+        params.minLat = filters.bounds.minLat.toString();
+        params.maxLat = filters.bounds.maxLat.toString();
+        params.minLng = filters.bounds.minLng.toString();
+        params.maxLng = filters.bounds.maxLng.toString();
+      }
+      if (filters?.page) params.page = filters.page.toString();
+      if (filters?.limit) params.limit = filters.limit.toString();
 
       const response = await apiClient.get<IApiResponse<HelpRequestResponseDto[]>>(
         this.basePath,

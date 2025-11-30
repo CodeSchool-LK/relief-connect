@@ -17,14 +17,17 @@ class HelpRequestController {
 
   /**
    * GET /api/help-requests
-   * Get all help requests with optional filters
-   * Query params: urgency, district
+   * Get all help requests with optional filters and pagination
+   * Query params: urgency, district, minLat, maxLat, minLng, maxLng, page, limit
    */
   getHelpRequests = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const filters: {
         urgency?: Urgency;
         district?: string;
+        bounds?: { minLat: number; maxLat: number; minLng: number; maxLng: number };
+        page?: number;
+        limit?: number;
       } = {};
 
       // Parse query parameters
@@ -33,6 +36,37 @@ class HelpRequestController {
       }
       if (req.query.district) {
         filters.district = req.query.district as string;
+      }
+      
+      // Parse bounds parameters
+      if (req.query.minLat && req.query.maxLat && req.query.minLng && req.query.maxLng) {
+        const minLat = parseFloat(req.query.minLat as string);
+        const maxLat = parseFloat(req.query.maxLat as string);
+        const minLng = parseFloat(req.query.minLng as string);
+        const maxLng = parseFloat(req.query.maxLng as string);
+        
+        // Validate bounds: ensure they are valid numbers and min < max
+        if (
+          !isNaN(minLat) && !isNaN(maxLat) && !isNaN(minLng) && !isNaN(maxLng) &&
+          minLat < maxLat && minLng < maxLng &&
+          minLat >= -90 && maxLat <= 90 && minLng >= -180 && maxLng <= 180
+        ) {
+          filters.bounds = { minLat, maxLat, minLng, maxLng };
+        }
+      }
+
+      // Parse pagination parameters
+      if (req.query.page) {
+        const page = parseInt(req.query.page as string, 10);
+        if (!isNaN(page) && page > 0) {
+          filters.page = page;
+        }
+      }
+      if (req.query.limit) {
+        const limit = parseInt(req.query.limit as string, 10);
+        if (!isNaN(limit) && limit > 0 && limit <= 100) {
+          filters.limit = limit;
+        }
       }
 
       const result = await this.helpRequestService.getAllHelpRequests(filters);

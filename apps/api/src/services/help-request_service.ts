@@ -39,20 +39,23 @@ class HelpRequestService {
   }
 
   /**
-   * Get all help requests with optional filters
+   * Get all help requests with optional filters and pagination
    */
   public async getAllHelpRequests(filters?: {
     urgency?: Urgency;
     district?: string;
+    bounds?: { minLat: number; maxLat: number; minLng: number; maxLng: number };
+    page?: number;
+    limit?: number;
   }): Promise<IApiResponse<HelpRequestResponseDto[]>> {
     try {
-      const helpRequests = await this.helpRequestDao.findAll(filters);
-      const helpRequestDtos = helpRequests.map(hr => new HelpRequestResponseDto(hr));
+      const result = await this.helpRequestDao.findAll(filters);
+      const helpRequestDtos = result.data.map(hr => new HelpRequestResponseDto(hr));
 
       return {
         success: true,
         data: helpRequestDtos,
-        count: helpRequestDtos.length,
+        count: result.total, // Total count for pagination
       };
     } catch (error) {
       console.error('Error in HelpRequestService.getAllHelpRequests:', error);

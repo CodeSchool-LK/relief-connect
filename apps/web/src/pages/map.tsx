@@ -44,6 +44,8 @@ export default function MapDashboard() {
   }>({})
   const [mapCenter, setMapCenter] = useState<[number, number]>([7.8731, 80.7718])
   const [mapZoom, setMapZoom] = useState(8)
+  const [mapBounds, setMapBounds] = useState<{ minLat: number; maxLat: number; minLng: number; maxLng: number } | null>(null)
+  const [debouncedBounds, setDebouncedBounds] = useState<{ minLat: number; maxLat: number; minLng: number; maxLng: number } | null>(null)
 
   useEffect(() => {
     const handleResize = () => {
@@ -73,18 +75,33 @@ export default function MapDashboard() {
     return helpRequests
   }, [helpRequests])
 
+  // Debounce bounds changes
+  useEffect(() => {
+    if (!mapBounds) return
+
+    const timer = setTimeout(() => {
+      setDebouncedBounds(mapBounds)
+    }, 600) // 600ms debounce delay
+
+    return () => clearTimeout(timer)
+  }, [mapBounds])
+
   const fetchData = useCallback(async () => {
     setLoading(true)
     setError(null)
 
     try {
+      // Use bounds if available (will be null on initial load, then set after map initializes)
       // Fetch help requests from API
       const helpRequestsResponse = await helpRequestService.getAllHelpRequests({
         urgency: appliedFilters.emergencyLevel,
+        bounds: debouncedBounds || undefined,
       })
 
       // Fetch camps from API
-      const campsResponse = await campService.getAllCamps({})
+      const campsResponse = await campService.getAllCamps({
+        bounds: debouncedBounds || undefined,
+      })
 
       if (helpRequestsResponse.success && helpRequestsResponse.data) {
         setHelpRequests(helpRequestsResponse.data)
@@ -104,11 +121,15 @@ export default function MapDashboard() {
     } finally {
       setLoading(false)
     }
-  }, [appliedFilters.emergencyLevel])
+  }, [appliedFilters.emergencyLevel, debouncedBounds])
 
   useEffect(() => {
     fetchData()
   }, [fetchData])
+
+  const handleBoundsChange = useCallback((bounds: { minLat: number; maxLat: number; minLng: number; maxLng: number }) => {
+    setMapBounds(bounds)
+  }, [])
 
   // Map center is fixed to Sri Lanka center
   // Province/District filter logic removed
@@ -369,6 +390,7 @@ export default function MapDashboard() {
                 center={mapCenter}
                 zoom={mapZoom}
                 onRequestClick={handleViewRequestDetails}
+                onBoundsChange={handleBoundsChange}
               />
             </div>
           )}

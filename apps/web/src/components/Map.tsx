@@ -3,7 +3,7 @@
 import type React from "react"
 import { useEffect } from "react"
 import { useRouter } from "next/router"
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet"
+import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from "react-leaflet"
 import L from "leaflet"
 import "leaflet/dist/leaflet.css"
 import type { HelpRequestResponseDto } from "@nx-mono-repo-deployment-test/shared/src/dtos/help-request/response/help_request_response_dto"
@@ -43,6 +43,7 @@ interface MapProps {
   center?: [number, number]
   zoom?: number
   onRequestClick?: (request: HelpRequestResponseDto) => void
+  onBoundsChange?: (bounds: { minLat: number; maxLat: number; minLng: number; maxLng: number }) => void
 }
 
 const MapUpdater: React.FC<{ center: [number, number]; zoom: number }> = ({ center, zoom }) => {
@@ -51,6 +52,53 @@ const MapUpdater: React.FC<{ center: [number, number]; zoom: number }> = ({ cent
   useEffect(() => {
     map.setView(center, zoom)
   }, [map, center, zoom])
+
+  return null
+}
+
+// Component to track map bounds changes
+const MapBoundsTracker: React.FC<{
+  onBoundsChange?: (bounds: { minLat: number; maxLat: number; minLng: number; maxLng: number }) => void
+}> = ({ onBoundsChange }) => {
+  const map = useMap()
+
+  useMapEvents({
+    moveend: () => {
+      if (onBoundsChange) {
+        const bounds = map.getBounds()
+        onBoundsChange({
+          minLat: bounds.getSouth(),
+          maxLat: bounds.getNorth(),
+          minLng: bounds.getWest(),
+          maxLng: bounds.getEast(),
+        })
+      }
+    },
+    zoomend: () => {
+      if (onBoundsChange) {
+        const bounds = map.getBounds()
+        onBoundsChange({
+          minLat: bounds.getSouth(),
+          maxLat: bounds.getNorth(),
+          minLng: bounds.getWest(),
+          maxLng: bounds.getEast(),
+        })
+      }
+    },
+  })
+
+  // Also trigger on initial load
+  useEffect(() => {
+    if (onBoundsChange) {
+      const bounds = map.getBounds()
+      onBoundsChange({
+        minLat: bounds.getSouth(),
+        maxLat: bounds.getNorth(),
+        minLng: bounds.getWest(),
+        maxLng: bounds.getEast(),
+      })
+    }
+  }, [map, onBoundsChange])
 
   return null
 }
@@ -281,6 +329,7 @@ const Map: React.FC<MapProps> = ({
   center = [7.8731, 80.7718], // Sri Lanka center
   zoom = 7,
   onRequestClick,
+  onBoundsChange,
 }) => {
   // Filter and validate coordinates
   const validHelpRequests = helpRequests.filter((request) => {
@@ -306,6 +355,7 @@ const Map: React.FC<MapProps> = ({
     <div className={styles.mapContainer}>
       <MapContainer center={center} zoom={zoom} style={{ height: "100%", width: "100%" }} scrollWheelZoom={true}>
         <MapUpdater center={center} zoom={zoom} />
+        <MapBoundsTracker onBoundsChange={onBoundsChange} />
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"

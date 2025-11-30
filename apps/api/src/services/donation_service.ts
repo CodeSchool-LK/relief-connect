@@ -62,9 +62,9 @@ class DonationService {
     try {
       const donations = await this.donationDao.findByDonatorId(donatorId);
       
-      // Map donations to DTOs with help request information
+      // Map donations to DTOs with help request and camp information
       const donationDtos = donations.map(d => {
-        return new DonationWithHelpRequestResponseDto(d, d.helpRequest);
+        return new DonationWithHelpRequestResponseDto(d, d.helpRequest, d.camp);
       });
 
       return {

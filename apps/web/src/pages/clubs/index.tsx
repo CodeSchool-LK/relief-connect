@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Head from 'next/head';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
@@ -18,6 +18,7 @@ export default function ClubsPage() {
   const [clubs, setClubs] = useState<IVolunteerClub[]>([]);
   const [memberships, setMemberships] = useState<IMembership[]>([]);
   const [loading, setLoading] = useState(true);
+  const [membershipsLoaded, setMembershipsLoaded] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [requesting, setRequesting] = useState<number | null>(null);
 
@@ -38,6 +39,7 @@ export default function ClubsPage() {
 
   const loadData = async () => {
     setLoading(true);
+    setMembershipsLoaded(false);
     try {
       const [clubsResponse, membershipsResponse] = await Promise.all([
         volunteerClubService.getAllVolunteerClubs(),
@@ -50,9 +52,15 @@ export default function ClubsPage() {
 
       if (membershipsResponse.success && membershipsResponse.data) {
         setMemberships(membershipsResponse.data);
+      } else {
+        // Even if the response fails, set empty array to indicate we've attempted to load
+        setMemberships([]);
       }
+      setMembershipsLoaded(true);
     } catch (error) {
       console.error('Error loading data:', error);
+      setMemberships([]);
+      setMembershipsLoaded(true);
     } finally {
       setLoading(false);
     }
@@ -79,9 +87,17 @@ export default function ClubsPage() {
     }
   };
 
+  // Memoize membership statuses to ensure they update when memberships change
+  const membershipStatuses = useMemo(() => {
+    const statusMap = new Map<number, 'PENDING' | 'APPROVED' | 'REJECTED' | null>();
+    memberships.forEach((membership) => {
+      statusMap.set(membership.volunteerClubId, membership.status as 'PENDING' | 'APPROVED' | 'REJECTED');
+    });
+    return statusMap;
+  }, [memberships]);
+
   const getMembershipStatus = (clubId: number): 'PENDING' | 'APPROVED' | 'REJECTED' | null => {
-    const membership = memberships.find((m) => m.volunteerClubId === clubId);
-    return membership ? (membership.status as 'PENDING' | 'APPROVED' | 'REJECTED') : null;
+    return membershipStatuses.get(clubId) ?? null;
   };
 
   const filteredClubs = clubs.filter((club) =>
@@ -89,7 +105,7 @@ export default function ClubsPage() {
     club.description?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  if (loading) {
+  if (loading || !membershipsLoaded) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin" />

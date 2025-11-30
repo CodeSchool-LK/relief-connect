@@ -37,12 +37,11 @@ export default function VolunteerClubDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [club, setClub] = useState<IVolunteerClub | null>(null);
   const [helpRequests, setHelpRequests] = useState<IHelpRequest[]>([]);
-  const [donations, setDonations] = useState<DonationWithDonatorResponseDto[]>([]);
   const [campDonations, setCampDonations] = useState<DonationWithDonatorResponseDto[]>([]);
   const [camps, setCamps] = useState<ICamp[]>([]);
   const [memberships, setMemberships] = useState<IMembership[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeTab, setActiveTab] = useState<'help-requests' | 'donations' | 'camps' | 'memberships' | 'camp-donations'>('help-requests');
+  const [activeTab, setActiveTab] = useState<'help-requests' | 'camps' | 'memberships' | 'camp-donations'>('help-requests');
   const [reviewingMembershipId, setReviewingMembershipId] = useState<number | null>(null);
   const [acceptingDonationId, setAcceptingDonationId] = useState<number | null>(null);
   const [showCreateDonationModal, setShowCreateDonationModal] = useState(false);
@@ -75,25 +74,6 @@ export default function VolunteerClubDashboard() {
       const helpRequestsResponse = await helpRequestService.getAllHelpRequests();
       if (helpRequestsResponse.success && helpRequestsResponse.data) {
         setHelpRequests(helpRequestsResponse.data);
-      }
-
-      // Load donations (we'll need to get donations from all help requests)
-      // For now, we'll show a summary - in a real implementation, you might want a dedicated endpoint
-      const donationsResponse = await helpRequestService.getAllHelpRequests();
-      if (donationsResponse.success && donationsResponse.data) {
-        // Get donations for each help request
-        const allDonations: DonationWithDonatorResponseDto[] = [];
-        for (const hr of donationsResponse.data.slice(0, 10)) { // Limit to first 10 for performance
-          try {
-            const hrDonations = await donationService.getDonationsByHelpRequestId(hr.id!);
-            if (hrDonations.success && hrDonations.data) {
-              allDonations.push(...hrDonations.data);
-            }
-          } catch (error) {
-            console.error(`Error loading donations for help request ${hr.id}:`, error);
-          }
-        }
-        setDonations(allDonations);
       }
 
       // Load camps
@@ -141,16 +121,6 @@ export default function VolunteerClubDashboard() {
       hr.approxArea?.toLowerCase().includes(search) ||
       hr.name?.toLowerCase().includes(search) ||
       hr.contact?.toLowerCase().includes(search)
-    );
-  });
-
-  const filteredDonations = donations.filter(d => {
-    if (!searchTerm) return true;
-    const search = searchTerm.toLowerCase();
-    return (
-      d.donatorName?.toLowerCase().includes(search) ||
-      d.donatorMobileNumber?.toLowerCase().includes(search) ||
-      d.donatorUsername?.toLowerCase().includes(search)
     );
   });
 
@@ -349,20 +319,6 @@ export default function VolunteerClubDashboard() {
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Donations</p>
-                    <p className="text-2xl font-bold text-gray-900 mt-1">{donations.length}</p>
-                  </div>
-                  <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
-                    <Package className="w-6 h-6 text-green-600" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-between">
-                  <div>
                     <p className="text-sm font-medium text-gray-600">Active Camps</p>
                     <p className="text-2xl font-bold text-gray-900 mt-1">{camps.length}</p>
                   </div>
@@ -404,16 +360,6 @@ export default function VolunteerClubDashboard() {
                     }`}
                   >
                     Help Requests
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('donations')}
-                    className={`px-4 py-2 font-medium text-sm ${
-                      activeTab === 'donations'
-                        ? 'text-blue-600 border-b-2 border-blue-600'
-                        : 'text-gray-600 hover:text-gray-900'
-                    }`}
-                  >
-                    Donations
                   </button>
                   <button
                     onClick={() => setActiveTab('camps')}
@@ -533,75 +479,6 @@ export default function VolunteerClubDashboard() {
                               <Link href={`/help-requests/${hr.id}/donations`}>
                                 <Button variant="outline" size="sm">
                                   View Donations
-                                </Button>
-                              </Link>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))
-                  )}
-                </div>
-              )}
-
-              {/* Donations Tab */}
-              {activeTab === 'donations' && (
-                <div className="space-y-4">
-                  {filteredDonations.length === 0 ? (
-                    <div className="text-center py-12">
-                      <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                      <p className="text-gray-600">No donations found</p>
-                    </div>
-                  ) : (
-                    filteredDonations.map((donation) => (
-                      <Card key={donation.id} className="hover:shadow-md transition-shadow">
-                        <CardContent className="pt-6">
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-2">
-                                <h3 className="font-semibold text-lg">
-                                  Donation from {donation.donatorName || 'Unknown'}
-                                </h3>
-                                {(donation.ownerMarkedCompleted || donation.donatorMarkedCompleted) && (
-                                  <span className={`px-2 py-1 text-xs rounded ${getStatusColor('COMPLETED')}`}>
-                                    Completed
-                                  </span>
-                                )}
-                                {donation.donatorMarkedScheduled && !donation.ownerMarkedCompleted && (
-                                  <span className={`px-2 py-1 text-xs rounded ${getStatusColor('SCHEDULED')}`}>
-                                    Scheduled
-                                  </span>
-                                )}
-                              </div>
-                              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm text-gray-600 mb-4">
-                                {donation.donatorName && (
-                                  <div>
-                                    <span className="font-medium">Donator:</span> {donation.donatorName}
-                                  </div>
-                                )}
-                                {donation.donatorMobileNumber && (
-                                  <div>
-                                    <span className="font-medium">Contact:</span> {donation.donatorMobileNumber}
-                                  </div>
-                                )}
-                                {donation.createdAt && (
-                                  <div>
-                                    <span className="font-medium">Created:</span>{' '}
-                                    {new Date(donation.createdAt).toLocaleDateString()}
-                                  </div>
-                                )}
-                              </div>
-                              {Object.keys(donation.rationItems || {}).length > 0 && (
-                                <p className="text-sm text-gray-600 mb-4">
-                                  <Package className="w-4 h-4 inline mr-1" />
-                                  Items: {Object.entries(donation.rationItems).map(([item, qty]) => `${item} (${qty})`).join(', ')}
-                                </p>
-                              )}
-                            </div>
-                            <div className="flex flex-col gap-2 ml-4">
-                              <Link href={`/help-requests/${donation.helpRequestId}/donations/${donation.id}`}>
-                                <Button variant="outline" size="sm">
-                                  View Details
                                 </Button>
                               </Link>
                             </div>

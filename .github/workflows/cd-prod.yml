@@ -51,7 +51,7 @@ jobs:
             nx-web-prod:latest
             nx-web-prod:${{ github.sha }}
           build-args: |
-            NEXT_PUBLIC_API_URL=https://prod-api.pasindusampath.com
+            NEXT_PUBLIC_API_URL=https://api.rebuildsl.com
           cache-from: type=gha
           cache-to: type=gha,mode=max
       
@@ -66,23 +66,27 @@ jobs:
             set -e
             
             # Check if directory exists AND is a git repository
-            if [ ! -d "/opt/nx-mono-repo-prod/.git" ]; then
-              echo "Initializing /opt/nx-mono-repo-prod..."
-              sudo rm -rf /opt/nx-mono-repo-prod
-              sudo mkdir -p /opt/nx-mono-repo-prod
-              sudo chown -R $USER:$USER /opt/nx-mono-repo-prod
-              cd /opt/nx-mono-repo-prod
+            if [ ! -d "/opt/rebuildsl_prod/.git" ]; then
+              echo "Initializing /opt/rebuildsl_prod..."
+              sudo rm -rf /opt/rebuildsl_prod
+              sudo mkdir -p /opt/rebuildsl_prod
+              cd /opt/rebuildsl_prod
+              # Add to Git safe directory to avoid ownership issues
+              git config --global --add safe.directory /opt/rebuildsl_prod
               git clone ${{ github.server_url }}/${{ github.repository }} .
-              git checkout main
+              git checkout production
             else
               # Navigate to deployment directory
-              cd /opt/nx-mono-repo-prod
+              cd /opt/rebuildsl_prod
+              
+              # Add to Git safe directory to avoid ownership issues
+              git config --global --add safe.directory /opt/rebuildsl_prod
               
               # Pull latest changes
               echo "Pulling latest changes..."
               git fetch origin
-              git checkout main
-              git pull origin main
+              git checkout production
+              git pull origin production
             fi
             
             # Create environment-specific .env files
@@ -97,14 +101,19 @@ jobs:
             DB_NAME=${{ secrets.PROD_DB_NAME }}
             DB_USER=${{ secrets.PROD_DB_USER }}
             DB_PASSWORD=${{ secrets.PROD_DB_PASSWORD }}
-            CORS_ORIGIN=https://prod-web.pasindusampath.com
+            CORS_ORIGIN=https://rebuildsl.com
+            JWT_SECRET=${{ secrets.PROD_JWT_SECRET }}
+            JWT_REFRESH_SECRET=${{ secrets.PROD_JWT_REFRESH_SECRET }}
+            JWT_ACCESS_TOKEN_EXPIRES_IN=15m
+            JWT_REFRESH_TOKEN_EXPIRES_IN=7d
+            ADMIN_API_KEY=${{ secrets.PROD_ADMIN_API_KEY }}
             EOF
             
             # Web env file
             cat > apps/web/.env.prod << 'EOF'
             NODE_ENV=production
             PORT=3023
-            NEXT_PUBLIC_API_URL=https://prod-api.pasindusampath.com
+            NEXT_PUBLIC_API_URL=https://api.rebuildsl.com
             EOF
             
             # Create network if it doesn't exist
@@ -143,13 +152,13 @@ jobs:
         run: |
           sleep 30
           echo "Checking PRODUCTION health endpoint..."
-          curl -f https://prod-api.pasindusampath.com/health || curl -f http://${{ secrets.VPS_HOST }}:3013/health || exit 1
+          curl -f https://api.rebuildsl.com/health || curl -f http://${{ secrets.VPS_HOST }}:3013/health || exit 1
         continue-on-error: true
       
       - name: Notify deployment status
         if: always()
         run: |
           echo "🚀 PRODUCTION Deployment completed with status: ${{ job.status }}"
-          echo "📍 API URL: https://prod-api.pasindusampath.com"
-          echo "📍 Web URL: https://prod-web.pasindusampath.com"
+          echo "📍 API URL: https://api.rebuildsl.com"
+          echo "📍 Web URL: https://rebuildsl.com"
 

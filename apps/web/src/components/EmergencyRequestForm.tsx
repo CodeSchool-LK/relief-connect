@@ -182,14 +182,26 @@ export default function EmergencyRequestForm({
         ? ` Special Needs: ${formData.specialNeeds}`
         : ''
 
+      // Generate shortNote and ensure it's between 1 and 160 characters
+      let shortNote = formData.notes?.trim() || 
+        `Items: ${rationItemsList}${specialNeedsText}`.trim() || 
+        'Help request'
+      
+      // Truncate to 160 characters if too long
+      if (shortNote.length > 160) {
+        shortNote = shortNote.substring(0, 157) + '...'
+      }
+      
+      // Ensure it's at least 1 character
+      if (shortNote.length === 0) {
+        shortNote = 'Help request'
+      }
+
       const helpRequestData: ICreateHelpRequest = {
         lat: formData.gpsLocation.lat,
         lng: formData.gpsLocation.lng,
         urgency: formData.urgent ? Urgency.HIGH : Urgency.MEDIUM,
-        shortNote:
-          formData.notes ||
-          `Items: ${rationItemsList}${specialNeedsText}`.trim() ||
-          'Help request',
+        shortNote,
         approxArea: `${formData.gpsLocation.lat}, ${formData.gpsLocation.lng}`,
         contactType: ContactType.PHONE,
         contact: formData.contactNumber,

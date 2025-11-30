@@ -72,15 +72,11 @@ export default function CampDetailsPage() {
   useEffect(() => {
     if (authLoading) return;
     
-    if (!isAuthenticated) {
-      router.push('/login');
-      return;
-    }
-
+    // Allow viewing camp details without authentication
     if (id) {
       loadCamp();
     }
-  }, [id, isAuthenticated, authLoading, router, loadCamp]);
+  }, [id, authLoading, loadCamp]);
 
   // Scroll to drop-off locations section if tab=dropoff query param is present
   useEffect(() => {
@@ -102,18 +98,9 @@ export default function CampDetailsPage() {
     );
   }
 
-  // Determine back URL based on context
+  // Determine back URL - always go back to map page
   const getBackUrl = (campData?: CampResponseDto | null) => {
-    // If clubId query param exists, go back to that club
-    if (clubId) {
-      return `/clubs/${clubId}`;
-    }
-    // If camp has volunteerClubId, go back to that club
-    if (campData?.volunteerClubId) {
-      return `/clubs/${campData.volunteerClubId}`;
-    }
-    // Fallback to camps list
-    return '/camps';
+    return '/map';
   };
 
   if (error || !camp) {

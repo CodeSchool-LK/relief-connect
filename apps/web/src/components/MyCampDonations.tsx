@@ -57,8 +57,8 @@ export default function MyCampDonations({ camp, currentUserId }: MyCampDonations
       <Card>
         <CardHeader>
           <CardTitle className="text-lg sm:text-xl flex items-center gap-2">
-            <User className="w-5 h-5 text-blue-600" />
-            My Donations
+            <Package className="w-5 h-5 text-blue-600" />
+            Donations
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -75,8 +75,8 @@ export default function MyCampDonations({ camp, currentUserId }: MyCampDonations
       <Card>
         <CardHeader>
           <CardTitle className="text-lg sm:text-xl flex items-center gap-2">
-            <User className="w-5 h-5 text-blue-600" />
-            My Donations
+            <Package className="w-5 h-5 text-blue-600" />
+            Donations
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -92,8 +92,8 @@ export default function MyCampDonations({ camp, currentUserId }: MyCampDonations
     <Card className="border-2 border-blue-200">
       <CardHeader>
         <CardTitle className="text-lg sm:text-xl flex items-center gap-2">
-          <User className="w-5 h-5 text-blue-600" />
-          My Donations ({donations.length})
+          <Package className="w-5 h-5 text-blue-600" />
+          Donations ({donations.length})
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -107,7 +107,7 @@ export default function MyCampDonations({ camp, currentUserId }: MyCampDonations
                 <div className="flex items-center justify-between pb-3 border-b border-gray-200">
                   <div>
                     <span className="font-bold text-base sm:text-lg text-gray-900">
-                      Your Donation
+                      Donation
                     </span>
                     <div className="text-xs text-gray-500 mt-1">Donation #{donation.id}</div>
                   </div>

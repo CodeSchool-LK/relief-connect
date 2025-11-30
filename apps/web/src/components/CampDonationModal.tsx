@@ -143,23 +143,23 @@ export default function CampDonationModal({
   const otherDonations = donations.filter((d) => d.donatorId !== currentUserId);
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] p-4">
-      <Card className="w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
-        <CardHeader className="sticky top-0 bg-gradient-to-r from-blue-50 to-purple-50 z-10 border-b shadow-sm">
-          <div className="flex items-center justify-between">
-            <div className="flex-1">
-              <CardTitle className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                <Package className="h-6 w-6 text-blue-600" />
-                Donations for {camp.name}
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] p-2 sm:p-4">
+      <Card className="w-full max-w-5xl max-h-[95vh] sm:max-h-[90vh] overflow-hidden flex flex-col">
+        <CardHeader className="sticky top-0 bg-gradient-to-r from-blue-50 to-purple-50 z-10 border-b shadow-sm p-4 sm:p-6">
+          <div className="flex items-start sm:items-center justify-between gap-2">
+            <div className="flex-1 min-w-0">
+              <CardTitle className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-2">
+                <Package className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600 flex-shrink-0" />
+                <span className="truncate">Donations for {camp.name}</span>
               </CardTitle>
-              <p className="text-sm text-gray-600 mt-2 line-clamp-2">{camp.shortNote}</p>
+              <p className="text-xs sm:text-sm text-gray-600 mt-2 line-clamp-2">{camp.shortNote}</p>
             </div>
-            <Button variant="ghost" size="sm" onClick={onClose} className="ml-4">
-              <X className="h-5 w-5" />
+            <Button variant="ghost" size="sm" onClick={onClose} className="ml-2 sm:ml-4 flex-shrink-0 h-8 w-8 sm:h-9 sm:w-9 p-0">
+              <X className="h-4 w-4 sm:h-5 sm:w-5" />
             </Button>
           </div>
         </CardHeader>
-        <CardContent className="p-6 space-y-6 overflow-y-auto flex-1">
+        <CardContent className="p-4 sm:p-6 space-y-4 sm:space-y-6 overflow-y-auto flex-1">
           {error && (
             <div className="bg-red-50 border-l-4 border-red-500 text-red-700 px-4 py-3 rounded-r-lg flex items-center gap-2">
               <AlertCircle className="h-5 w-5 flex-shrink-0" />
@@ -169,21 +169,21 @@ export default function CampDonationModal({
 
               {/* Create Donation Section */}
               {currentUserId && (
-            <div className="border-2 border-dashed border-blue-200 rounded-xl p-5 bg-gradient-to-br from-blue-50/50 to-purple-50/50">
+            <div className="border-2 border-dashed border-blue-200 rounded-xl p-3 sm:p-5 bg-gradient-to-br from-blue-50/50 to-purple-50/50">
               {!showCreateForm ? (
                 <Button 
                   onClick={() => setShowCreateForm(true)} 
-                  className="w-full h-12 text-base font-semibold bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg"
+                  className="w-full h-11 sm:h-12 text-sm sm:text-base font-semibold bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg touch-manipulation"
                 >
-                  <Package className="h-5 w-5 mr-2" />
+                  <Package className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
                   {isClubAdmin ? 'Add Items to Inventory' : 'Create New Donation'}
                 </Button>
               ) : (
-                <div className="space-y-5">
-                  <div className="flex items-center justify-between pb-3 border-b border-gray-200">
-                    <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                      <HandHeart className="h-5 w-5 text-green-600" />
-                      {isClubAdmin ? 'Add Items to Camp Inventory' : 'Select Items to Donate'}
+                <div className="space-y-4 sm:space-y-5">
+                  <div className="flex items-center justify-between pb-3 border-b border-gray-200 gap-2">
+                    <h3 className="text-lg sm:text-xl font-bold text-gray-900 flex items-center gap-2 min-w-0">
+                      <HandHeart className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 flex-shrink-0" />
+                      <span className="truncate">{isClubAdmin ? 'Add Items to Camp Inventory' : 'Select Items to Donate'}</span>
                     </h3>
                     <Button
                       variant="ghost"
@@ -195,14 +195,14 @@ export default function CampDonationModal({
                         setDonatorMobileNumber('');
                         setError(null);
                       }}
-                      className="text-gray-500 hover:text-gray-700"
+                      className="text-gray-500 hover:text-gray-700 flex-shrink-0 h-8 w-8 sm:h-9 sm:w-9 p-0"
                     >
-                      <X className="h-5 w-5" />
+                      <X className="h-4 w-4 sm:h-5 sm:w-5" />
                     </Button>
                   </div>
-                  <div className="space-y-4">
+                  <div className="space-y-3 sm:space-y-4">
                     {/* Donator Contact Information */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-blue-50 rounded-lg border-2 border-blue-200">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-3 sm:p-4 bg-blue-50 rounded-lg border-2 border-blue-200">
                       <div>
                         <Label htmlFor="donatorName" className="text-sm font-semibold text-gray-700 mb-2 block">
                           Your Name <span className="text-red-500">*</span>
@@ -213,7 +213,7 @@ export default function CampDonationModal({
                           value={donatorName}
                           onChange={(e) => setDonatorName(e.target.value)}
                           placeholder="Enter your full name"
-                          className="w-full"
+                          className="w-full h-11 sm:h-9 text-base sm:text-sm"
                           required
                         />
                       </div>
@@ -227,7 +227,8 @@ export default function CampDonationModal({
                           value={donatorMobileNumber}
                           onChange={(e) => setDonatorMobileNumber(e.target.value)}
                           placeholder="+94771234567"
-                          className="w-full"
+                          className="w-full h-11 sm:h-9 text-base sm:text-sm"
+                          inputMode="tel"
                           required
                         />
                       </div>
@@ -249,7 +250,7 @@ export default function CampDonationModal({
                           <p className="text-sm text-gray-600">No items are currently requested for this camp.</p>
                         </div>
                       ) : (
-                        <div className="grid grid-cols-1 gap-3 max-h-[300px] overflow-y-auto">
+                        <div className="grid grid-cols-1 gap-3 sm:gap-3 max-h-[400px] sm:max-h-[300px] overflow-y-auto pr-1">
                           {inventoryItems
                             .filter(invItem => invItem.quantityNeeded > 0)
                             .map((invItem) => {
@@ -262,23 +263,30 @@ export default function CampDonationModal({
                               return (
                                 <div
                                   key={invItem.itemName}
-                                  className="flex items-center gap-3 p-3 rounded-lg border-2 bg-gray-50 hover:bg-blue-50 transition-colors"
+                                  className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-3 p-3 sm:p-4 rounded-lg border-2 bg-gray-50 hover:bg-blue-50 transition-colors"
                                 >
-                                  <span className="text-2xl">{item.icon}</span>
-                                  <div className="flex-1">
-                                    <Label className="text-base font-medium">{item.label}</Label>
-                                    <div className="text-xs text-gray-600 mt-0.5">
-                                      Needed: {invItem.quantityNeeded} | 
-                                      Remaining: <span className={remainingNeeded > 0 ? 'font-semibold text-orange-600' : 'text-green-600'}>
-                                        {remainingNeeded}
-                                      </span>
+                                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                                    <span className="text-2xl sm:text-3xl flex-shrink-0">{item.icon}</span>
+                                    <div className="flex-1 min-w-0">
+                                      <Label className="text-sm sm:text-base font-medium block truncate">{item.label}</Label>
+                                      <div className="text-xs text-gray-600 mt-0.5">
+                                        <span className="block sm:inline">Needed: {invItem.quantityNeeded}</span>
+                                        <span className="hidden sm:inline"> | </span>
+                                        <span className="block sm:inline">
+                                          Remaining: <span className={remainingNeeded > 0 ? 'font-semibold text-orange-600' : 'text-green-600'}>
+                                            {remainingNeeded}
+                                          </span>
+                                        </span>
+                                      </div>
                                     </div>
                                   </div>
-                                  <div className="flex items-center gap-2">
+                                  <div className="flex items-center gap-2 sm:gap-2 flex-shrink-0">
                                     <Button
                                       variant="outline"
-                                      size="sm"
+                                      size="default"
                                       onClick={() => handleRationItemChange(invItem.itemName, Math.max(0, count - 1))}
+                                      className="h-10 w-10 sm:h-9 sm:w-9 p-0 text-lg sm:text-base font-bold touch-manipulation"
+                                      aria-label="Decrease quantity"
                                     >
                                       -
                                     </Button>
@@ -289,12 +297,16 @@ export default function CampDonationModal({
                                       onChange={(e) =>
                                         handleRationItemChange(invItem.itemName, parseInt(e.target.value) || 0)
                                       }
-                                      className="w-20 text-center"
+                                      className="w-24 sm:w-20 h-10 sm:h-9 text-center text-base sm:text-sm font-semibold touch-manipulation"
+                                      inputMode="numeric"
+                                      pattern="[0-9]*"
                                     />
                                     <Button
                                       variant="outline"
-                                      size="sm"
+                                      size="default"
                                       onClick={() => handleRationItemChange(invItem.itemName, count + 1)}
+                                      className="h-10 w-10 sm:h-9 sm:w-9 p-0 text-lg sm:text-base font-bold touch-manipulation"
+                                      aria-label="Increase quantity"
                                     >
                                       +
                                     </Button>
@@ -309,7 +321,7 @@ export default function CampDonationModal({
                   <Button
                     onClick={handleCreateDonation}
                     disabled={creating || Object.keys(rationItems).length === 0}
-                    className="w-full h-12 text-base font-semibold bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg disabled:opacity-50"
+                    className="w-full h-11 sm:h-12 text-sm sm:text-base font-semibold bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg disabled:opacity-50 touch-manipulation"
                   >
                     {creating ? (
                       <>
@@ -328,12 +340,12 @@ export default function CampDonationModal({
             </div>
           )}
 
-          {/* My Donations */}
+          {/* Donations */}
           {myDonations.length > 0 && (
             <div className="space-y-4">
               <div className="flex items-center gap-2 pb-2 border-b-2 border-blue-200">
-                <User className="h-5 w-5 text-blue-600" />
-                <h3 className="text-xl font-bold text-gray-900">My Donations ({myDonations.length})</h3>
+                <Package className="h-5 w-5 text-blue-600" />
+                <h3 className="text-xl font-bold text-gray-900">Donations ({myDonations.length})</h3>
               </div>
               {myDonations.map((donation) => (
                 <Card key={donation.id} className="border-2 border-blue-200 shadow-md">
@@ -341,7 +353,7 @@ export default function CampDonationModal({
                     <div className="space-y-4">
                       <div className="flex items-center justify-between pb-3 border-b border-gray-200">
                         <div>
-                          <span className="font-bold text-lg text-gray-900">Your Donation</span>
+                          <span className="font-bold text-lg text-gray-900">Donation</span>
                           <div className="text-xs text-gray-500">Donation #{donation.id}</div>
                         </div>
                         {donation.ownerMarkedCompleted && (

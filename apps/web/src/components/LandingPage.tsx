@@ -71,7 +71,7 @@ export default function LandingPage() {
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
   const [selectedRequest, setSelectedRequest] = useState<HelpRequestResponseDto | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
-  const [itemsPerPage] = useState(9) // 3 columns × 3 rows
+  const [itemsPerPage] = useState(10) // Items per page for pagination
   const [totalCount, setTotalCount] = useState(0)
   const [loadingRequests, setLoadingRequests] = useState(false)
 
@@ -127,8 +127,17 @@ export default function LandingPage() {
         const response = await helpRequestService.getAllHelpRequests(filters)
         if (response.success && response.data) {
           setHelpRequests(response.data)
-          // Use count from API response for total count
-          setTotalCount(response.count || response.data.length)
+          // Use count from API response for total count (this should be the total count, not page size)
+          // If count is not provided, fall back to data.length but this means no pagination
+          const total = response.count !== undefined ? response.count : response.data.length
+          setTotalCount(total)
+          console.log('[LandingPage] Loaded requests:', {
+            page: currentPage,
+            itemsPerPage,
+            itemsOnPage: response.data.length,
+            totalCount: total,
+            totalPages: Math.ceil(total / itemsPerPage),
+          })
         } else {
           console.error('[LandingPage] Failed to load help requests:', response.error)
           setHelpRequests([])
@@ -1292,9 +1301,10 @@ export default function LandingPage() {
                 )}
 
                 {/* Pagination Info */}
-                {totalPages > 1 && (
+                {totalCount > 0 && (
                   <div className="mt-4 text-center text-sm text-gray-600">
-                    Showing {startIndex + 1} to {endIndex} of {totalCount} requests
+                    Showing {startIndex + 1} to {endIndex} of {totalCount} request{totalCount !== 1 ? 's' : ''}
+                    {totalPages > 1 && ` (Page ${currentPage} of ${totalPages})`}
                   </div>
                 )}
               </>

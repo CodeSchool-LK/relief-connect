@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { HelpRequestService } from '../services';
 import { CreateHelpRequestDto } from '@nx-mono-repo-deployment-test/shared/src/dtos';
 import { Urgency } from '@nx-mono-repo-deployment-test/shared/src/enums';
+import { IApiResponse } from '@nx-mono-repo-deployment-test/shared/src/interfaces';
 
 /**
  * Controller for HelpRequest endpoints
@@ -72,7 +73,16 @@ class HelpRequestController {
       const result = await this.helpRequestService.getAllHelpRequests(filters);
 
       if (result.success && result.data) {
-        res.sendSuccess(result.data, result.message, 200);
+        // Manually build response to include the total count for pagination
+        const response: IApiResponse<typeof result.data> = {
+          success: true,
+          data: result.data,
+          count: result.count, // Include total count from service (not just array length)
+        };
+        if (result.message) {
+          response.message = result.message;
+        }
+        res.status(200).json(response);
       } else {
         res.sendError(result.error || 'Failed to retrieve help requests', 500);
       }

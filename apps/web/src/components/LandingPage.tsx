@@ -70,10 +70,11 @@ export default function LandingPage() {
   const [selectedLevel, setSelectedLevel] = useState<Urgency | undefined>(undefined)
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
   const [selectedRequest, setSelectedRequest] = useState<HelpRequestResponseDto | null>(null)
-  const [currentPage, setCurrentPage] = useState(1)
+  const [currentPage, setCurrentPage] = useState(1) // Track current page for API calls
   const [itemsPerPage] = useState(10) // Items per page for pagination
   const [totalCount, setTotalCount] = useState(0)
   const [loadingRequests, setLoadingRequests] = useState(false)
+  const [loadingMore, setLoadingMore] = useState(false) // Separate loading state for "See More"
 
   // Check for existing authentication
   useEffect(() => {
@@ -116,7 +117,7 @@ export default function LandingPage() {
           page?: number
           limit?: number
         } = {
-          page: currentPage,
+          page: 1, // Always start from page 1 when filters change
           limit: itemsPerPage,
         }
         
@@ -126,33 +127,81 @@ export default function LandingPage() {
 
         const response = await helpRequestService.getAllHelpRequests(filters)
         if (response.success && response.data) {
-          setHelpRequests(response.data)
+          setHelpRequests(response.data) // Replace with first page
           // Use count from API response for total count (this should be the total count, not page size)
           // If count is not provided, fall back to data.length but this means no pagination
           const total = response.count !== undefined ? response.count : response.data.length
           setTotalCount(total)
+          setCurrentPage(1) // Reset to page 1
           console.log('[LandingPage] Loaded requests:', {
-            page: currentPage,
+            page: 1,
             itemsPerPage,
             itemsOnPage: response.data.length,
             totalCount: total,
-            totalPages: Math.ceil(total / itemsPerPage),
+            hasMore: response.data.length < total,
           })
         } else {
           console.error('[LandingPage] Failed to load help requests:', response.error)
           setHelpRequests([])
           setTotalCount(0)
+          setCurrentPage(1)
         }
       } catch (error) {
         console.error('[LandingPage] Error loading help requests:', error)
         setHelpRequests([])
         setTotalCount(0)
+        setCurrentPage(1)
       } finally {
         setLoadingRequests(false)
       }
     }
     loadData()
-  }, [currentPage, selectedLevel, itemsPerPage])
+  }, [selectedLevel, itemsPerPage]) // Remove currentPage from dependencies - only reload when filters change
+
+  // Function to load more items (next page)
+  const handleLoadMore = async () => {
+    if (loadingMore || loadingRequests) return
+    
+    const nextPage = currentPage + 1
+    setLoadingMore(true)
+    
+    try {
+      const filters: {
+        urgency?: Urgency
+        page?: number
+        limit?: number
+      } = {
+        page: nextPage,
+        limit: itemsPerPage,
+      }
+      
+      if (selectedLevel) {
+        filters.urgency = selectedLevel
+      }
+
+      const response = await helpRequestService.getAllHelpRequests(filters)
+      if (response.success && response.data) {
+        // Extract data to ensure TypeScript knows it's an array
+        const newItems = response.data
+        if (Array.isArray(newItems)) {
+          // Append new items to existing ones
+          setHelpRequests((prev) => [...prev, ...newItems])
+          setCurrentPage(nextPage)
+          console.log('[LandingPage] Loaded more requests:', {
+            page: nextPage,
+            itemsOnPage: newItems.length,
+            totalLoaded: helpRequests.length + newItems.length,
+          })
+        }
+      } else {
+        console.error('[LandingPage] Failed to load more requests:', response.error)
+      }
+    } catch (error) {
+      console.error('[LandingPage] Error loading more requests:', error)
+    } finally {
+      setLoadingMore(false)
+    }
+  }
 
   // Load summary statistics from API (for Donation Requests cards)
   useEffect(() => {
@@ -389,15 +438,10 @@ export default function LandingPage() {
     return requestsWithMockCoords
   }, [requestsWithMockCoords])
 
-  // Reset to page 1 when filters change
-  useEffect(() => {
-    setCurrentPage(1)
-  }, [selectedLevel])
+  // Reset to page 1 when filters change (handled in loadData useEffect)
 
-  // Calculate pagination from backend data
-  const totalPages = Math.ceil(totalCount / itemsPerPage)
-  const startIndex = (currentPage - 1) * itemsPerPage
-  const endIndex = Math.min(startIndex + itemsPerPage, totalCount)
+  // Calculate if there are more items to load
+  const hasMoreItems = helpRequests.length < totalCount
 
   // Calculate analytics for requests section
   // - When NO level or location is applied: use summary API data (overall picture)
@@ -1185,17 +1229,42 @@ export default function LandingPage() {
                                 <Package className="h-3.5 w-3.5" />
                                 Items Needed
                               </div>
-                              <div className="flex flex-wrap gap-2">
-                                {rationItemsList.map((item) => (
-                                  <div
-                                    key={item.id}
-                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-100 hover:bg-purple-200 text-purple-700 rounded-md text-xs font-medium transition-colors duration-200"
-                                  >
-                                    <span>{item.icon}</span>
-                                    <span>{item.label}</span>
+                              {rationItemsList.length === 1 ? (
+                                // Single item - show directly
+                                <div className="flex flex-wrap gap-2">
+                                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-100 hover:bg-purple-200 text-purple-700 rounded-md text-xs font-medium transition-colors duration-200">
+                                    <span>{rationItemsList[0].icon}</span>
+                                    <span>{rationItemsList[0].label}</span>
                                   </div>
-                                ))}
-                              </div>
+                                </div>
+                              ) : (
+                                // Multiple items - show first item, rest in collapsible
+                                <div className="space-y-2">
+                                  <div className="flex flex-wrap gap-2">
+                                    <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-100 hover:bg-purple-200 text-purple-700 rounded-md text-xs font-medium transition-colors duration-200">
+                                      <span>{rationItemsList[0].icon}</span>
+                                      <span>{rationItemsList[0].label}</span>
+                                    </div>
+                                  </div>
+                                  <details className="mt-1">
+                                    <summary className="cursor-pointer list-none text-xs text-purple-600 hover:text-purple-700 font-medium flex items-center gap-1 select-none">
+                                      <ChevronDown className="h-3 w-3" />
+                                      +{rationItemsList.length - 1} more item{rationItemsList.length - 1 > 1 ? 's' : ''}
+                                    </summary>
+                                    <div className="flex flex-wrap gap-2 mt-2">
+                                      {rationItemsList.slice(1).map((item) => (
+                                        <div
+                                          key={item.id}
+                                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-100 hover:bg-purple-200 text-purple-700 rounded-md text-xs font-medium transition-colors duration-200"
+                                        >
+                                          <span>{item.icon}</span>
+                                          <span>{item.label}</span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </details>
+                                </div>
+                              )}
                             </div>
                           ) : fallbackItems ? (
                             <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-3 border border-purple-100">
@@ -1243,68 +1312,38 @@ export default function LandingPage() {
                   </div>
                 )}
 
-                {/* Pagination Controls */}
-                {totalPages > 1 && (
-                  <div className="mt-8 flex items-center justify-center gap-2">
+                {/* Load More Button */}
+                {helpRequests.length < totalCount && (
+                  <div className="mt-8 flex flex-col items-center justify-center gap-4">
                     <Button
                       variant="outline"
-                      size="sm"
-                      onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-                      disabled={currentPage === 1}
-                      className="h-9 px-3"
+                      size="lg"
+                      onClick={handleLoadMore}
+                      disabled={loadingMore || loadingRequests}
+                      className="h-12 px-8 min-w-[200px]"
                     >
-                      <ChevronLeft className="h-4 w-4 mr-1" />
-                      Previous
+                      {loadingMore ? (
+                        <>
+                          <span className="mr-2">Loading...</span>
+                        </>
+                      ) : (
+                        <>
+                          See More
+                          <ChevronDown className="h-4 w-4 ml-2" />
+                        </>
+                      )}
                     </Button>
-
-                    <div className="flex items-center gap-1">
-                      {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
-                        // Show first page, last page, current page, and pages around current
-                        if (
-                          page === 1 ||
-                          page === totalPages ||
-                          (page >= currentPage - 1 && page <= currentPage + 1)
-                        ) {
-                          return (
-                            <Button
-                              key={page}
-                              variant={currentPage === page ? 'default' : 'outline'}
-                              size="sm"
-                              onClick={() => setCurrentPage(page)}
-                              className="h-9 w-9 p-0"
-                            >
-                              {page}
-                            </Button>
-                          )
-                        } else if (page === currentPage - 2 || page === currentPage + 2) {
-                          return (
-                            <span key={page} className="px-2 text-gray-500">
-                              ...
-                            </span>
-                          )
-                        }
-                        return null
-                      })}
-                    </div>
-
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
-                      disabled={currentPage === totalPages}
-                      className="h-9 px-3"
-                    >
-                      Next
-                      <ChevronRight className="h-4 w-4 ml-1" />
-                    </Button>
+                    {loadingMore && (
+                      <p className="text-sm text-gray-500">Loading more requests...</p>
+                    )}
                   </div>
                 )}
 
                 {/* Pagination Info */}
                 {totalCount > 0 && (
                   <div className="mt-4 text-center text-sm text-gray-600">
-                    Showing {startIndex + 1} to {endIndex} of {totalCount} request{totalCount !== 1 ? 's' : ''}
-                    {totalPages > 1 && ` (Page ${currentPage} of ${totalPages})`}
+                    Showing {helpRequests.length} of {totalCount} request{totalCount !== 1 ? 's' : ''}
+                    {helpRequests.length < totalCount && ` (${totalCount - helpRequests.length} more available)`}
                   </div>
                 )}
               </>

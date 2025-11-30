@@ -144,5 +144,23 @@ class CampDropOffLocationDto {
   @IsString({ message: 'Notes must be a string' })
   @IsOptional()
   notes?: string;
+
+  @IsString({ message: 'Drop-off start date must be a string' })
+  @IsOptional()
+  dropOffStartDate?: string;
+
+  @IsString({ message: 'Drop-off end date must be a string' })
+  @IsOptional()
+  dropOffEndDate?: string;
+
+  @IsString({ message: 'Drop-off start time must be a string' })
+  @IsOptional()
+  @Length(0, 10, { message: 'Drop-off start time must not exceed 10 characters' })
+  dropOffStartTime?: string;
+
+  @IsString({ message: 'Drop-off end time must be a string' })
+  @IsOptional()
+  @Length(0, 10, { message: 'Drop-off end time must not exceed 10 characters' })
+  dropOffEndTime?: string;
 }
 

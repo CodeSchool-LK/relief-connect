@@ -3,6 +3,7 @@ import { IApiResponse } from '@nx-mono-repo-deployment-test/shared/src/interface
 import { ICreateCamp } from '@nx-mono-repo-deployment-test/shared/src/interfaces/camp/ICreateCamp';
 import { CampResponseDto } from '@nx-mono-repo-deployment-test/shared/src/dtos/camp/response/camp_response_dto';
 import { ICampInventoryItem } from '@nx-mono-repo-deployment-test/shared/src/interfaces/camp/ICampInventoryItem';
+import { ICampDropOffLocation } from '@nx-mono-repo-deployment-test/shared/src/interfaces/camp/ICampDropOffLocation';
 import { CampFilters } from '../types/camp';
 
 /**
@@ -128,6 +129,24 @@ class CampService {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Failed to fetch camp inventory items',
+      };
+    }
+  }
+
+  /**
+   * Get all drop-off locations for active camps
+   */
+  public async getAllDropOffLocations(): Promise<IApiResponse<Array<ICampDropOffLocation & { campName?: string; campId?: number }>>> {
+    try {
+      const response = await apiClient.get<IApiResponse<Array<ICampDropOffLocation & { campName?: string; campId?: number }>>>(
+        `${this.basePath}/drop-off-locations`
+      );
+      return response;
+    } catch (error) {
+      console.error('Error in CampService.getAllDropOffLocations:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to fetch drop-off locations',
       };
     }
   }

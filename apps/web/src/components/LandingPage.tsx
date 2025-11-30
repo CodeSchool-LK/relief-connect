@@ -592,15 +592,12 @@ export default function LandingPage() {
                   <LanguageSwitcher variant="dark" />
                   {userInfo && (
                     <>
-                      <div className="flex items-center gap-2 px-3 py-2 bg-white/20 backdrop-blur-sm rounded-lg border border-white/30">
-                        <div className="w-8 h-8 rounded-full bg-white/30 flex items-center justify-center">
-                          <User className="h-4 w-4 text-white" />
+                      <div className="flex items-center gap-2 px-3 h-9 bg-white/20 backdrop-blur-sm rounded-lg border border-white/30">
+                        <div className="w-5 h-5 rounded-full bg-white/30 flex items-center justify-center flex-shrink-0">
+                          <User className="h-3 w-3 text-white" />
                         </div>
-                        <div className="hidden sm:block">
-                          <div className="text-sm font-semibold text-white">
-                            {userInfo.name || t('donor')}
-                          </div>
-                          <div className="text-xs text-white/80">{userInfo.identifier}</div>
+                        <div className="text-sm font-medium text-white truncate max-w-[120px] sm:max-w-[150px]">
+                          {userInfo.name || userInfo.identifier || t('donor')}
                         </div>
                       </div>
                       <Button
@@ -608,7 +605,7 @@ export default function LandingPage() {
                         size="icon"
                         onClick={handleLogout}
                         title={t('logout')}
-                        className="text-white hover:bg-white/20"
+                        className="text-white hover:bg-white/20 h-9 w-9"
                       >
                         <LogOut className="h-4 w-4" />
                       </Button>

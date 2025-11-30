@@ -24,8 +24,10 @@ import {
   Clock,
   Building2,
   Plus,
-  XCircle
+  XCircle,
+  HandHeart
 } from 'lucide-react';
+import CreateCampDonationModal from '../../components/CreateCampDonationModal';
 import Link from 'next/link';
 
 export default function VolunteerClubDashboard() {
@@ -43,6 +45,7 @@ export default function VolunteerClubDashboard() {
   const [activeTab, setActiveTab] = useState<'help-requests' | 'donations' | 'camps' | 'memberships' | 'camp-donations'>('help-requests');
   const [reviewingMembershipId, setReviewingMembershipId] = useState<number | null>(null);
   const [acceptingDonationId, setAcceptingDonationId] = useState<number | null>(null);
+  const [showCreateDonationModal, setShowCreateDonationModal] = useState(false);
 
   useEffect(() => {
     // Wait for auth to finish loading before checking
@@ -820,6 +823,17 @@ export default function VolunteerClubDashboard() {
               {/* Camp Donations Tab */}
               {activeTab === 'camp-donations' && (
                 <div className="space-y-4">
+                  {/* Create Donation Button */}
+                  <div className="flex justify-end mb-4">
+                    <Button
+                      onClick={() => setShowCreateDonationModal(true)}
+                      className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg"
+                    >
+                      <HandHeart className="w-4 h-4 mr-2" />
+                      Create Camp Donation
+                    </Button>
+                  </div>
+
                   {filteredCampDonations.length === 0 ? (
                     <div className="text-center py-12">
                       <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
@@ -967,6 +981,19 @@ export default function VolunteerClubDashboard() {
           </Card>
         </div>
       </div>
+
+      {/* Create Camp Donation Modal */}
+      {showCreateDonationModal && (
+        <CreateCampDonationModal
+          camps={camps}
+          isOpen={showCreateDonationModal}
+          onClose={() => setShowCreateDonationModal(false)}
+          currentUserId={user?.id}
+          onDonationCreated={async () => {
+            await loadDashboardData();
+          }}
+        />
+      )}
     </>
   );
 }

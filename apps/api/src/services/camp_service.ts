@@ -1,10 +1,10 @@
-import { CampDao, CampItemDao, CampDropOffLocationDao, VolunteerClubDao, MembershipDao, CampInventoryItemDao } from '../dao';
+import { CampDao, CampItemDao, CampDropOffLocationDao, VolunteerClubDao, CampInventoryItemDao } from '../dao';
 import { CreateCampDto, UpdateCampDto, CampResponseDto } from '@nx-mono-repo-deployment-test/shared/src/dtos/camp';
 import { IApiResponse } from '@nx-mono-repo-deployment-test/shared/src/interfaces';
 import { ICamp } from '@nx-mono-repo-deployment-test/shared/src/interfaces/camp/ICamp';
 import { ICampInventoryItem } from '@nx-mono-repo-deployment-test/shared/src/interfaces/camp/ICampInventoryItem';
+import { ICampDropOffLocation } from '@nx-mono-repo-deployment-test/shared/src/interfaces/camp/ICampDropOffLocation';
 import { CampType, CampNeed, UserRole } from '@nx-mono-repo-deployment-test/shared/src/enums';
-import { MembershipStatus } from '@nx-mono-repo-deployment-test/shared/src/enums';
 import { CampItemModel, CampHelpRequestModel, CampDonationModel, CampDropOffLocationModel } from '../models';
 import { sequelize } from '../models';
 
@@ -96,24 +96,14 @@ class CampService {
           const volunteerClub = await volunteerClubDao.findByUserId(userId);
           const isClubOwner = volunteerClub && volunteerClub.id === camp.volunteerClubId;
           
-          // If not club owner, check if user is an approved member of the club
+          // If not club owner, allow authenticated users to view camps (for donation requests)
+          // No membership check needed - any authenticated user can view camps
           if (!isClubOwner && camp.volunteerClubId) {
-            const membershipDao = MembershipDao.getInstance();
-            const membership = await membershipDao.findByUserAndClub(userId, camp.volunteerClubId);
-            const isApprovedMember = membership && membership.status === MembershipStatus.APPROVED;
-            
-            if (!isApprovedMember) {
-              return {
-                success: false,
-                error: 'Access denied. You must be an approved member of the volunteer club to view this camp.',
-              };
-            }
+            // Allow authenticated users to view camps even if not members (for donation requests)
+            // No error, just continue - users can view camps to make donation requests
           } else if (!isClubOwner && !camp.volunteerClubId) {
-            // Camp has no volunteer club associated, deny access
-            return {
-              success: false,
-              error: 'Access denied. Camp is not associated with a volunteer club.',
-            };
+            // Camp has no volunteer club associated - still allow authenticated users to view
+            // No error, just continue
           }
         }
       } else {
@@ -284,6 +274,17 @@ class CampService {
               }
             }
             
+            // Convert date strings to Date objects if provided
+            let startDate: Date | undefined = undefined;
+            let endDate: Date | undefined = undefined;
+            
+            if (location.dropOffStartDate) {
+              startDate = new Date(location.dropOffStartDate);
+            }
+            if (location.dropOffEndDate) {
+              endDate = new Date(location.dropOffEndDate);
+            }
+            
             return dropOffLocationDao.create({
               campId: camp.id!,
               name: location.name,
@@ -292,6 +293,10 @@ class CampService {
               lng: lngNum,
               contactNumber: location.contactNumber,
               notes: location.notes,
+              dropOffStartDate: startDate,
+              dropOffEndDate: endDate,
+              dropOffStartTime: location.dropOffStartTime,
+              dropOffEndTime: location.dropOffEndTime,
             });
           })
         );
@@ -467,6 +472,17 @@ class CampService {
                 }
               }
               
+              // Convert date strings to Date objects if provided
+              let startDate: Date | undefined = undefined;
+              let endDate: Date | undefined = undefined;
+              
+              if (location.dropOffStartDate) {
+                startDate = new Date(location.dropOffStartDate);
+              }
+              if (location.dropOffEndDate) {
+                endDate = new Date(location.dropOffEndDate);
+              }
+              
               return dropOffLocationDao.create({
                 campId: updatedCamp.id!,
                 name: location.name!,
@@ -475,6 +491,10 @@ class CampService {
                 lng: lngNum,
                 contactNumber: location.contactNumber,
                 notes: location.notes,
+                dropOffStartDate: startDate,
+                dropOffEndDate: endDate,
+                dropOffStartTime: location.dropOffStartTime,
+                dropOffEndTime: location.dropOffEndTime,
               }, transaction);
             })
           );
@@ -536,6 +556,39 @@ class CampService {
       return {
         success: false,
         error: 'Failed to update camp',
+      };
+    }
+  }
+
+  /**
+   * Get all drop-off locations for active camps
+   */
+  public async getAllDropOffLocationsForActiveCamps(): Promise<IApiResponse<Array<ICampDropOffLocation & { campName?: string; campId?: number }>>> {
+    try {
+      const dropOffLocationDao = CampDropOffLocationDao.getInstance();
+      const locations = await dropOffLocationDao.findAllForActiveCamps();
+      
+      const locationsWithCampInfo = locations
+        .filter(loc => loc.campId !== undefined) // Filter out locations without valid campId
+        .map(loc => {
+          const { camp, ...locationData } = loc;
+          return {
+            ...locationData,
+            campName: camp?.name,
+            campId: camp?.id,
+          } as ICampDropOffLocation & { campName?: string; campId?: number };
+        });
+      
+      return {
+        success: true,
+        data: locationsWithCampInfo,
+        count: locationsWithCampInfo.length,
+      };
+    } catch (error) {
+      console.error('Error in CampService.getAllDropOffLocationsForActiveCamps:', error);
+      return {
+        success: false,
+        error: 'Failed to retrieve drop-off locations',
       };
     }
   }

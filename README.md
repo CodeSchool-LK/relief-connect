@@ -98,7 +98,7 @@ Built with modern technologies and best practices, Relief Connect provides a sca
 
 ```bash
 # Clone repository
-git clone https://github.com/KavinduUoM20/relief-connect.git
+git clone https://github.com/CodeSchool-LK/relief-connect.git
 cd relief-connect
 
 # Enable Corepack

@@ -39,6 +39,10 @@ interface DropOffLocation {
   lng?: number;
   contactNumber?: string;
   notes?: string;
+  dropOffStartDate?: string;
+  dropOffEndDate?: string;
+  dropOffStartTime?: string;
+  dropOffEndTime?: string;
 }
 
 export default function EditCampPage() {
@@ -138,6 +142,10 @@ export default function EditCampPage() {
             lng: loc.lng,
             contactNumber: loc.contactNumber,
             notes: loc.notes,
+            dropOffStartDate: loc.dropOffStartDate ? new Date(loc.dropOffStartDate).toISOString().split('T')[0] : undefined,
+            dropOffEndDate: loc.dropOffEndDate ? new Date(loc.dropOffEndDate).toISOString().split('T')[0] : undefined,
+            dropOffStartTime: loc.dropOffStartTime,
+            dropOffEndTime: loc.dropOffEndTime,
           })));
         }
 
@@ -242,6 +250,10 @@ export default function EditCampPage() {
           lng: loc.lng !== undefined && loc.lng !== null ? String(loc.lng) : undefined,
           contactNumber: loc.contactNumber?.trim() || undefined,
           notes: loc.notes?.trim() || undefined,
+          dropOffStartDate: loc.dropOffStartDate || undefined,
+          dropOffEndDate: loc.dropOffEndDate || undefined,
+          dropOffStartTime: loc.dropOffStartTime || undefined,
+          dropOffEndTime: loc.dropOffEndTime || undefined,
         }));
 
       const campData = {
@@ -724,7 +736,64 @@ export default function EditCampPage() {
                           disabled={loading}
                         />
                       </div>
-                      <div className="flex items-end">
+                      <div className="md:col-span-2">
+                        <Label className="text-sm font-medium text-gray-700 mb-2 block">Availability Schedule</Label>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <Label className="text-xs text-gray-600">Start Date</Label>
+                            <Input
+                              type="date"
+                              value={location.dropOffStartDate || ''}
+                              onChange={(e) => updateDropOffLocation(index, 'dropOffStartDate', e.target.value)}
+                              disabled={loading}
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-xs text-gray-600">End Date</Label>
+                            <Input
+                              type="date"
+                              value={location.dropOffEndDate || ''}
+                              onChange={(e) => updateDropOffLocation(index, 'dropOffEndDate', e.target.value)}
+                              disabled={loading}
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-xs text-gray-600">Start Time (24-hour format)</Label>
+                            <Input
+                              type="time"
+                              value={location.dropOffStartTime || ''}
+                              onChange={(e) => updateDropOffLocation(index, 'dropOffStartTime', e.target.value)}
+                              placeholder="09:00"
+                              disabled={loading}
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-xs text-gray-600">End Time (24-hour format)</Label>
+                            <Input
+                              type="time"
+                              value={location.dropOffEndTime || ''}
+                              onChange={(e) => updateDropOffLocation(index, 'dropOffEndTime', e.target.value)}
+                              placeholder="17:00"
+                              disabled={loading}
+                            />
+                          </div>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-2">
+                          Leave empty for always available. Time format: HH:MM (24-hour)
+                        </p>
+                      </div>
+                      <div className="md:col-span-2">
+                        <Label>Notes</Label>
+                        <textarea
+                          value={location.notes || ''}
+                          onChange={(e) => updateDropOffLocation(index, 'notes', e.target.value)}
+                          placeholder="Additional notes about this location"
+                          rows={2}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                          disabled={loading}
+                        />
+                      </div>
+                      <div className="md:col-span-2 flex justify-end">
                         <Button
                           type="button"
                           onClick={() => removeDropOffLocation(index)}
@@ -732,7 +801,8 @@ export default function EditCampPage() {
                           size="sm"
                           disabled={loading}
                         >
-                          <X className="w-4 h-4" />
+                          <X className="w-4 h-4 mr-2" />
+                          Remove Location
                         </Button>
                       </div>
                     </div>

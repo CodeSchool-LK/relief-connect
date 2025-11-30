@@ -114,6 +114,10 @@ export class CreateCampDto extends BaseDto implements IBodyDto, ICreateCamp {
         lng: loc.lng !== undefined ? (typeof loc.lng === 'number' ? String(loc.lng) : loc.lng) : undefined,
         contactNumber: loc.contactNumber,
         notes: loc.notes,
+        dropOffStartDate: loc.dropOffStartDate ? (typeof loc.dropOffStartDate === 'string' ? loc.dropOffStartDate : loc.dropOffStartDate.toISOString().split('T')[0]) : undefined,
+        dropOffEndDate: loc.dropOffEndDate ? (typeof loc.dropOffEndDate === 'string' ? loc.dropOffEndDate : loc.dropOffEndDate.toISOString().split('T')[0]) : undefined,
+        dropOffStartTime: loc.dropOffStartTime,
+        dropOffEndTime: loc.dropOffEndTime,
       }));
       this.helpRequestIds = data.helpRequestIds;
       this.donationIds = data.donationIds;
@@ -169,5 +173,23 @@ class CampDropOffLocationDto {
   @IsString({ message: 'Notes must be a string' })
   @IsOptional()
   notes?: string;
+
+  @IsString({ message: 'Drop-off start date must be a string' })
+  @IsOptional()
+  dropOffStartDate?: string;
+
+  @IsString({ message: 'Drop-off end date must be a string' })
+  @IsOptional()
+  dropOffEndDate?: string;
+
+  @IsString({ message: 'Drop-off start time must be a string' })
+  @IsOptional()
+  @Length(0, 10, { message: 'Drop-off start time must not exceed 10 characters' })
+  dropOffStartTime?: string;
+
+  @IsString({ message: 'Drop-off end time must be a string' })
+  @IsOptional()
+  @Length(0, 10, { message: 'Drop-off end time must not exceed 10 characters' })
+  dropOffEndTime?: string;
 }
 

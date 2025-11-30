@@ -1,8 +1,9 @@
-import { DonationDao, HelpRequestDao, HelpRequestInventoryItemDao, CampDao, CampInventoryItemDao } from '../dao';
+import { DonationDao, HelpRequestDao, HelpRequestInventoryItemDao, CampDao, CampInventoryItemDao, MembershipDao, VolunteerClubDao } from '../dao';
 import { CreateDonationDto, DonationResponseDto, DonationWithHelpRequestResponseDto } from '@nx-mono-repo-deployment-test/shared/src/dtos/donation';
 import { DonationWithDonatorResponseDto } from '@nx-mono-repo-deployment-test/shared/src/dtos/donation/response/donation_with_donator_response_dto';
 import { CreateCampDonationDto } from '@nx-mono-repo-deployment-test/shared/src/dtos/donation/request/create_camp_donation_dto';
 import { IApiResponse } from '@nx-mono-repo-deployment-test/shared/src/interfaces';
+import { MembershipStatus, UserRole } from '@nx-mono-repo-deployment-test/shared/src/enums';
 
 /**
  * Service layer for Donation business logic
@@ -15,19 +16,24 @@ class DonationService {
   private inventoryItemDao: HelpRequestInventoryItemDao;
   private campDao: CampDao;
   private campInventoryItemDao: CampInventoryItemDao;
-
+  private membershipDao: MembershipDao;
+  private volunteerClubDao: VolunteerClubDao;
   private constructor(
     donationDao: DonationDao,
     helpRequestDao: HelpRequestDao,
     inventoryItemDao: HelpRequestInventoryItemDao,
     campDao: CampDao,
-    campInventoryItemDao: CampInventoryItemDao
+    campInventoryItemDao: CampInventoryItemDao,
+    membershipDao: MembershipDao,
+    volunteerClubDao: VolunteerClubDao
   ) {
     this.donationDao = donationDao;
     this.helpRequestDao = helpRequestDao;
     this.inventoryItemDao = inventoryItemDao;
     this.campDao = campDao;
     this.campInventoryItemDao = campInventoryItemDao;
+    this.membershipDao = membershipDao;
+    this.volunteerClubDao = volunteerClubDao;
   }
 
   /**
@@ -35,13 +41,14 @@ class DonationService {
    */
   public static getInstance(): DonationService {
     if (!DonationService.instance) {
-      const { CampDao, CampInventoryItemDao } = require('../dao');
       DonationService.instance = new DonationService(
         DonationDao.getInstance(),
         HelpRequestDao.getInstance(),
         HelpRequestInventoryItemDao.getInstance(),
         CampDao.getInstance(),
-        CampInventoryItemDao.getInstance()
+        CampInventoryItemDao.getInstance(),
+        MembershipDao.getInstance(),
+        VolunteerClubDao.getInstance()
       );
     }
     return DonationService.instance;
@@ -360,10 +367,12 @@ class DonationService {
    * Get all donations for a camp
    * @param campId - The camp ID
    * @param requesterUserId - Optional user ID of the requester (to check permissions)
+   * @param requesterUserRole - Optional user role of the requester (to check permissions)
    */
   public async getDonationsByCampId(
     campId: number,
-    requesterUserId?: number
+    requesterUserId?: number,
+    requesterUserRole?: UserRole
   ): Promise<IApiResponse<DonationWithDonatorResponseDto[]>> {
     try {
       // Verify camp exists
@@ -375,15 +384,17 @@ class DonationService {
         };
       }
 
-      // Check if requester is club admin or member
+      // Check if requester is club admin, system admin, or member
+      const isSystemAdmin = requesterUserRole === UserRole.SYSTEM_ADMINISTRATOR || requesterUserRole === UserRole.ADMIN;
       const isClubAdmin = requesterUserId !== undefined && camp.volunteerClubId && 
         await this.isClubAdmin(camp.volunteerClubId, requesterUserId);
 
       const donations = await this.donationDao.findByCampId(campId);
       const donationDtos = donations.map(d => {
-        // Show contact info if requester is club admin OR if requester is the donator
+        // Show contact info if requester is club admin, system admin, OR if requester is the donator
+        // Club admins should ALWAYS see contact info for their camp's donations
         const isDonator = requesterUserId !== undefined && d.donatorId === requesterUserId;
-        const showContactInfo = isClubAdmin || isDonator;
+        const showContactInfo = isSystemAdmin || isClubAdmin || isDonator;
         return new DonationWithDonatorResponseDto(d, showContactInfo);
       });
 
@@ -405,8 +416,15 @@ class DonationService {
    * Create a new camp donation
    * @param createCampDonationDto - Camp donation data
    * @param donatorId - User ID of the donator
+   * @param donatorRole - Optional user role of the donator (for admin auto-approval)
+   * @param autoApprove - Optional flag to auto-approve donation (for admins)
    */
-  public async createCampDonation(createCampDonationDto: CreateCampDonationDto, donatorId: number): Promise<IApiResponse<DonationResponseDto>> {
+  public async createCampDonation(
+    createCampDonationDto: CreateCampDonationDto, 
+    donatorId: number,
+    donatorRole?: UserRole,
+    autoApprove?: boolean
+  ): Promise<IApiResponse<DonationResponseDto>> {
     try {
       // Verify camp exists
       const camp = await this.campDao.findById(createCampDonationDto.campId);
@@ -436,25 +454,51 @@ class DonationService {
       }
 
       const donation = await this.donationDao.create(
-        undefined,
+        undefined, // helpRequestId
         donatorId,
         createCampDonationDto.donatorName,
         createCampDonationDto.donatorMobileNumber,
         createCampDonationDto.rationItems,
-        createCampDonationDto.campId
+        createCampDonationDto.campId // campId
       );
 
-      // Add pending quantities to camp inventory
+      // Check if this is an admin donation that should be auto-approved
+      const isSystemAdmin = donatorRole === UserRole.SYSTEM_ADMINISTRATOR || donatorRole === UserRole.ADMIN;
+      const isClubAdmin = camp.volunteerClubId && await this.isClubAdmin(camp.volunteerClubId, donatorId);
+      const shouldAutoApprove = autoApprove && (isSystemAdmin || isClubAdmin);
+
+      // Add pending quantities first (for tracking)
       await this.campInventoryItemDao.addPendingQuantities(
         createCampDonationDto.campId,
         createCampDonationDto.rationItems
       );
 
-      return {
-        success: true,
-        data: new DonationResponseDto(donation),
-        message: 'Camp donation created successfully',
-      };
+      if (shouldAutoApprove) {
+        // Auto-approve: Mark donation as completed by both donator and owner
+        await this.donationDao.markAsCompletedByDonator(donation.id!);
+        await this.donationDao.markAsCompletedByOwner(donation.id!);
+
+        // Move from pending to donated quantities
+        await this.campInventoryItemDao.confirmPendingQuantities(
+          createCampDonationDto.campId,
+          createCampDonationDto.rationItems
+        );
+
+        // Reload donation to get updated status
+        const updatedDonation = await this.donationDao.findById(donation.id!);
+        return {
+          success: true,
+          data: new DonationResponseDto(updatedDonation!),
+          message: 'Camp donation created and approved successfully. Items have been added to camp inventory.',
+        };
+      } else {
+        // Normal flow: Items remain in pending until admin approval
+        return {
+          success: true,
+          data: new DonationResponseDto(donation),
+          message: 'Camp donation created successfully',
+        };
+      }
     } catch (error) {
       console.error('Error in DonationService.createCampDonation:', error);
       return {
@@ -512,6 +556,38 @@ class DonationService {
         };
       }
 
+      // Check if donator is already a member of the club
+      const existingMembership = await this.membershipDao.findByUserAndClub(
+        donation.donatorId,
+        camp.volunteerClubId
+      );
+
+      // If not a member, auto-register them as an approved member
+      if (!existingMembership || existingMembership.status !== MembershipStatus.APPROVED) {
+        if (existingMembership) {
+          // If membership exists but not approved, update it to approved
+          await this.membershipDao.updateStatus(
+            existingMembership.id!,
+            MembershipStatus.APPROVED,
+            clubAdminId,
+            'Auto-approved upon donation acceptance'
+          );
+        } else {
+          // Create new approved membership
+          const newMembership = await this.membershipDao.create(
+            donation.donatorId,
+            camp.volunteerClubId
+          );
+          // Immediately approve it
+          await this.membershipDao.updateStatus(
+            newMembership.id!,
+            MembershipStatus.APPROVED,
+            clubAdminId,
+            'Auto-approved upon donation acceptance'
+          );
+        }
+      }
+
       // Mark donation as completed by owner (club admin)
       const updatedDonation = await this.donationDao.markAsCompletedByOwner(donationId);
       if (!updatedDonation) {
@@ -530,7 +606,7 @@ class DonationService {
       return {
         success: true,
         data: new DonationResponseDto(updatedDonation),
-        message: 'Camp donation accepted successfully',
+        message: 'Camp donation accepted successfully. Donator has been automatically registered as a club member.',
       };
     } catch (error) {
       console.error(`Error in DonationService.acceptCampDonation (${donationId}):`, error);
@@ -546,9 +622,7 @@ class DonationService {
    */
   private async isClubAdmin(volunteerClubId: number, userId: number): Promise<boolean> {
     try {
-      const { VolunteerClubDao } = require('../dao');
-      const volunteerClubDao = VolunteerClubDao.getInstance();
-      const club = await volunteerClubDao.findByUserId(userId);
+      const club = await this.volunteerClubDao.findByUserId(userId);
       return club !== null && club.id === volunteerClubId;
     } catch (error) {
       console.error(`Error in DonationService.isClubAdmin (${volunteerClubId}, ${userId}):`, error);

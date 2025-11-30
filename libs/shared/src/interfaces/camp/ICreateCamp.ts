@@ -33,6 +33,10 @@ export interface ICreateCamp {
     lng?: string | number; // Accept string to preserve floating point precision
     contactNumber?: string;
     notes?: string;
+    dropOffStartDate?: string | Date; // Start date when this location accepts donations (ISO date string or Date)
+    dropOffEndDate?: string | Date; // End date when this location accepts donations (ISO date string or Date)
+    dropOffStartTime?: string; // Start time (e.g., "09:00" in 24-hour format)
+    dropOffEndTime?: string; // End time (e.g., "17:00" in 24-hour format)
   }>;
   // Help request IDs to connect people who need help
   helpRequestIds?: number[];

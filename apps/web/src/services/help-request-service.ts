@@ -35,6 +35,12 @@ class HelpRequestService {
       const params: Record<string, string> = {};
       if (filters?.urgency) params.urgency = filters.urgency;
       if (filters?.district) params.district = filters.district;
+      if (filters?.bounds) {
+        params.minLat = filters.bounds.minLat.toString();
+        params.maxLat = filters.bounds.maxLat.toString();
+        params.minLng = filters.bounds.minLng.toString();
+        params.maxLng = filters.bounds.maxLng.toString();
+      }
 
       const response = await apiClient.get<IApiResponse<HelpRequestResponseDto[]>>(
         this.basePath,

@@ -21,12 +21,13 @@ class CampDao {
 
   /**
    * Find all camps, filtering out expired ones (30 days)
-   * Optional filters: campType, needs, district (via name)
+   * Optional filters: campType, needs, district (via name), bounds (viewport filtering)
    */
   public async findAll(filters?: {
     campType?: CampType;
     needs?: CampNeed[];
     district?: string;
+    bounds?: { minLat: number; maxLat: number; minLng: number; maxLng: number };
   }): Promise<ICamp[]> {
     try {
       // Calculate date 30 days ago
@@ -52,6 +53,19 @@ class CampDao {
         whereClause[CampModel.CAMP_NAME] = {
           [Op.iLike]: `%${filters.district}%`,
         };
+      }
+      // Apply bounds filtering if provided
+      if (filters?.bounds) {
+        const { minLat, maxLat, minLng, maxLng } = filters.bounds;
+        // Validate bounds
+        if (minLat < maxLat && minLng < maxLng) {
+          whereClause[CampModel.CAMP_LAT] = {
+            [Op.between]: [minLat, maxLat],
+          };
+          whereClause[CampModel.CAMP_LNG] = {
+            [Op.between]: [minLng, maxLng],
+          };
+        }
       }
 
       const camps = await CampModel.findAll({

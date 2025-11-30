@@ -39,6 +39,12 @@ class CampService {
         params.needs = filters.needs.join(',');
       }
       if (filters?.district) params.district = filters.district;
+      if (filters?.bounds) {
+        params.minLat = filters.bounds.minLat.toString();
+        params.maxLat = filters.bounds.maxLat.toString();
+        params.minLng = filters.bounds.minLng.toString();
+        params.maxLng = filters.bounds.maxLng.toString();
+      }
 
       const response = await apiClient.get<IApiResponse<CampResponseDto[]>>(
         this.basePath,

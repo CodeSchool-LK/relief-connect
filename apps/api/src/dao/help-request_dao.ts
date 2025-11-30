@@ -24,11 +24,12 @@ class HelpRequestDao {
 
   /**
    * Find all help requests, filtering out expired ones (30 days)
-   * Optional filters: urgency, district (via approxArea)
+   * Optional filters: urgency, district (via approxArea), bounds (viewport filtering)
    */
   public async findAll(filters?: {
     urgency?: Urgency;
     district?: string;
+    bounds?: { minLat: number; maxLat: number; minLng: number; maxLng: number };
   }): Promise<IHelpRequest[]> {
     try {
       // Calculate date 30 days ago
@@ -50,6 +51,19 @@ class HelpRequestDao {
         whereClause[HelpRequestModel.HELP_REQUEST_APPROX_AREA] = {
           [Op.iLike]: `%${filters.district}%`,
         };
+      }
+      // Apply bounds filtering if provided
+      if (filters?.bounds) {
+        const { minLat, maxLat, minLng, maxLng } = filters.bounds;
+        // Validate bounds
+        if (minLat < maxLat && minLng < maxLng) {
+          whereClause[HelpRequestModel.HELP_REQUEST_LAT] = {
+            [Op.between]: [minLat, maxLat],
+          };
+          whereClause[HelpRequestModel.HELP_REQUEST_LNG] = {
+            [Op.between]: [minLng, maxLng],
+          };
+        }
       }
 
       const helpRequests = await HelpRequestModel.findAll({

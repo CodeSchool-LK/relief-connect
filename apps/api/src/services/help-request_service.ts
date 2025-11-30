@@ -44,6 +44,7 @@ class HelpRequestService {
   public async getAllHelpRequests(filters?: {
     urgency?: Urgency;
     district?: string;
+    bounds?: { minLat: number; maxLat: number; minLng: number; maxLng: number };
   }): Promise<IApiResponse<HelpRequestResponseDto[]>> {
     try {
       const helpRequests = await this.helpRequestDao.findAll(filters);

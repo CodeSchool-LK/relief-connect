@@ -64,6 +64,12 @@ class UserService {
       if (existingUser) {
         // User exists - login them in
         // Check if user account is active
+        if (existingUser.role !== UserRole.USER) {
+          return {
+            success: false,
+            error: 'You are not authorized to access this resource',
+          };
+        }
         if (existingUser.status !== UserStatus.ACTIVE) {
           return {
             success: false,

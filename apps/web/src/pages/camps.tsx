@@ -1,135 +1,136 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import Head from 'next/head';
-import { useRouter } from 'next/router';
-import { serverSideTranslations } from 'next-i18next/serverSideTranslations';
-import { useAuth } from '../hooks/useAuth';
-import { campService, volunteerClubService } from '../services';
-import { CampResponseDto } from '@nx-mono-repo-deployment-test/shared/src/dtos/camp/response/camp_response_dto';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
-import { Button } from '../components/ui/button';
-import { Input } from '../components/ui/input';
-import { 
-  Search, 
-  Loader2, 
-  MapPin, 
+import React, { useState, useEffect, useMemo } from 'react'
+import Head from 'next/head'
+import { useRouter } from 'next/router'
+import { serverSideTranslations } from 'next-i18next/serverSideTranslations'
+import { useAuth } from '../hooks/useAuth'
+import { campService, volunteerClubService } from '../services'
+import { CampResponseDto } from '@nx-mono-repo-deployment-test/shared/src/dtos/camp/response/camp_response_dto'
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
+import { Button } from '../components/ui/button'
+import { Input } from '../components/ui/input'
+import {
+  Search,
+  Loader2,
+  MapPin,
   Users,
   Package,
   HandHeart,
   Building2,
-  ArrowLeft
-} from 'lucide-react';
-import { CampStatus } from '@nx-mono-repo-deployment-test/shared/src/enums';
-import CampDonationModal from '../components/CampDonationModal';
-import { ICampInventoryItem } from '@nx-mono-repo-deployment-test/shared/src/interfaces/camp/ICampInventoryItem';
-import { RATION_ITEMS } from '../components/EmergencyRequestForm';
+  ArrowLeft,
+} from 'lucide-react'
+import { CampStatus } from '@nx-mono-repo-deployment-test/shared/src/enums'
+import CampDonationModal from '../components/CampDonationModal'
+import { ICampInventoryItem } from '@nx-mono-repo-deployment-test/shared/src/interfaces/camp/ICampInventoryItem'
+import { RATION_ITEMS } from '../components/EmergencyRequestForm'
 
 interface CampWithClub extends CampResponseDto {
-  clubName?: string;
-  clubId?: number;
+  clubName?: string
+  clubId?: number
 }
 
 export default function CampsPage() {
-  const router = useRouter();
-  const { isAuthenticated, user, loading: authLoading } = useAuth();
-  const [camps, setCamps] = useState<CampWithClub[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCamp, setSelectedCamp] = useState<CampWithClub | null>(null);
-  const [showDonationModal, setShowDonationModal] = useState(false);
-  const [campInventories, setCampInventories] = useState<Record<number, ICampInventoryItem[]>>({});
+  const router = useRouter()
+  const { isAuthenticated, user, loading: authLoading } = useAuth()
+  const [camps, setCamps] = useState<CampWithClub[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [selectedCamp, setSelectedCamp] = useState<CampWithClub | null>(null)
+  const [showDonationModal, setShowDonationModal] = useState(false)
+  const [campInventories, setCampInventories] = useState<Record<number, ICampInventoryItem[]>>({})
 
   useEffect(() => {
-    if (authLoading) return;
+    if (authLoading) return
 
     // Allow viewing camps without authentication
-    loadData();
-  }, [authLoading]);
+    loadData()
+  }, [authLoading])
 
   const loadData = async () => {
-    setLoading(true);
-    setError(null);
+    setLoading(true)
+    setError(null)
     try {
       const [campsResponse, clubsResponse] = await Promise.all([
         campService.getAllCamps(),
         volunteerClubService.getAllVolunteerClubs(),
-      ]);
+      ])
 
       if (campsResponse.success && campsResponse.data) {
-        const allCamps = campsResponse.data.filter(camp => camp.status === CampStatus.ACTIVE);
-        const clubs = clubsResponse.success && clubsResponse.data ? clubsResponse.data : [];
+        const allCamps = campsResponse.data.filter((camp) => camp.status === CampStatus.ACTIVE)
+        const clubs = clubsResponse.success && clubsResponse.data ? clubsResponse.data : []
 
         // Enrich camps with club information
-        const campsWithClub: CampWithClub[] = allCamps.map(camp => {
-          const club = clubs.find(c => c.id === camp.volunteerClubId);
+        const campsWithClub: CampWithClub[] = allCamps.map((camp) => {
+          const club = clubs.find((c) => c.id === camp.volunteerClubId)
           return {
             ...camp,
             clubName: club?.name,
             clubId: camp.volunteerClubId,
-          };
-        });
+          }
+        })
 
-        setCamps(campsWithClub);
+        setCamps(campsWithClub)
 
         // Load inventory for all camps
-        await loadCampInventories(campsWithClub);
+        await loadCampInventories(campsWithClub)
       } else {
-        setError(campsResponse.error || 'Failed to load camps');
+        setError(campsResponse.error || 'Failed to load camps')
       }
     } catch (err) {
-      console.error('Error loading data:', err);
-      setError('Failed to load camps');
+      console.error('Error loading data:', err)
+      setError('Failed to load camps')
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   const loadCampInventories = async (campsList: CampWithClub[]) => {
     const inventoryPromises = campsList.map(async (camp) => {
-      if (!camp.id) return;
+      if (!camp.id) return
       try {
-        const inventoryResponse = await campService.getCampInventoryItems(camp.id);
+        const inventoryResponse = await campService.getCampInventoryItems(camp.id)
         if (inventoryResponse.success && inventoryResponse.data) {
-          return { campId: camp.id, inventory: inventoryResponse.data };
+          return { campId: camp.id, inventory: inventoryResponse.data }
         }
       } catch (error) {
-        console.error(`Error loading inventory for camp ${camp.id}:`, error);
+        console.error(`Error loading inventory for camp ${camp.id}:`, error)
       }
-      return null;
-    });
+      return null
+    })
 
-    const inventoryResults = await Promise.all(inventoryPromises);
-    const inventoryMap: Record<number, ICampInventoryItem[]> = {};
-    inventoryResults.forEach(result => {
+    const inventoryResults = await Promise.all(inventoryPromises)
+    const inventoryMap: Record<number, ICampInventoryItem[]> = {}
+    inventoryResults.forEach((result) => {
       if (result) {
-        inventoryMap[result.campId] = result.inventory;
+        inventoryMap[result.campId] = result.inventory
       }
-    });
-    setCampInventories(inventoryMap);
-  };
+    })
+    setCampInventories(inventoryMap)
+  }
 
   const filteredCamps = useMemo(() => {
-    return camps.filter(camp =>
-      camp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      camp.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      camp.location?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      camp.clubName?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [camps, searchTerm]);
+    return camps.filter(
+      (camp) =>
+        camp.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        camp.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        camp.location?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        camp.clubName?.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+  }, [camps, searchTerm])
 
   const handleDonateClick = (camp: CampWithClub) => {
     if (!isAuthenticated) {
-      router.push('/login');
-      return;
+      router.push('/login')
+      return
     }
-    setSelectedCamp(camp);
-    setShowDonationModal(true);
-  };
+    setSelectedCamp(camp)
+    setShowDonationModal(true)
+  }
 
   const handleDonationCreated = async () => {
     // Reload data to update inventory
-    await loadData();
-  };
+    await loadData()
+  }
 
   if (authLoading || loading) {
     return (
@@ -141,14 +142,14 @@ export default function CampsPage() {
           <Loader2 className="w-8 h-8 animate-spin text-gray-600" />
         </div>
       </>
-    );
+    )
   }
 
   return (
     <>
       <Head>
-        <title>All Camps - Donate to Camps</title>
-        <meta name="description" content="View all active camps and make donation requests" />
+        <title>All Campaigns - Donate to Campaigns</title>
+        <meta name="description" content="View all active campaigns and make donation requests" />
       </Head>
 
       <div className="min-h-screen bg-gray-50 py-8">
@@ -167,7 +168,7 @@ export default function CampsPage() {
                 <ArrowLeft className="h-4 w-4" />
                 <span className="hidden sm:inline">Back</span>
               </Button>
-              
+
               {/* Navigation Buttons - Two lines on mobile */}
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
                 <Button
@@ -186,7 +187,7 @@ export default function CampsPage() {
                   {/* Glittering effect overlay - always visible */}
                   <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent translate-x-[-100%] animate-[shimmer-sweep_3s_ease-in-out_infinite]"></span>
                   <span className="absolute inset-0 bg-[linear-gradient(45deg,transparent_30%,rgba(255,255,255,0.5)_50%,transparent_70%)] bg-[length:200%_200%] animate-[shimmer_2s_linear_infinite]"></span>
-                  
+
                   <MapPin className="h-4 w-4 mr-2 relative z-10 animate-pulse" />
                   <span className="font-semibold relative z-10">Drop-off Locations</span>
                 </Button>
@@ -195,9 +196,12 @@ export default function CampsPage() {
 
             {/* Title Section */}
             <div className="px-0 sm:px-0">
-              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-2">All Active Camps</h1>
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-2">
+                All Active Campaigns
+              </h1>
               <p className="text-xs sm:text-sm md:text-base text-gray-600 leading-relaxed">
-                Browse all active camps and make donation requests. Once approved by club admins, you&apos;ll be automatically registered as a member.
+                Browse all active campaigns and make donation requests. Once approved by club
+                admins, you&apos;ll be automatically registered as a member.
               </p>
             </div>
           </div>
@@ -208,7 +212,7 @@ export default function CampsPage() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 sm:w-5 sm:h-5" />
               <Input
                 type="text"
-                placeholder="Search camps..."
+                placeholder="Search campaigns..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-9 sm:pl-10 h-9 sm:h-10 text-sm sm:text-base"
@@ -227,44 +231,52 @@ export default function CampsPage() {
               <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
               <p className="text-gray-500 text-lg">
                 {searchTerm
-                  ? 'No camps found matching your search.'
-                  : 'No active camps available at the moment.'}
+                  ? 'No campaigns found matching your search.'
+                  : 'No active campaigns available at the moment.'}
               </p>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {filteredCamps.map((camp) => {
-                const inventory = campInventories[camp.id!] || [];
-                const hasRequestedItems = inventory.some(item => item.quantityNeeded > 0);
+                const inventory = campInventories[camp.id!] || []
+                const hasRequestedItems = inventory.some((item) => item.quantityNeeded > 0)
 
                 // Map inventory items to RATION_ITEMS for proper labels and icons
                 // itemName is the code/id (e.g., 'dry_rations', 'bottled_water')
                 const itemsWithMetadata = inventory
-                  .filter(item => item.quantityNeeded > 0)
+                  .filter((item) => item.quantityNeeded > 0)
                   .map((item) => {
-                    const remaining = Math.max(0, item.quantityNeeded - item.quantityDonated - item.quantityPending);
+                    const remaining = Math.max(
+                      0,
+                      item.quantityNeeded - item.quantityDonated - item.quantityPending
+                    )
                     // Match by id (itemName is the code/id from RATION_ITEMS)
-                    const rationItem = RATION_ITEMS.find((ri) => ri.id === item.itemName);
+                    const rationItem = RATION_ITEMS.find((ri) => ri.id === item.itemName)
                     return {
                       id: item.id,
                       label: rationItem ? rationItem.label : item.itemName,
                       icon: rationItem ? rationItem.icon : '📦',
                       remaining,
-                    };
-                  });
+                    }
+                  })
 
                 // Calculate items to show (limit to 2 lines)
                 // Approximately 4-5 tags per line on mobile, 6-7 on desktop
-                const maxItemsToShow = 8; // Approximately 2 lines
-                const itemsToShow = itemsWithMetadata.slice(0, maxItemsToShow);
-                const remainingCount = itemsWithMetadata.length - maxItemsToShow;
+                const maxItemsToShow = 8 // Approximately 2 lines
+                const itemsToShow = itemsWithMetadata.slice(0, maxItemsToShow)
+                const remainingCount = itemsWithMetadata.length - maxItemsToShow
 
                 return (
-                  <Card key={camp.id} className="hover:shadow-lg transition-shadow flex flex-col h-full">
+                  <Card
+                    key={camp.id}
+                    className="hover:shadow-lg transition-shadow flex flex-col h-full"
+                  >
                     <CardHeader className="p-4 sm:p-6 flex-shrink-0">
                       <div className="flex items-start justify-between">
                         <div className="flex-1 min-w-0">
-                          <CardTitle className="text-lg sm:text-xl mb-1 line-clamp-2">{camp.name}</CardTitle>
+                          <CardTitle className="text-lg sm:text-xl mb-1 line-clamp-2">
+                            {camp.name}
+                          </CardTitle>
                           {camp.clubName && (
                             <div className="flex items-center gap-1 text-xs sm:text-sm text-gray-600 mt-1">
                               <Building2 className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
@@ -274,12 +286,16 @@ export default function CampsPage() {
                         </div>
                       </div>
                       {camp.shortNote && (
-                        <p className="text-xs sm:text-sm text-gray-600 mt-2 line-clamp-2">{camp.shortNote}</p>
+                        <p className="text-xs sm:text-sm text-gray-600 mt-2 line-clamp-2">
+                          {camp.shortNote}
+                        </p>
                       )}
                     </CardHeader>
                     <CardContent className="space-y-3 sm:space-y-4 flex-1 flex flex-col p-4 sm:p-6 pt-0">
                       {camp.description && (
-                        <p className="text-xs sm:text-sm text-gray-600 line-clamp-3 flex-1">{camp.description}</p>
+                        <p className="text-xs sm:text-sm text-gray-600 line-clamp-3 flex-1">
+                          {camp.description}
+                        </p>
                       )}
 
                       <div className="space-y-2 text-xs sm:text-sm">
@@ -334,14 +350,12 @@ export default function CampsPage() {
                             variant="default"
                           >
                             <HandHeart className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
-                            <span className="hidden xs:inline">Make Donation Request</span>
-                            <span className="xs:hidden">Donate</span>
+                            <span className="hidden xs:inline">Support Campaign</span>
+                            <span className="xs:hidden">Support</span>
                           </Button>
                         ) : (
                           <div className="text-center py-2">
-                            <p className="text-xs text-gray-500">
-                              No items currently requested
-                            </p>
+                            <p className="text-xs text-gray-500">No items currently requested</p>
                           </div>
                         )}
                         <Button
@@ -354,7 +368,7 @@ export default function CampsPage() {
                       </div>
                     </CardContent>
                   </Card>
-                );
+                )
               })}
             </div>
           )}
@@ -367,8 +381,8 @@ export default function CampsPage() {
           camp={selectedCamp}
           isOpen={showDonationModal}
           onClose={() => {
-            setShowDonationModal(false);
-            setSelectedCamp(null);
+            setShowDonationModal(false)
+            setSelectedCamp(null)
           }}
           currentUserId={user?.id}
           isClubAdmin={false}
@@ -377,7 +391,7 @@ export default function CampsPage() {
         />
       )}
     </>
-  );
+  )
 }
 
 export async function getServerSideProps({ locale }: { locale: string }) {
@@ -385,6 +399,5 @@ export async function getServerSideProps({ locale }: { locale: string }) {
     props: {
       ...(await serverSideTranslations(locale || 'en', ['common'])),
     },
-  };
+  }
 }
-

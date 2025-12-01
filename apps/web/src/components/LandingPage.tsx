@@ -39,6 +39,7 @@ import {
   UserCog,
   FileText,
   X,
+  Menu,
 } from 'lucide-react'
 import LanguageSwitcher from './LanguageSwitcher'
 import { HelpRequestResponseDto } from '@nx-mono-repo-deployment-test/shared/src/dtos/help-request/response/help_request_response_dto'
@@ -62,7 +63,11 @@ const getErrorMessage = (error: unknown): string => {
     const message = error.message.toLowerCase()
 
     // Network errors
-    if (message.includes('network') || message.includes('fetch') || message.includes('connection')) {
+    if (
+      message.includes('network') ||
+      message.includes('fetch') ||
+      message.includes('connection')
+    ) {
       return 'Unable to connect to the server. Please check your internet connection and try again.'
     }
 
@@ -116,7 +121,7 @@ const getErrorMessage = (error: unknown): string => {
   // Handle API response errors
   if (error && typeof error === 'object') {
     const errorObj = error as Record<string, unknown>
-    
+
     // Check for common API error formats
     if (errorObj.message && typeof errorObj.message === 'string') {
       return getErrorMessage(errorObj.message)
@@ -154,6 +159,25 @@ export default function LandingPage() {
   const [totalCount, setTotalCount] = useState(0)
   const [loadingRequests, setLoadingRequests] = useState(false)
   const [loadingMore, setLoadingMore] = useState(false) // Separate loading state for "See More"
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false) // Mobile menu state
+  const mobileMenuRef = useRef<HTMLDivElement>(null) // Ref for mobile menu
+
+  // Close mobile menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (mobileMenuRef.current && !mobileMenuRef.current.contains(event.target as Node)) {
+        setMobileMenuOpen(false)
+      }
+    }
+
+    if (mobileMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [mobileMenuOpen])
 
   // Check for existing authentication
   useEffect(() => {
@@ -189,7 +213,7 @@ export default function LandingPage() {
   // Load requests from API with pagination and filters (async, non-blocking)
   useEffect(() => {
     let isCancelled = false
-    
+
     const loadData = async () => {
       setLoadingRequests(true)
       try {
@@ -201,16 +225,16 @@ export default function LandingPage() {
           page: 1, // Always start from page 1 when filters change
           limit: itemsPerPage,
         }
-        
+
         if (selectedLevel) {
           filters.urgency = selectedLevel
         }
 
         const response = await helpRequestService.getAllHelpRequests(filters)
-        
+
         // Don't update state if component unmounted or effect cancelled
         if (isCancelled) return
-        
+
         if (response.success && response.data) {
           setHelpRequests(response.data) // Replace with first page
           // Use count from API response for total count (this should be the total count, not page size)
@@ -243,10 +267,10 @@ export default function LandingPage() {
         }
       }
     }
-    
+
     // Start loading immediately, don't wait
     loadData()
-    
+
     // Cleanup function to cancel if component unmounts or effect re-runs
     return () => {
       isCancelled = true
@@ -256,10 +280,10 @@ export default function LandingPage() {
   // Function to load more items (next page)
   const handleLoadMore = async () => {
     if (loadingMore || loadingRequests) return
-    
+
     const nextPage = currentPage + 1
     setLoadingMore(true)
-    
+
     try {
       const filters: {
         urgency?: Urgency
@@ -269,7 +293,7 @@ export default function LandingPage() {
         page: nextPage,
         limit: itemsPerPage,
       }
-      
+
       if (selectedLevel) {
         filters.urgency = selectedLevel
       }
@@ -301,15 +325,15 @@ export default function LandingPage() {
   // Load summary statistics from API (async, non-blocking, runs in parallel with requests)
   useEffect(() => {
     let isCancelled = false
-    
+
     const loadSummary = async () => {
       setSummaryLoading(true)
       try {
         const response = await helpRequestService.getHelpRequestsSummary()
-        
+
         // Don't update state if component unmounted or effect cancelled
         if (isCancelled) return
-        
+
         if (response.success && response.data) {
           setSummary(response.data)
         } else {
@@ -324,10 +348,10 @@ export default function LandingPage() {
         }
       }
     }
-    
+
     // Start loading immediately in parallel with requests, don't wait
     loadSummary()
-    
+
     // Cleanup function to cancel if component unmounts or effect re-runs
     return () => {
       isCancelled = true
@@ -366,12 +390,16 @@ export default function LandingPage() {
     }
 
     if (trimmedIdentifier.length < 3) {
-      setError('Your identifier must be at least 3 characters long. Please enter a valid email or phone number.')
+      setError(
+        'Your identifier must be at least 3 characters long. Please enter a valid email or phone number.'
+      )
       return
     }
 
     if (trimmedIdentifier.length > 50) {
-      setError('Your identifier is too long. Please enter a valid email or phone number (maximum 50 characters).')
+      setError(
+        'Your identifier is too long. Please enter a valid email or phone number (maximum 50 characters).'
+      )
       return
     }
 
@@ -796,15 +824,22 @@ export default function LandingPage() {
                   />
                 </div>
 
-                <div className="flex items-center gap-3">
+                {/* Desktop View - Hidden on mobile */}
+                <div className="hidden md:flex items-center gap-2 sm:gap-3">
                   <LanguageSwitcher variant="dark" />
+                  <Button
+                    onClick={() => router.push('/login')}
+                    className="h-8 sm:h-9 px-2 sm:px-3 md:px-4 bg-white/20 backdrop-blur-sm text-white hover:bg-white/30 border border-white/30 font-medium text-[10px] sm:text-xs md:text-sm transition-all duration-300 whitespace-nowrap"
+                  >
+                    Volunteer Login
+                  </Button>
                   {userInfo && (
                     <>
-                      <div className="flex items-center gap-2 px-3 h-9 bg-white/20 backdrop-blur-sm rounded-lg border border-white/30">
-                        <div className="w-5 h-5 rounded-full bg-white/30 flex items-center justify-center flex-shrink-0">
-                          <User className="h-3 w-3 text-white" />
+                      <div className="flex items-center gap-2 px-2 sm:px-3 h-8 sm:h-9 bg-white/20 backdrop-blur-sm rounded-lg border border-white/30">
+                        <div className="w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-white/30 flex items-center justify-center flex-shrink-0">
+                          <User className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-white" />
                         </div>
-                        <div className="text-sm font-medium text-white truncate max-w-[120px] sm:max-w-[150px]">
+                        <div className="text-xs sm:text-sm font-medium text-white truncate max-w-[80px] sm:max-w-[120px] md:max-w-[150px]">
                           {userInfo.name || userInfo.identifier || t('donor')}
                         </div>
                       </div>
@@ -813,12 +848,130 @@ export default function LandingPage() {
                         size="icon"
                         onClick={handleLogout}
                         title={t('logout')}
-                        className="text-white hover:bg-white/20 h-9 w-9"
+                        className="text-white hover:bg-white/20 h-8 w-8 sm:h-9 sm:w-9"
                       >
-                        <LogOut className="h-4 w-4" />
+                        <LogOut className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                       </Button>
                     </>
                   )}
+                </div>
+
+                {/* Mobile View - Hamburger Menu */}
+                <div className="md:hidden relative" ref={mobileMenuRef}>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                    className="text-white hover:bg-white/20 h-9 w-9 transition-all duration-300"
+                  >
+                    <div className="relative w-6 h-5 flex flex-col justify-center gap-1.5">
+                      <span
+                        className={`block w-full h-0.5 bg-white transition-all duration-300 ease-out ${
+                          mobileMenuOpen ? 'rotate-45 translate-y-2' : ''
+                        }`}
+                      />
+                      <span
+                        className={`block w-full h-0.5 bg-white transition-all duration-300 ease-out ${
+                          mobileMenuOpen ? 'opacity-0' : 'opacity-100'
+                        }`}
+                      />
+                      <span
+                        className={`block w-full h-0.5 bg-white transition-all duration-300 ease-out ${
+                          mobileMenuOpen ? '-rotate-45 -translate-y-2' : ''
+                        }`}
+                      />
+                    </div>
+                  </Button>
+
+                  {/* Mobile Menu Drawer Overlay */}
+                  <div
+                    className={`fixed inset-0 z-40 transition-opacity duration-300 ${
+                      mobileMenuOpen
+                        ? 'opacity-100 pointer-events-auto'
+                        : 'opacity-0 pointer-events-none'
+                    }`}
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    {/* Backdrop */}
+                    <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+                    {/* Drawer */}
+                    <div
+                      className={`absolute top-0 right-0 h-full w-80 max-w-[85vw] bg-white/90 backdrop-blur-xl shadow-2xl transform transition-transform duration-300 ease-out ${
+                        mobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
+                      }`}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <div className="flex flex-col h-full">
+                        {/* Drawer Header */}
+                        <div className="flex items-center justify-between p-5 border-b border-gray-200/50 bg-white/50">
+                          <h2 className="text-xl font-bold text-gray-900">Menu</h2>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setMobileMenuOpen(false)}
+                            className="h-9 w-9 hover:bg-gray-100"
+                          >
+                            <X className="h-5 w-5 text-gray-600" />
+                          </Button>
+                        </div>
+
+                        {/* Drawer Content */}
+                        <div className="flex-1 overflow-y-auto p-5 space-y-5">
+                          {/* Language Switcher */}
+                          <div className="pb-5 border-b border-gray-200/50">
+                            <div className="text-xs font-semibold text-gray-500 mb-3 uppercase tracking-wide">
+                              Language
+                            </div>
+                            <LanguageSwitcher variant="light" />
+                          </div>
+
+                          {/* Volunteer Login */}
+                          <div>
+                            <Button
+                              onClick={() => {
+                                router.push('/login')
+                                setMobileMenuOpen(false)
+                              }}
+                              className="w-full h-12 bg-gradient-to-r from-green-500 to-green-600 text-white hover:from-green-600 hover:to-green-700 font-semibold text-base transition-all duration-300 shadow-lg hover:shadow-xl"
+                            >
+                              Volunteer Login
+                            </Button>
+                          </div>
+
+                          {/* Profile Section (if logged in) */}
+                          {userInfo && (
+                            <>
+                              <div className="flex items-center gap-4 px-4 py-4 bg-gradient-to-r from-blue-50/80 to-indigo-50/80 rounded-xl border border-blue-200/50 backdrop-blur-sm">
+                                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center flex-shrink-0 shadow-md">
+                                  <User className="h-6 w-6 text-blue-600" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="text-xs text-gray-500 mb-1 font-medium">
+                                    Logged in as
+                                  </div>
+                                  <div className="text-base font-bold text-gray-900 truncate">
+                                    {userInfo.name || userInfo.identifier || t('donor')}
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Logout Button */}
+                              <Button
+                                onClick={() => {
+                                  handleLogout()
+                                  setMobileMenuOpen(false)
+                                }}
+                                className="w-full h-12 bg-red-50 text-red-600 hover:bg-red-100 border-2 border-red-200 font-semibold text-base transition-all duration-300 shadow-md hover:shadow-lg"
+                              >
+                                <LogOut className="h-5 w-5 mr-2" />
+                                {t('logout')}
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -897,14 +1050,14 @@ export default function LandingPage() {
                     className="w-full h-12 sm:h-14 text-base sm:text-lg font-semibold bg-white text-blue-600 hover:bg-gradient-to-r hover:from-orange-500 hover:to-orange-600 hover:text-white hover:shadow-xl transition-all duration-300 font-bold"
                     size="lg"
                   >
-                    Find Camps
+                    Find Campaigns
                   </Button>
                 </CardContent>
               </Card>
 
               {/* I Need Help Card */}
-              <Card className="cursor-pointer transition-all duration-500 hover:shadow-2xl hover:scale-105 border-0 bg-gradient-to-br from-red-500 via-red-600 to-rose-700 overflow-hidden group relative w-full md:w-80 lg:w-96 min-h-[320px] sm:min-h-[380px] md:min-h-[420px] flex flex-col">
-                <div className="absolute inset-0 bg-gradient-to-t from-red-600 via-red-500 to-red-400 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <Card className="cursor-pointer transition-all duration-300 hover:shadow-xl hover:scale-[1.02] border-0 bg-gradient-to-br from-red-500 via-red-600 to-rose-700 overflow-hidden group relative w-full md:w-80 lg:w-96 min-h-[320px] sm:min-h-[380px] md:min-h-[420px] flex flex-col">
+                <div className="absolute inset-0 bg-gradient-to-t from-red-300/30 via-red-200/20 to-red-100/10 opacity-100 group-hover:opacity-0 transition-opacity duration-300"></div>
                 {/* Background Icon */}
                 <div className="absolute top-4 right-4 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
                   <HelpCircle className="w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 text-white" />
@@ -932,8 +1085,8 @@ export default function LandingPage() {
               </Card>
 
               {/* I Can Help Card */}
-              <Card className="cursor-pointer transition-all duration-500 hover:shadow-2xl hover:scale-105 border-0 bg-gradient-to-br from-green-500 via-emerald-600 to-teal-700 overflow-hidden group relative w-full md:w-80 lg:w-96 min-h-[320px] sm:min-h-[380px] md:min-h-[420px] flex flex-col">
-                <div className="absolute inset-0 bg-gradient-to-t from-green-600 via-green-500 to-green-400 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <Card className="cursor-pointer transition-all duration-300 hover:shadow-xl hover:scale-[1.02] border-0 bg-gradient-to-br from-green-500 via-emerald-600 to-teal-700 overflow-hidden group relative w-full md:w-80 lg:w-96 min-h-[320px] sm:min-h-[380px] md:min-h-[420px] flex flex-col">
+                <div className="absolute inset-0 bg-gradient-to-t from-green-300/30 via-green-200/20 to-green-100/10 opacity-100 group-hover:opacity-0 transition-opacity duration-300"></div>
                 {/* Background Icon */}
                 <div className="absolute top-4 right-4 opacity-10 group-hover:opacity-20 transition-opacity duration-500">
                   <HandHeart className="w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 text-white" />
@@ -1216,220 +1369,229 @@ export default function LandingPage() {
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {filteredRequests.map((request) => {
-                  // Use real data from API response fields
-                  const name =
-                    request.name ||
-                    request.shortNote?.split(',')[0]?.replace('Name:', '').trim() ||
-                    'Anonymous'
-                  const peopleCount =
-                    request.totalPeople || request.shortNote?.match(/People:\s*(\d+)/)?.[1] || '1'
-                  const kidsCount =
-                    request.children || request.shortNote?.match(/Kids:\s*(\d+)/)?.[1] || '0'
-                  const eldersCount =
-                    request.elders || request.shortNote?.match(/Elders:\s*(\d+)/)?.[1] || '0'
-                  // Use rationItems if available, otherwise parse from shortNote
-                  const rationItemsList =
-                    request.rationItems && request.rationItems.length > 0
-                      ? request.rationItems
-                          .map((itemId) => {
-                            const item = RATION_ITEMS.find((i) => i.id === itemId)
-                            return item ? { id: itemId, label: item.label, icon: item.icon } : null
-                          })
-                          .filter(
-                            (item): item is { id: string; label: string; icon: string } =>
-                              item !== null
-                          )
-                      : []
-                  const fallbackItems = request.shortNote?.match(/Items:\s*(.+)/)?.[1] || null
-                  const peopleCountNumber = Number(peopleCount) || 0
-                  const requestType = peopleCountNumber <= 1 ? 'Individual' : 'Group'
+                      // Use real data from API response fields
+                      const name =
+                        request.name ||
+                        request.shortNote?.split(',')[0]?.replace('Name:', '').trim() ||
+                        'Anonymous'
+                      const peopleCount =
+                        request.totalPeople ||
+                        request.shortNote?.match(/People:\s*(\d+)/)?.[1] ||
+                        '1'
+                      const kidsCount =
+                        request.children || request.shortNote?.match(/Kids:\s*(\d+)/)?.[1] || '0'
+                      const eldersCount =
+                        request.elders || request.shortNote?.match(/Elders:\s*(\d+)/)?.[1] || '0'
+                      // Use rationItems if available, otherwise parse from shortNote
+                      const rationItemsList =
+                        request.rationItems && request.rationItems.length > 0
+                          ? request.rationItems
+                              .map((itemId) => {
+                                const item = RATION_ITEMS.find((i) => i.id === itemId)
+                                return item
+                                  ? { id: itemId, label: item.label, icon: item.icon }
+                                  : null
+                              })
+                              .filter(
+                                (item): item is { id: string; label: string; icon: string } =>
+                                  item !== null
+                              )
+                          : []
+                      const fallbackItems = request.shortNote?.match(/Items:\s*(.+)/)?.[1] || null
+                      const peopleCountNumber = Number(peopleCount) || 0
+                      const requestType = peopleCountNumber <= 1 ? 'Individual' : 'Group'
 
-                  return (
-                    <Card
-                      key={request.id}
-                      className="group cursor-pointer transition-all duration-300 hover:shadow-xl hover:scale-[1.02] overflow-hidden border-2 hover:border-primary bg-white"
-                      onClick={() => router.push(`/request/${request.id}`)}
-                    >
-                      <CardContent className="p-6">
-                        <div className="space-y-4">
-                          {/* Header with name and urgency */}
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-2">
-                                <div className="font-bold text-xl text-gray-900 group-hover:text-primary transition-colors">
-                                  {name}
+                      return (
+                        <Card
+                          key={request.id}
+                          className="group cursor-pointer transition-all duration-300 hover:shadow-xl hover:scale-[1.02] overflow-hidden border-2 hover:border-primary bg-white"
+                          onClick={() => router.push(`/request/${request.id}`)}
+                        >
+                          <CardContent className="p-6">
+                            <div className="space-y-4">
+                              {/* Header with name and urgency */}
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <div className="font-bold text-xl text-gray-900 group-hover:text-primary transition-colors">
+                                      {name}
+                                    </div>
+                                    <div
+                                      className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                                        request.urgency === Urgency.HIGH
+                                          ? 'bg-red-100 text-red-700'
+                                          : request.urgency === Urgency.MEDIUM
+                                            ? 'bg-orange-100 text-orange-700'
+                                            : 'bg-green-100 text-green-700'
+                                      }`}
+                                    >
+                                      {request.urgency || 'Medium'}
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                                    <div className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded-md text-xs font-medium">
+                                      {requestType}
+                                    </div>
+                                  </div>
                                 </div>
-                                <div
-                                  className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                                    request.urgency === Urgency.HIGH
-                                      ? 'bg-red-100 text-red-700'
-                                      : request.urgency === Urgency.MEDIUM
-                                        ? 'bg-orange-100 text-orange-700'
-                                        : 'bg-green-100 text-green-700'
-                                  }`}
+                              </div>
+
+                              {/* Location (single clickable link to Google Maps) */}
+                              {request.lat != null && request.lng != null ? (
+                                <a
+                                  href={`https://www.google.com/maps?q=${encodeURIComponent(
+                                    `${Number(request.lat)},${Number(request.lng)}`
+                                  )}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-colors duration-200 text-gray-900 hover:text-gray-950"
+                                  style={{ backgroundColor: '#92eb34' }}
+                                  onMouseEnter={(e) => {
+                                    e.currentTarget.style.backgroundColor = '#7dd321'
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.currentTarget.style.backgroundColor = '#92eb34'
+                                  }}
                                 >
-                                  {request.urgency || 'Medium'}
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-2 text-sm text-gray-600">
-                                <div className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded-md text-xs font-medium">
-                                  {requestType}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Location (single clickable link to Google Maps) */}
-                          {request.lat != null && request.lng != null ? (
-                            <a
-                              href={`https://www.google.com/maps?q=${encodeURIComponent(
-                                `${Number(request.lat)},${Number(request.lng)}`
-                              )}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              onClick={(e) => e.stopPropagation()}
-                              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-colors duration-200 text-gray-900 hover:text-gray-950"
-                              style={{ backgroundColor: '#92eb34' }}
-                              onMouseEnter={(e) => {
-                                e.currentTarget.style.backgroundColor = '#7dd321'
-                              }}
-                              onMouseLeave={(e) => {
-                                e.currentTarget.style.backgroundColor = '#92eb34'
-                              }}
-                            >
-                              <MapPin className="h-3.5 w-3.5" />
-                              Click on map
-                            </a>
-                          ) : (
-                            <div className="flex items-center gap-2 text-sm text-gray-600">
-                              <MapPin className="h-4 w-4 text-gray-400" />
-                              <span className="font-medium truncate">
-                                {request.approxArea &&
-                                !request.approxArea.match(/^-?\d+\.\d+,\s*-?\d+\.\d+/)
-                                  ? request.approxArea
-                                  : 'Unknown location'}
-                              </span>
-                            </div>
-                          )}
-
-                          {/* People Details */}
-                          <div className="grid grid-cols-3 gap-2">
-                            <div className="bg-blue-50 rounded-lg p-3 text-center">
-                              <div className="flex items-center justify-center gap-1 mb-1">
-                                <Users className="h-4 w-4 text-blue-600" />
-                              </div>
-                              <div className="text-lg font-bold text-blue-700">{peopleCount}</div>
-                              <div className="text-xs text-gray-600">People</div>
-                            </div>
-                            {Number(kidsCount) > 0 && (
-                              <div className="bg-purple-50 rounded-lg p-3 text-center">
-                                <div className="flex items-center justify-center gap-1 mb-1">
-                                  <Users className="h-4 w-4 text-purple-600" />
-                                </div>
-                                <div className="text-lg font-bold text-purple-700">{kidsCount}</div>
-                                <div className="text-xs text-gray-600">Kids</div>
-                              </div>
-                            )}
-                            {Number(eldersCount) > 0 && (
-                              <div className="bg-orange-50 rounded-lg p-3 text-center">
-                                <div className="flex items-center justify-center gap-1 mb-1">
-                                  <Users className="h-4 w-4 text-orange-600" />
-                                </div>
-                                <div className="text-lg font-bold text-orange-700">
-                                  {eldersCount}
-                                </div>
-                                <div className="text-xs text-gray-600">Elders</div>
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Items Needed */}
-                          {rationItemsList.length > 0 ? (
-                            <div className="space-y-2">
-                              <div className="text-xs font-semibold text-purple-700 flex items-center gap-1">
-                                <Package className="h-3.5 w-3.5" />
-                                Items Needed
-                              </div>
-                              {rationItemsList.length === 1 ? (
-                                // Single item - show directly
-                                <div className="flex flex-wrap gap-2">
-                                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-100 hover:bg-purple-200 text-purple-700 rounded-md text-xs font-medium transition-colors duration-200">
-                                    <span>{rationItemsList[0].icon}</span>
-                                    <span>{rationItemsList[0].label}</span>
-                                  </div>
-                                </div>
+                                  <MapPin className="h-3.5 w-3.5" />
+                                  Click on map
+                                </a>
                               ) : (
-                                // Multiple items - show first item, rest in collapsible
-                                <div className="space-y-2">
-                                  <div className="flex flex-wrap gap-2">
-                                    <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-100 hover:bg-purple-200 text-purple-700 rounded-md text-xs font-medium transition-colors duration-200">
-                                      <span>{rationItemsList[0].icon}</span>
-                                      <span>{rationItemsList[0].label}</span>
-                                    </div>
-                                  </div>
-                                  <details className="mt-1">
-                                    <summary className="cursor-pointer list-none text-xs text-purple-600 hover:text-purple-700 font-medium flex items-center gap-1 select-none">
-                                      <ChevronDown className="h-3 w-3" />
-                                      +{rationItemsList.length - 1} more item{rationItemsList.length - 1 > 1 ? 's' : ''}
-                                    </summary>
-                                    <div className="flex flex-wrap gap-2 mt-2">
-                                      {rationItemsList.slice(1).map((item) => (
-                                        <div
-                                          key={item.id}
-                                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-100 hover:bg-purple-200 text-purple-700 rounded-md text-xs font-medium transition-colors duration-200"
-                                        >
-                                          <span>{item.icon}</span>
-                                          <span>{item.label}</span>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </details>
+                                <div className="flex items-center gap-2 text-sm text-gray-600">
+                                  <MapPin className="h-4 w-4 text-gray-400" />
+                                  <span className="font-medium truncate">
+                                    {request.approxArea &&
+                                    !request.approxArea.match(/^-?\d+\.\d+,\s*-?\d+\.\d+/)
+                                      ? request.approxArea
+                                      : 'Unknown location'}
+                                  </span>
                                 </div>
                               )}
-                            </div>
-                          ) : fallbackItems ? (
-                            <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-3 border border-purple-100">
-                              <div className="flex items-start gap-2">
-                                <Package className="h-4 w-4 text-purple-600 mt-0.5 flex-shrink-0" />
-                                <div className="flex-1">
-                                  <div className="text-xs font-semibold text-purple-700 mb-1">
+
+                              {/* People Details */}
+                              <div className="grid grid-cols-3 gap-2">
+                                <div className="bg-blue-50 rounded-lg p-3 text-center">
+                                  <div className="flex items-center justify-center gap-1 mb-1">
+                                    <Users className="h-4 w-4 text-blue-600" />
+                                  </div>
+                                  <div className="text-lg font-bold text-blue-700">
+                                    {peopleCount}
+                                  </div>
+                                  <div className="text-xs text-gray-600">People</div>
+                                </div>
+                                {Number(kidsCount) > 0 && (
+                                  <div className="bg-purple-50 rounded-lg p-3 text-center">
+                                    <div className="flex items-center justify-center gap-1 mb-1">
+                                      <Users className="h-4 w-4 text-purple-600" />
+                                    </div>
+                                    <div className="text-lg font-bold text-purple-700">
+                                      {kidsCount}
+                                    </div>
+                                    <div className="text-xs text-gray-600">Kids</div>
+                                  </div>
+                                )}
+                                {Number(eldersCount) > 0 && (
+                                  <div className="bg-orange-50 rounded-lg p-3 text-center">
+                                    <div className="flex items-center justify-center gap-1 mb-1">
+                                      <Users className="h-4 w-4 text-orange-600" />
+                                    </div>
+                                    <div className="text-lg font-bold text-orange-700">
+                                      {eldersCount}
+                                    </div>
+                                    <div className="text-xs text-gray-600">Elders</div>
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Items Needed */}
+                              {rationItemsList.length > 0 ? (
+                                <div className="space-y-2">
+                                  <div className="text-xs font-semibold text-purple-700 flex items-center gap-1">
+                                    <Package className="h-3.5 w-3.5" />
                                     Items Needed
                                   </div>
-                                  <div className="text-sm text-gray-700 line-clamp-2">
-                                    {fallbackItems}
+                                  {rationItemsList.length === 1 ? (
+                                    // Single item - show directly
+                                    <div className="flex flex-wrap gap-2">
+                                      <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-100 hover:bg-purple-200 text-purple-700 rounded-md text-xs font-medium transition-colors duration-200">
+                                        <span>{rationItemsList[0].icon}</span>
+                                        <span>{rationItemsList[0].label}</span>
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    // Multiple items - show first item, rest in collapsible
+                                    <div className="space-y-2">
+                                      <div className="flex flex-wrap gap-2">
+                                        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-100 hover:bg-purple-200 text-purple-700 rounded-md text-xs font-medium transition-colors duration-200">
+                                          <span>{rationItemsList[0].icon}</span>
+                                          <span>{rationItemsList[0].label}</span>
+                                        </div>
+                                      </div>
+                                      <details className="mt-1">
+                                        <summary className="cursor-pointer list-none text-xs text-purple-600 hover:text-purple-700 font-medium flex items-center gap-1 select-none">
+                                          <ChevronDown className="h-3 w-3" />+
+                                          {rationItemsList.length - 1} more item
+                                          {rationItemsList.length - 1 > 1 ? 's' : ''}
+                                        </summary>
+                                        <div className="flex flex-wrap gap-2 mt-2">
+                                          {rationItemsList.slice(1).map((item) => (
+                                            <div
+                                              key={item.id}
+                                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-100 hover:bg-purple-200 text-purple-700 rounded-md text-xs font-medium transition-colors duration-200"
+                                            >
+                                              <span>{item.icon}</span>
+                                              <span>{item.label}</span>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </details>
+                                    </div>
+                                  )}
+                                </div>
+                              ) : fallbackItems ? (
+                                <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-3 border border-purple-100">
+                                  <div className="flex items-start gap-2">
+                                    <Package className="h-4 w-4 text-purple-600 mt-0.5 flex-shrink-0" />
+                                    <div className="flex-1">
+                                      <div className="text-xs font-semibold text-purple-700 mb-1">
+                                        Items Needed
+                                      </div>
+                                      <div className="text-sm text-gray-700 line-clamp-2">
+                                        {fallbackItems}
+                                      </div>
+                                    </div>
                                   </div>
                                 </div>
+                              ) : null}
+
+                              {/* Contact Info */}
+                              <div className="flex items-center gap-2 text-sm text-gray-600 pt-2 border-t border-gray-200">
+                                {request.contactType === 'Phone' ? (
+                                  <Phone className="h-4 w-4 text-green-600" />
+                                ) : (
+                                  <Mail className="h-4 w-4 text-blue-600" />
+                                )}
+                                <span className="font-medium">{request.contact}</span>
                               </div>
+
+                              {/* Action Button */}
+                              <Button
+                                className="w-full mt-2 group-hover:bg-gradient-to-r group-hover:from-red-500 group-hover:to-red-600 group-hover:text-white group-hover:border-red-600 transition-all"
+                                variant="outline"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  router.push(`/request/${request.id}`)
+                                }}
+                              >
+                                <span className="group-hover:text-white">View Details</span>
+                                <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 group-hover:text-white transition-transform" />
+                              </Button>
                             </div>
-                          ) : null}
-
-                          {/* Contact Info */}
-                          <div className="flex items-center gap-2 text-sm text-gray-600 pt-2 border-t border-gray-200">
-                            {request.contactType === 'Phone' ? (
-                              <Phone className="h-4 w-4 text-green-600" />
-                            ) : (
-                              <Mail className="h-4 w-4 text-blue-600" />
-                            )}
-                            <span className="font-medium">{request.contact}</span>
-                          </div>
-
-                          {/* Action Button */}
-                          <Button
-                            className="w-full mt-2 group-hover:bg-gradient-to-r group-hover:from-red-500 group-hover:to-red-600 group-hover:text-white group-hover:border-red-600 transition-all"
-                            variant="outline"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              router.push(`/request/${request.id}`)
-                            }}
-                          >
-                            <span className="group-hover:text-white">View Details</span>
-                            <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 group-hover:text-white transition-transform" />
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )
-                })}
+                          </CardContent>
+                        </Card>
+                      )
+                    })}
                   </div>
                 )}
 
@@ -1463,8 +1625,10 @@ export default function LandingPage() {
                 {/* Pagination Info */}
                 {totalCount > 0 && (
                   <div className="mt-4 text-center text-sm text-gray-600">
-                    Showing {helpRequests.length} of {totalCount} request{totalCount !== 1 ? 's' : ''}
-                    {helpRequests.length < totalCount && ` (${totalCount - helpRequests.length} more available)`}
+                    Showing {helpRequests.length} of {totalCount} request
+                    {totalCount !== 1 ? 's' : ''}
+                    {helpRequests.length < totalCount &&
+                      ` (${totalCount - helpRequests.length} more available)`}
                   </div>
                 )}
               </>

@@ -594,11 +594,10 @@ export default function LandingPage() {
     // If there are no active filters and summary from API is available, use it directly
     if (!hasActiveFilters && summary) {
       const mealsPerPersonPerDay = 3
-      // Total people should include elders and children as well
+      // Total people should be sum of children and elders only
       const totalPeopleFromSummary =
-        (summary.people?.totalPeople || 0) +
-        (summary.people?.elders || 0) +
-        (summary.people?.children || 0)
+        (summary.people?.children || 0) +
+        (summary.people?.elders || 0)
 
       // Meals needed PER DAY (not for multiple days)
       const totalMealsNeeded = totalPeopleFromSummary * mealsPerPersonPerDay
@@ -621,18 +620,8 @@ export default function LandingPage() {
     // Note: When using backend pagination, totalRequests uses totalCount from API
     // Other metrics (people, kids, etc.) are calculated from current page only
     const totalRequests = totalCount > 0 ? totalCount : filteredRequests.length
-    const totalPeople = filteredRequests.reduce((sum, req) => {
-      // Use real API field first, fallback to parsing shortNote
-      return (
-        sum +
-        (req.totalPeople ||
-          (() => {
-            const match = req.shortNote?.match(/People:\s*(\d+)/)
-            return match ? parseInt(match[1]) : 1
-          })())
-      )
-    }, 0)
-
+    
+    // Calculate total children and elders first
     const totalKids = filteredRequests.reduce((sum, req) => {
       // Use real API field first, fallback to parsing shortNote
       return (
@@ -656,6 +645,9 @@ export default function LandingPage() {
           })())
       )
     }, 0)
+    
+    // Total people is sum of children and elders only
+    const totalPeople = totalKids + totalElders
 
     const mealsPerPersonPerDay = 3
     // Meals needed PER DAY (not for multiple days)

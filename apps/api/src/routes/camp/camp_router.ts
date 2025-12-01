@@ -70,19 +70,15 @@ export class CampRouter extends BaseRouter {
       controller.getAllDropOffLocations
     );
 
-    // GET /api/camps/:id - Get a single camp by ID (requires authentication - only accessible by admins or owning volunteer club)
+    // GET /api/camps/:id - Get a single camp by ID (public - no authentication required)
     this.router.get(
       '/:id',
-      authenticate,
-      requireAuthenticated(),
       controller.getCampById
     );
 
-    // GET /api/camps/:id/inventory - Get inventory items for a camp
+    // GET /api/camps/:id/inventory - Get inventory items for a camp (public - needed for viewing camps)
     this.router.get(
       '/:id/inventory',
-      authenticate,
-      requireAuthenticated(),
       controller.getCampInventoryItems
     );
 

@@ -73,15 +73,10 @@ class CampController {
 
   /**
    * GET /api/camps/:id
-   * Get a single camp by ID (requires authentication - only accessible by admins or owning volunteer club)
+   * Get a single camp by ID (public - no authentication required)
    */
   getCampById = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      if (!req.user || !req.user.id) {
-        res.sendError('Authentication required', 401);
-        return;
-      }
-
       const campId = parseInt(req.params.id, 10);
       
       if (isNaN(campId)) {
@@ -89,7 +84,11 @@ class CampController {
         return;
       }
 
-      const result = await this.campService.getCampById(campId, req.user.id, req.user.role);
+      // Pass user info if authenticated, otherwise undefined (allows public access)
+      const userId = req.user?.id;
+      const userRole = req.user?.role;
+
+      const result = await this.campService.getCampById(campId, userId, userRole);
 
       if (result.success && result.data) {
         res.sendSuccess(result.data, result.message, 200);

@@ -115,34 +115,49 @@ const MapLocationPickerInternal: React.FC<MapLocationPickerProps> = ({
     setError(null)
 
     if (!navigator.geolocation) {
-      setError('Geolocation is not supported by your browser')
+      setError('Geolocation is not supported by your browser. Please select your location by clicking on the map.')
       setIsGettingLocation(false)
       return
     }
 
+    // Use high accuracy settings with longer timeout for better accuracy
     const options = {
       enableHighAccuracy: true,
-      timeout: 15000,
-      maximumAge: 0,
+      timeout: 20000, // Increased timeout to 20 seconds for better accuracy
+      maximumAge: 0, // Always get fresh location
     }
 
-    console.log('[MapLocationPicker] Requesting current location...')
+    console.log('[MapLocationPicker] Requesting current location with high accuracy...')
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const lat = position.coords.latitude
         const lng = position.coords.longitude
-        const accuracy = position.coords.accuracy
-        console.log('[MapLocationPicker] Location received:', { lat, lng, accuracy })
+        const accuracy = position.coords.accuracy // Accuracy in meters
+        console.log('[MapLocationPicker] Location received:', { lat, lng, accuracy: `${accuracy}m` })
 
+        // Validate coordinates
         if (isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0) {
           console.error('[MapLocationPicker] Invalid coordinates received')
-          setError('Invalid location received. Please try again or click on the map.')
+          setError('Invalid location received. Please select your location by clicking on the map.')
           setIsGettingLocation(false)
           return
         }
 
+        // Check accuracy - require accuracy better than 200 meters for reliable location
+        // If accuracy is poor (>200m), ask user to manually select
+        if (accuracy > 200) {
+          console.warn('[MapLocationPicker] Poor location accuracy:', accuracy, 'meters')
+          setError(`Location accuracy is poor (${Math.round(accuracy)} meters). For accurate coordinates, please select your location by clicking on the map.`)
+          setErrorType('unavailable')
+          setIsGettingLocation(false)
+          // Don't set the location if accuracy is poor
+          return
+        }
+
+        // If accuracy is acceptable, use the location
         const newLocation: [number, number] = [lat, lng]
+        console.log('[MapLocationPicker] Location accepted with accuracy:', accuracy, 'meters')
         console.log('[MapLocationPicker] Setting location state to:', newLocation)
 
         setSelectedLocation(newLocation)
@@ -151,6 +166,7 @@ const MapLocationPickerInternal: React.FC<MapLocationPickerProps> = ({
 
         setIsGettingLocation(false)
         setError(null)
+        setErrorType(null)
       },
       (err) => {
         // Enhanced error logging
@@ -180,22 +196,22 @@ const MapLocationPickerInternal: React.FC<MapLocationPickerProps> = ({
           case PERMISSION_DENIED:
           case 1: // Fallback for code: 1
             errorTypeValue = 'permission'
-            errorMessage = 'Location access was denied. Location services are needed to automatically find your position, but you can still select your location manually by clicking on the map.'
+            errorMessage = 'Location access was denied. Please select your location by clicking on the map to proceed.'
             setShowInstructions(true) // Auto-expand instructions for permission denied
             break
           case POSITION_UNAVAILABLE:
           case 2: // Fallback for code: 2
             errorTypeValue = 'unavailable'
-            errorMessage = 'Your location information is currently unavailable. Please select your location by clicking on the map.'
+            errorMessage = 'Your location information is currently unavailable. Please select your location by clicking on the map to proceed.'
             break
           case TIMEOUT:
           case 3: // Fallback for code: 3
             errorTypeValue = 'timeout'
-            errorMessage = 'Location request timed out. Please try again or select your location by clicking on the map.'
+            errorMessage = 'Location request timed out. Please select your location by clicking on the map to proceed.'
             break
           default:
             errorTypeValue = 'other'
-            errorMessage = 'Unable to get your location. Please select your location by clicking on the map.'
+            errorMessage = 'Unable to get your location. Please select your location by clicking on the map to proceed.'
             break
         }
         setError(errorMessage)
@@ -421,3 +437,4 @@ const MapLocationPicker = dynamic(() => Promise.resolve(MapLocationPickerInterna
 })
 
 export default MapLocationPicker
+

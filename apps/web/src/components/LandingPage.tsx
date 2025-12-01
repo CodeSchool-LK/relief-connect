@@ -210,8 +210,82 @@ export default function LandingPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router.query])
 
+  // Function to load dashboard data (requests and summary)
+  const loadDashboardData = async () => {
+    // Load help requests
+    setLoadingRequests(true)
+    try {
+      const filters: {
+        urgency?: Urgency
+        page?: number
+        limit?: number
+      } = {
+        page: 1, // Always start from page 1 when filters change
+        limit: itemsPerPage,
+      }
+
+      if (selectedLevel) {
+        filters.urgency = selectedLevel
+      }
+
+      const response = await helpRequestService.getAllHelpRequests(filters)
+
+      if (response.success && response.data) {
+        setHelpRequests(response.data) // Replace with first page
+        // Use count from API response for total count (this should be the total count, not page size)
+        // If count is not provided, fall back to data.length but this means no pagination
+        const total = response.count !== undefined ? response.count : response.data.length
+        setTotalCount(total)
+        setCurrentPage(1) // Reset to page 1
+        console.log('[LandingPage] Loaded requests:', {
+          page: 1,
+          itemsPerPage,
+          itemsOnPage: response.data.length,
+          totalCount: total,
+          hasMore: response.data.length < total,
+        })
+      } else {
+        console.error('[LandingPage] Failed to load help requests:', response.error)
+        setHelpRequests([])
+        setTotalCount(0)
+        setCurrentPage(1)
+      }
+    } catch (error) {
+      console.error('[LandingPage] Error loading help requests:', error)
+      setHelpRequests([])
+      setTotalCount(0)
+      setCurrentPage(1)
+    } finally {
+      setLoadingRequests(false)
+    }
+
+    // Load summary statistics
+    setSummaryLoading(true)
+    try {
+      const summaryResponse = await helpRequestService.getHelpRequestsSummary()
+      if (summaryResponse.success && summaryResponse.data) {
+        setSummary(summaryResponse.data)
+      } else {
+        console.error('[LandingPage] Failed to load summary:', summaryResponse.error)
+      }
+    } catch (error) {
+      console.error('[LandingPage] Error loading summary:', error)
+    } finally {
+      setSummaryLoading(false)
+    }
+  }
+
   // Load requests from API with pagination and filters (async, non-blocking)
+  // Only load data if user is logged in
   useEffect(() => {
+    // Don't load data if user is not logged in
+    if (!userInfo) {
+      setHelpRequests([])
+      setTotalCount(0)
+      setCurrentPage(1)
+      return
+    }
+
     let isCancelled = false
 
     const loadData = async () => {
@@ -268,7 +342,7 @@ export default function LandingPage() {
       }
     }
 
-    // Start loading immediately, don't wait
+    // Start loading only if user is logged in
     loadData()
 
     // Cleanup function to cancel if component unmounts or effect re-runs
@@ -323,7 +397,14 @@ export default function LandingPage() {
   }
 
   // Load summary statistics from API (async, non-blocking, runs in parallel with requests)
+  // Only load data if user is logged in
   useEffect(() => {
+    // Don't load data if user is not logged in
+    if (!userInfo) {
+      setSummary(null)
+      return
+    }
+
     let isCancelled = false
 
     const loadSummary = async () => {
@@ -349,7 +430,7 @@ export default function LandingPage() {
       }
     }
 
-    // Start loading immediately in parallel with requests, don't wait
+    // Start loading only if user is logged in
     loadSummary()
 
     // Cleanup function to cancel if component unmounts or effect re-runs
@@ -459,9 +540,12 @@ export default function LandingPage() {
         setShowIdentifierPrompt(false)
         setIdentifier('')
 
-        // Trigger data loading after successful login
-        // The useEffect will reload when userInfo changes
+        // Explicitly load dashboard data after successful login
         console.log('[LandingPage] Registration complete, user logged in')
+        console.log('[LandingPage] Loading dashboard data after login...')
+        
+        // Load dashboard data immediately after login
+        await loadDashboardData()
         
         // Clear any URL tokens
         router.replace('/', undefined, { shallow: true })

@@ -78,7 +78,7 @@ export default function EmergencyRequestForm({
     elders: 0,
     children: 0,
     pets: 0,
-    gpsLocation: { lat: 7.8731, lng: 80.7718 },
+    gpsLocation: { lat: 0, lng: 0 },
     address: '',
     notes: '',
     rationItems: {},
@@ -125,8 +125,16 @@ export default function EmergencyRequestForm({
         setError(t('contactNumberIsRequired'))
         return
       }
-      if (!formData.gpsLocation.lat || !formData.gpsLocation.lng) {
-        setError(t('gpsLocationIsRequired'))
+      // Validate GPS location - must be valid coordinates (not 0,0 and not NaN)
+      if (
+        !formData.gpsLocation.lat || 
+        !formData.gpsLocation.lng || 
+        formData.gpsLocation.lat === 0 || 
+        formData.gpsLocation.lng === 0 ||
+        isNaN(formData.gpsLocation.lat) ||
+        isNaN(formData.gpsLocation.lng)
+      ) {
+        setError('Please select your location on the map to proceed.')
         return
       }
       if (!formData.address.trim()) {
@@ -420,7 +428,7 @@ export default function EmergencyRequestForm({
                 {(!formData.gpsLocation.lat || !formData.gpsLocation.lng || 
                   formData.gpsLocation.lat === 0 || formData.gpsLocation.lng === 0) && (
                   <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 px-3 py-2 rounded-md text-sm mb-2">
-                    Location is required to proceed to the next step. Please click on the map to select your location.
+                    <strong>Location required:</strong> Please click on the map to select your exact location. You can use "Use My Location" button, but if it doesn't work, you must click on the map to proceed.
                   </div>
                 )}
                 <MapLocationPicker

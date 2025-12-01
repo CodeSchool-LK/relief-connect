@@ -1,5 +1,9 @@
 import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
+
+import { Navbar } from '@/components/organisms/common/navbar'
+import { Footer } from '@/components/organisms/common/footer'
+import { Toaster } from '@/components/atoms/sonner'
 import './globals.css'
 
 const geistSans = Geist({
@@ -13,9 +17,9 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'Rebuild Sri Lanka - Supporting Dashboard',
+  title: 'RebuildSL.com - Rebuild Sri Lanka | Disaster Relief Platform',
   description:
-    'Request/Provide help to the people in Sri Lanka who are affected by the natural disaster',
+    'Request/Provide help to the people in Sri Lanka who are affected by the natural disaster. Connecting communities in need with volunteers and organizations.',
 }
 
 export default function RootLayout({
@@ -25,7 +29,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>{children}</body>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <Navbar />
+        <main>{children}</main>
+        <Footer />
+        <Toaster />
+      </body>
     </html>
   )
 }

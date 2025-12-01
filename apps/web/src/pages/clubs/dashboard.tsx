@@ -462,7 +462,7 @@ export default function VolunteerClubDashboard() {
 
 
 
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-2 text-sm text-gray-600 mb-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-2 text-sm text-gray-600 mb-4 lg:mb-0">
                               {hr.approxArea && (
                                 <div className="break-words">
                                   <span className="font-medium">Area:</span> {hr.approxArea}
@@ -513,7 +513,7 @@ export default function VolunteerClubDashboard() {
                     ) : (
                       filteredCamps.map((camp) => (
                         <Card key={camp.id} className="hover:shadow-md transition-shadow">
-                          <CardContent className="pt-6">
+                          <CardContent>
                             <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                               <div className="flex-1 min-w-0">
                                 <div className="flex flex-wrap items-center gap-2 mb-2">
@@ -526,7 +526,7 @@ export default function VolunteerClubDashboard() {
                                     </span>
                                   )}
                                 </div>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-sm text-gray-600 mb-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-sm text-gray-600 mb-4 lg:mb-0">
                                   {camp.location && (
                                     <div className="break-words">
                                       <span className="font-medium">Location:</span> {camp.location}
@@ -544,7 +544,7 @@ export default function VolunteerClubDashboard() {
                                   )}
                                 </div>
                                 {camp.description && (
-                                  <p className="text-sm text-gray-600 mb-4 break-words">{camp.description}</p>
+                                  <p className="text-sm text-gray-600 break-words">{camp.description}</p>
                                 )}
                               </div>
                               <div className="flex flex-row sm:flex-col gap-2 sm:ml-4 flex-shrink-0">
@@ -580,10 +580,10 @@ export default function VolunteerClubDashboard() {
                               .filter((m) => m.status === "PENDING")
                               .map((membership) => (
                                 <Card key={membership.id} className="mb-4 border-l-4 border-l-yellow-500">
-                                  <CardContent className="pt-6">
+                                  <CardContent>
                                     <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                                       <div className="flex-1 min-w-0">
-                                        <div className="flex flex-wrap items-center gap-2 mb-2">
+                                        <div className="flex flex-col-reverse items-start sm:flex-row sm:items-center gap-2 mb-2">
                                           <h4 className="font-semibold text-base">Member #{membership.id}</h4>
                                           <span className="px-2 py-1 text-xs rounded bg-yellow-100 text-yellow-800 flex-shrink-0">
                                             PENDING
@@ -649,10 +649,10 @@ export default function VolunteerClubDashboard() {
                               .filter((m) => m.status === "APPROVED")
                               .map((membership) => (
                                 <Card key={membership.id} className="mb-4 border-l-4 border-l-green-500">
-                                  <CardContent className="pt-6">
+                                  <CardContent>
                                     <div className="flex items-center justify-between">
                                       <div className="flex-1 min-w-0">
-                                        <div className="flex flex-wrap items-center gap-2 mb-2">
+                                        <div className="flex flex-col-reverse items-start sm:flex-row sm:items-center gap-2 mb-2">
                                           <h4 className="font-semibold text-base">Member #{membership.id}</h4>
                                           <span className="px-2 py-1 text-xs rounded bg-green-100 text-green-800 flex-shrink-0">
                                             APPROVED
@@ -685,10 +685,10 @@ export default function VolunteerClubDashboard() {
                               .filter((m) => m.status === "REJECTED")
                               .map((membership) => (
                                 <Card key={membership.id} className="mb-4 border-l-4 border-l-red-500">
-                                  <CardContent className="pt-6">
+                                  <CardContent>
                                     <div className="flex items-center justify-between">
                                       <div className="flex-1 min-w-0">
-                                        <div className="flex flex-wrap items-center gap-2 mb-2">
+                                        <div className="flex flex-col-reverse items-start sm:flex-row sm:items-center gap-2 mb-2">
                                           <h4 className="font-semibold text-base">Member #{membership.id}</h4>
                                           <span className="px-2 py-1 text-xs rounded bg-red-100 text-red-800 flex-shrink-0">
                                             REJECTED
@@ -737,10 +737,10 @@ export default function VolunteerClubDashboard() {
                                 const camp = camps.find((c) => c.id === donation.campId)
                                 return (
                                   <Card key={donation.id} className="mb-4 border-l-4 border-l-yellow-500">
-                                    <CardContent className="pt-6">
+                                    <CardContent>
                                       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                                         <div className="flex-1 min-w-0">
-                                          <div className="flex flex-wrap items-center gap-2 mb-2">
+                                          <div className="flex flex-col-reverse items-start sm:flex-row sm:items-center gap-2 mb-2">
                                             <h4 className="font-semibold text-base break-words">
                                               Donation #{donation.id} - {camp?.name || "Camp"}
                                             </h4>
@@ -819,10 +819,10 @@ export default function VolunteerClubDashboard() {
                                 const camp = camps.find((c) => c.id === donation.campId)
                                 return (
                                   <Card key={donation.id} className="mb-4 border-l-4 border-l-green-500">
-                                    <CardContent className="pt-6">
+                                    <CardContent>
                                       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                                         <div className="flex-1 min-w-0">
-                                          <div className="flex flex-wrap items-center gap-2 mb-2">
+                                          <div className="flex flex-col-reverse items-start sm:flex-row sm:items-center gap-2 mb-2">
                                             <h4 className="font-semibold text-base break-words">
                                               Donation #{donation.id} - {camp?.name || "Camp"}
                                             </h4>

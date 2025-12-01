@@ -225,7 +225,7 @@ export default function CreateCampDialog({ isOpen, onClose, onCampCreated }: Cre
 
           {/* basic info */}
           <div className="border-t pt-6">
-            <h3 className="font-semibold text-lg mb-6">Basic Information</h3>
+            <h3 className="font-semibold text-lg mb-4">Basic Information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label htmlFor="name" className="text-base">
@@ -237,7 +237,7 @@ export default function CreateCampDialog({ isOpen, onClose, onCampCreated }: Cre
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   required
                   disabled={loading}
-                  className="h-11"
+                  className="h-11 border-gray-300 text-black"
                 />
               </div>
 
@@ -249,7 +249,7 @@ export default function CreateCampDialog({ isOpen, onClose, onCampCreated }: Cre
                   id="campType"
                   value={formData.campType}
                   onChange={(e) => setFormData({ ...formData, campType: e.target.value as CampType })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md h-11"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md h-11 text-black"
                   required
                   disabled={loading}
                 >
@@ -265,7 +265,7 @@ export default function CreateCampDialog({ isOpen, onClose, onCampCreated }: Cre
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <Label htmlFor="lat" className="text-sm text-gray-600">
+                      <Label htmlFor="lat" className="text-sm text-black">
                         Latitude
                       </Label>
                       <Input
@@ -276,11 +276,11 @@ export default function CreateCampDialog({ isOpen, onClose, onCampCreated }: Cre
                         onChange={(e) => setFormData({ ...formData, lat: e.target.value })}
                         required
                         disabled={loading}
-                        className="h-11"
+                        className="h-11 border-gray-300 text-black"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="lng" className="text-sm text-gray-600">
+                      <Label htmlFor="lng" className="text-sm text-black">
                         Longitude
                       </Label>
                       <Input
@@ -291,7 +291,7 @@ export default function CreateCampDialog({ isOpen, onClose, onCampCreated }: Cre
                         onChange={(e) => setFormData({ ...formData, lng: e.target.value })}
                         required
                         disabled={loading}
-                        className="h-11"
+                        className="h-11 border-gray-300 text-black"
                       />
                     </div>
                   </div>
@@ -306,7 +306,7 @@ export default function CreateCampDialog({ isOpen, onClose, onCampCreated }: Cre
                     {showMap ? "Hide Map" : "Select Location on Map"}
                   </Button>
                   {showMap && (
-                    <div className="border rounded-lg overflow-hidden">
+                    <div className="p-2 border rounded-lg overflow-hidden">
                       <MapLocationPicker
                         initialLat={Number.parseFloat(formData.lat) || 7.8731}
                         initialLng={Number.parseFloat(formData.lng) || 80.7718}
@@ -323,25 +323,26 @@ export default function CreateCampDialog({ isOpen, onClose, onCampCreated }: Cre
                 </div>
               </div>
 
-              <div>
-                <Label htmlFor="location">Location/Address</Label>
+              <div className="space-y-2">
+                <Label htmlFor="location" className="text-base">Location/Address</Label>
                 <Input
                   id="location"
+                  className="h-11 border-gray-300 text-black"
                   value={formData.location}
                   onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                   disabled={loading}
                 />
               </div>
 
-              <div>
-                <Label htmlFor="peopleRange">
+              <div className="space-y-2">
+                <Label htmlFor="peopleRange" className="text-base">
                   People Range <span className="text-red-500">*</span>
                 </Label>
                 <select
                   id="peopleRange"
                   value={formData.peopleRange}
                   onChange={(e) => setFormData({ ...formData, peopleRange: e.target.value as PeopleRange })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md h-11 text-black"
                   required
                   disabled={loading}
                 >
@@ -351,12 +352,13 @@ export default function CreateCampDialog({ isOpen, onClose, onCampCreated }: Cre
                 </select>
               </div>
 
-              <div>
-                <Label htmlFor="peopleCount">Exact People Count</Label>
+              <div className="space-y-2">
+                <Label htmlFor="peopleCount" className="text-base">Exact People Count</Label>
                 <Input
                   id="peopleCount"
                   type="number"
                   min="1"
+                  className="h-11 border-gray-300 text-black"
                   value={formData.peopleCount}
                   onChange={(e) => setFormData({ ...formData, peopleCount: e.target.value })}
                   disabled={loading}
@@ -367,7 +369,7 @@ export default function CreateCampDialog({ isOpen, onClose, onCampCreated }: Cre
 
           {/* needs */}
           <div className="border-t pt-6">
-            <Label>
+            <Label className="text-base">
               Camp Needs <span className="text-red-500">*</span>
             </Label>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
@@ -387,45 +389,50 @@ export default function CreateCampDialog({ isOpen, onClose, onCampCreated }: Cre
           </div>
 
           {/* description */}
-          <div className="border-t pt-6">
-            <Label htmlFor="shortNote">
-              Short Note <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              id="shortNote"
-              value={formData.shortNote}
-              onChange={(e) => setFormData({ ...formData, shortNote: e.target.value })}
-              maxLength={500}
-              required
-              disabled={loading}
-            />
+          <div className="border-t pt-6 space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="shortNote" className="text-base">
+                Short Note <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="shortNote"
+                value={formData.shortNote}
+                onChange={(e) => setFormData({ ...formData, shortNote: e.target.value })}
+                maxLength={500}
+                required
+                disabled={loading}
+                className="h-11 border-gray-300 text-black"
+              />
+            </div>
 
-            <Label htmlFor="description" className="mt-4">
-              Detailed Description
-            </Label>
-            <textarea
-              id="description"
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              rows={4}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md"
-              disabled={loading}
-            />
+            <div className="space-y-2">
+              <Label htmlFor="description" className="text-base">
+                Detailed Description
+              </Label>
+              <textarea
+                id="description"
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                rows={4}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-black"
+                disabled={loading}
+              />
+            </div>
           </div>
 
           {/* contact */}
           <div className="border-t pt-6">
             <h3 className="font-semibold text-lg mb-4">Contact Information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="contactType">
+              <div className="space-y-2">
+                <Label htmlFor="contactType" className="text-base">
                   Contact Type <span className="text-red-500">*</span>
                 </Label>
                 <select
                   id="contactType"
                   value={formData.contactType}
                   onChange={(e) => setFormData({ ...formData, contactType: e.target.value as ContactType })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md h-11 text-black"
                   required
                   disabled={loading}
                 >
@@ -435,13 +442,14 @@ export default function CreateCampDialog({ isOpen, onClose, onCampCreated }: Cre
                 </select>
               </div>
 
-              <div>
-                <Label htmlFor="contact">Contact</Label>
+              <div className="space-y-2">
+                <Label htmlFor="contact" className="text-base">Contact</Label>
                 <Input
                   id="contact"
                   value={formData.contact}
                   onChange={(e) => setFormData({ ...formData, contact: e.target.value })}
                   disabled={loading}
+                  className="h-11 border-gray-300 text-black"
                 />
               </div>
             </div>

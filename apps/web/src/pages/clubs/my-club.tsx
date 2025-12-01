@@ -138,9 +138,8 @@ export default function MyClubPage() {
                         <CardTitle className="text-xl sm:text-2xl break-words">{club.name}</CardTitle>
                         {club.status && (
                           <span
-                            className={`inline-block mt-1 px-2 py-1 text-xs rounded ${
-                              club.status === "ACTIVE" ? "bg-emerald-100 text-emerald-800" : "bg-gray-100 text-gray-800"
-                            }`}
+                            className={`inline-block mt-1 px-2 py-1 text-xs rounded ${club.status === "ACTIVE" ? "bg-emerald-100 text-emerald-800" : "bg-gray-100 text-gray-800"
+                              }`}
                           >
                             {club.status}
                           </span>
@@ -212,7 +211,7 @@ export default function MyClubPage() {
                   <div className="text-center py-8">
                     <Building2 className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                     <h3 className="text-lg font-semibold text-gray-900 mb-2">No Club Found</h3>
-                    <p className="text-gray-600 mb-4">You don't have a club associated with your account yet.</p>
+                    <p className="text-gray-600 mb-4">You don&apos;t have a club associated with your account yet.</p>
                     <p className="text-sm text-gray-500">
                       Please contact an administrator to set up your volunteer club.
                     </p>

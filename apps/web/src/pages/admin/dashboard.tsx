@@ -138,6 +138,11 @@ export default function AdminDashboard() {
                     Review Memberships
                   </Button>
                 </Link>
+                <Link href="/admin/help-requests">
+                  <Button className="w-full justify-start" variant="outline">
+                    Manage Help Requests
+                  </Button>
+                </Link>
               </CardContent>
             </Card>
           </div>

@@ -92,3 +92,12 @@ docker/nginx/ssl/*.key
 # Cursor AI
 .cursor
 *.plan.md
+
+# Yarn
+.yarn
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+.pnp.*

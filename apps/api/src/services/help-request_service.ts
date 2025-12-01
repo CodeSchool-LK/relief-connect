@@ -1,8 +1,10 @@
 import { HelpRequestDao, HelpRequestInventoryItemDao, ItemDao } from '../dao';
-import { CreateHelpRequestDto, HelpRequestResponseDto, HelpRequestWithOwnershipResponseDto } from '@nx-mono-repo-deployment-test/shared/src/dtos/help-request';
+import { CreateHelpRequestDto, UpdateHelpRequestDto, HelpRequestResponseDto, HelpRequestWithOwnershipResponseDto } from '@nx-mono-repo-deployment-test/shared/src/dtos/help-request';
 import { InventoryItemResponseDto } from '@nx-mono-repo-deployment-test/shared/src/dtos/inventory';
-import { IApiResponse, IHelpRequestSummary } from '@nx-mono-repo-deployment-test/shared/src/interfaces';
-import { Urgency, RationItemType } from '@nx-mono-repo-deployment-test/shared/src/enums';
+import { IApiResponse, IHelpRequestSummary, IHelpRequest } from '@nx-mono-repo-deployment-test/shared/src/interfaces';
+import { Urgency, RationItemType, UserRole } from '@nx-mono-repo-deployment-test/shared/src/enums';
+import HelpRequestInventoryItemModel from '../models/help-request-inventory-item.model';
+import sequelize from '../config/database';
 
 /**
  * Service layer for HelpRequest business logic
@@ -241,6 +243,173 @@ class HelpRequestService {
       return {
         success: false,
         error: 'Failed to create help request',
+      };
+    }
+  }
+
+  /**
+   * Update an existing help request
+   * @param id - Help request ID
+   * @param updateHelpRequestDto - Update data
+   * @param userId - ID of the user making the update
+   * @param userRole - Role of the user making the update
+   */
+  public async updateHelpRequest(
+    id: number,
+    updateHelpRequestDto: UpdateHelpRequestDto,
+    userId: number,
+    userRole: UserRole
+  ): Promise<IApiResponse<HelpRequestResponseDto>> {
+    const transaction = await sequelize.transaction();
+    try {
+      // Get the existing help request
+      const existingHelpRequest = await this.helpRequestDao.findById(id);
+      if (!existingHelpRequest) {
+        await transaction.rollback();
+        return {
+          success: false,
+          error: 'Help request not found',
+        };
+      }
+
+      // Authorization check: Only admins or volunteer clubs can update
+      const isAdmin = userRole === UserRole.SYSTEM_ADMINISTRATOR || userRole === UserRole.ADMIN;
+      const isVolunteerClub = userRole === UserRole.VOLUNTEER_CLUB;
+      
+      if (!isAdmin && !isVolunteerClub) {
+        await transaction.rollback();
+        return {
+          success: false,
+          error: 'Access denied. Only admins and volunteer clubs can update help requests.',
+        };
+      }
+
+      // Validate coordinates if provided
+      if (updateHelpRequestDto.lat !== undefined && (updateHelpRequestDto.lat < -90 || updateHelpRequestDto.lat > 90)) {
+        await transaction.rollback();
+        return {
+          success: false,
+          error: 'Invalid latitude',
+        };
+      }
+      if (updateHelpRequestDto.lng !== undefined && (updateHelpRequestDto.lng < -180 || updateHelpRequestDto.lng > 180)) {
+        await transaction.rollback();
+        return {
+          success: false,
+          error: 'Invalid longitude',
+        };
+      }
+
+      // Validate short note length if provided
+      if (updateHelpRequestDto.shortNote !== undefined) {
+        if (!updateHelpRequestDto.shortNote || updateHelpRequestDto.shortNote.trim().length === 0) {
+          await transaction.rollback();
+          return {
+            success: false,
+            error: 'Short note cannot be empty',
+          };
+        }
+        if (updateHelpRequestDto.shortNote.length > 160) {
+          await transaction.rollback();
+          return {
+            success: false,
+            error: 'Short note must not exceed 160 characters',
+          };
+        }
+      }
+
+      // Prepare update data
+      const updateData: Partial<IHelpRequest> = {};
+      if (updateHelpRequestDto.lat !== undefined) updateData.lat = updateHelpRequestDto.lat;
+      if (updateHelpRequestDto.lng !== undefined) updateData.lng = updateHelpRequestDto.lng;
+      if (updateHelpRequestDto.urgency !== undefined) updateData.urgency = updateHelpRequestDto.urgency;
+      if (updateHelpRequestDto.shortNote !== undefined) updateData.shortNote = updateHelpRequestDto.shortNote.trim();
+      if (updateHelpRequestDto.approxArea !== undefined) updateData.approxArea = updateHelpRequestDto.approxArea.trim();
+      if (updateHelpRequestDto.contactType !== undefined) updateData.contactType = updateHelpRequestDto.contactType;
+      if (updateHelpRequestDto.contact !== undefined) updateData.contact = updateHelpRequestDto.contact?.trim();
+      if (updateHelpRequestDto.name !== undefined) updateData.name = updateHelpRequestDto.name?.trim();
+      if (updateHelpRequestDto.totalPeople !== undefined) updateData.totalPeople = updateHelpRequestDto.totalPeople;
+      if (updateHelpRequestDto.elders !== undefined) updateData.elders = updateHelpRequestDto.elders;
+      if (updateHelpRequestDto.children !== undefined) updateData.children = updateHelpRequestDto.children;
+      if (updateHelpRequestDto.pets !== undefined) updateData.pets = updateHelpRequestDto.pets;
+      if (updateHelpRequestDto.status !== undefined) updateData.status = updateHelpRequestDto.status;
+
+      // Handle ration items update if provided
+      if (updateHelpRequestDto.rationItems !== undefined) {
+        const rationItemsMap = updateHelpRequestDto.rationItems;
+        
+        // Validate ration items if provided
+        if (Object.keys(rationItemsMap).length > 0) {
+          const invalidItems: string[] = [];
+          for (const [itemCode, quantity] of Object.entries(rationItemsMap)) {
+            // Validate quantity is positive
+            if (typeof quantity !== 'number' || quantity <= 0) {
+              invalidItems.push(`${itemCode} (invalid quantity: must be positive number)`);
+              continue;
+            }
+            // Validate it's a valid enum value
+            if (!Object.values(RationItemType).includes(itemCode as RationItemType)) {
+              invalidItems.push(`${itemCode} (invalid item code)`);
+              continue;
+            }
+            // Validate it exists in database
+            const item = await this.itemDao.findByCode(itemCode);
+            if (!item) {
+              invalidItems.push(`${itemCode} (item not found in database)`);
+            }
+          }
+          if (invalidItems.length > 0) {
+            await transaction.rollback();
+            return {
+              success: false,
+              error: `Invalid ration items: ${invalidItems.join(', ')}. Please ensure all items are seeded and quantities are positive numbers.`,
+            };
+          }
+        }
+
+        // Store ration items as array for database
+        const rationItemsArray = Object.keys(rationItemsMap);
+        updateData.rationItems = rationItemsArray;
+      }
+
+      // Update the help request
+      const updatedHelpRequest = await this.helpRequestDao.update(id, updateData);
+      if (!updatedHelpRequest) {
+        await transaction.rollback();
+        return {
+          success: false,
+          error: 'Failed to update help request',
+        };
+      }
+
+      // Handle inventory items update if rationItems is provided (replace all items)
+      if (updateHelpRequestDto.rationItems !== undefined) {
+        // Delete existing inventory items
+        await HelpRequestInventoryItemModel.destroy({
+          where: {
+            [HelpRequestInventoryItemModel.INVENTORY_ITEM_HELP_REQUEST_ID]: id,
+          },
+          transaction,
+        });
+        // Create new inventory items with quantities
+        if (Object.keys(updateHelpRequestDto.rationItems).length > 0) {
+          await this.inventoryItemDao.createInventoryItems(id, updateHelpRequestDto.rationItems);
+        }
+      }
+
+      await transaction.commit();
+
+      return {
+        success: true,
+        data: new HelpRequestResponseDto(updatedHelpRequest),
+        message: 'Help request updated successfully',
+      };
+    } catch (error) {
+      await transaction.rollback();
+      console.error(`Error in HelpRequestService.updateHelpRequest (${id}):`, error);
+      return {
+        success: false,
+        error: 'Failed to update help request',
       };
     }
   }

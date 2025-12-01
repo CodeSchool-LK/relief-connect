@@ -13,4 +13,5 @@ export * from './camp-status.enum';
 export * from './user.enum';
 export * from './ration-item.enum';
 export * from './membership-status.enum';
+export * from './location.enum';
 

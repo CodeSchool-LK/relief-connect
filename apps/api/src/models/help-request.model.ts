@@ -25,6 +25,8 @@ export default class HelpRequestModel extends Model<IHelpRequest> implements IHe
   public static readonly HELP_REQUEST_CHILDREN = 'children';
   public static readonly HELP_REQUEST_PETS = 'pets';
   public static readonly HELP_REQUEST_RATION_ITEMS = 'rationItems';
+  public static readonly HELP_REQUEST_PROVINCE = 'province';
+  public static readonly HELP_REQUEST_DISTRICT = 'district';
   public static readonly HELP_REQUEST_STATUS = 'status';
   public static readonly HELP_REQUEST_CREATED_AT = 'createdAt';
   public static readonly HELP_REQUEST_UPDATED_AT = 'updatedAt';
@@ -144,6 +146,20 @@ export default class HelpRequestModel extends Model<IHelpRequest> implements IHe
     field: HelpRequestModel.HELP_REQUEST_RATION_ITEMS,
   })
   rationItems?: string[];
+
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: true,
+    field: HelpRequestModel.HELP_REQUEST_PROVINCE,
+  })
+  province?: number;
+
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: true,
+    field: HelpRequestModel.HELP_REQUEST_DISTRICT,
+  })
+  district?: number;
 
   @Column({
     type: DataType.STRING(20),

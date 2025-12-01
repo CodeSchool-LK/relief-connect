@@ -40,6 +40,11 @@ import {
   FileText,
   X,
   Menu,
+  BookOpen,
+  Info,
+  Tent,
+  Gift,
+  LifeBuoy,
 } from 'lucide-react'
 import LanguageSwitcher from './LanguageSwitcher'
 import { HelpRequestResponseDto } from '@nx-mono-repo-deployment-test/shared/src/dtos/help-request/response/help_request_response_dto'
@@ -161,6 +166,8 @@ export default function LandingPage() {
   const [loadingMore, setLoadingMore] = useState(false) // Separate loading state for "See More"
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false) // Mobile menu state
   const mobileMenuRef = useRef<HTMLDivElement>(null) // Ref for mobile menu
+  const [showGuideDialog, setShowGuideDialog] = useState(false) // Guide dialog state
+  const [guideView, setGuideView] = useState<'simple' | 'detailed' | 'volunteer'>('simple') // Guide view type
 
   // Close mobile menu when clicking outside
   useEffect(() => {
@@ -210,8 +217,82 @@ export default function LandingPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router.query])
 
+  // Function to load dashboard data (requests and summary)
+  const loadDashboardData = async () => {
+    // Load help requests
+    setLoadingRequests(true)
+    try {
+      const filters: {
+        urgency?: Urgency
+        page?: number
+        limit?: number
+      } = {
+        page: 1, // Always start from page 1 when filters change
+        limit: itemsPerPage,
+      }
+
+      if (selectedLevel) {
+        filters.urgency = selectedLevel
+      }
+
+      const response = await helpRequestService.getAllHelpRequests(filters)
+
+      if (response.success && response.data) {
+        setHelpRequests(response.data) // Replace with first page
+        // Use count from API response for total count (this should be the total count, not page size)
+        // If count is not provided, fall back to data.length but this means no pagination
+        const total = response.count !== undefined ? response.count : response.data.length
+        setTotalCount(total)
+        setCurrentPage(1) // Reset to page 1
+        console.log('[LandingPage] Loaded requests:', {
+          page: 1,
+          itemsPerPage,
+          itemsOnPage: response.data.length,
+          totalCount: total,
+          hasMore: response.data.length < total,
+        })
+      } else {
+        console.error('[LandingPage] Failed to load help requests:', response.error)
+        setHelpRequests([])
+        setTotalCount(0)
+        setCurrentPage(1)
+      }
+    } catch (error) {
+      console.error('[LandingPage] Error loading help requests:', error)
+      setHelpRequests([])
+      setTotalCount(0)
+      setCurrentPage(1)
+    } finally {
+      setLoadingRequests(false)
+    }
+
+    // Load summary statistics
+    setSummaryLoading(true)
+    try {
+      const summaryResponse = await helpRequestService.getHelpRequestsSummary()
+      if (summaryResponse.success && summaryResponse.data) {
+        setSummary(summaryResponse.data)
+      } else {
+        console.error('[LandingPage] Failed to load summary:', summaryResponse.error)
+      }
+    } catch (error) {
+      console.error('[LandingPage] Error loading summary:', error)
+    } finally {
+      setSummaryLoading(false)
+    }
+  }
+
   // Load requests from API with pagination and filters (async, non-blocking)
+  // Only load data if user is logged in
   useEffect(() => {
+    // Don't load data if user is not logged in
+    if (!userInfo) {
+      setHelpRequests([])
+      setTotalCount(0)
+      setCurrentPage(1)
+      return
+    }
+
     let isCancelled = false
 
     const loadData = async () => {
@@ -268,7 +349,7 @@ export default function LandingPage() {
       }
     }
 
-    // Start loading immediately, don't wait
+    // Start loading only if user is logged in
     loadData()
 
     // Cleanup function to cancel if component unmounts or effect re-runs
@@ -323,7 +404,14 @@ export default function LandingPage() {
   }
 
   // Load summary statistics from API (async, non-blocking, runs in parallel with requests)
+  // Only load data if user is logged in
   useEffect(() => {
+    // Don't load data if user is not logged in
+    if (!userInfo) {
+      setSummary(null)
+      return
+    }
+
     let isCancelled = false
 
     const loadSummary = async () => {
@@ -349,7 +437,7 @@ export default function LandingPage() {
       }
     }
 
-    // Start loading immediately in parallel with requests, don't wait
+    // Start loading only if user is logged in
     loadSummary()
 
     // Cleanup function to cancel if component unmounts or effect re-runs
@@ -459,9 +547,12 @@ export default function LandingPage() {
         setShowIdentifierPrompt(false)
         setIdentifier('')
 
-        // Trigger data loading after successful login
-        // The useEffect will reload when userInfo changes
+        // Explicitly load dashboard data after successful login
         console.log('[LandingPage] Registration complete, user logged in')
+        console.log('[LandingPage] Loading dashboard data after login...')
+        
+        // Load dashboard data immediately after login
+        await loadDashboardData()
         
         // Clear any URL tokens
         router.replace('/', undefined, { shallow: true })
@@ -832,6 +923,14 @@ export default function LandingPage() {
 
                 {/* Desktop View - Hidden on mobile */}
                 <div className="hidden md:flex items-center gap-2 sm:gap-3">
+                  <Button
+                    onClick={() => setShowGuideDialog(true)}
+                    className="h-8 sm:h-9 px-2 sm:px-3 md:px-4 bg-white/20 backdrop-blur-sm text-white hover:bg-white/30 border border-white/30 font-medium text-[10px] sm:text-xs md:text-sm transition-all duration-300 whitespace-nowrap flex items-center gap-1.5"
+                    title="User Guide"
+                  >
+                    <BookOpen className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                    <span>Guide</span>
+                  </Button>
                   <LanguageSwitcher variant="dark" />
                   <Button
                     onClick={() => router.push('/login')}
@@ -929,6 +1028,20 @@ export default function LandingPage() {
                               Language
                             </div>
                             <LanguageSwitcher variant="light" />
+                          </div>
+
+                          {/* User Guide Button */}
+                          <div>
+                            <Button
+                              onClick={() => {
+                                setShowGuideDialog(true)
+                                setMobileMenuOpen(false)
+                              }}
+                              className="w-full h-12 bg-gradient-to-r from-blue-500 to-indigo-600 text-white hover:from-blue-600 hover:to-indigo-700 font-semibold text-base transition-all duration-300 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+                            >
+                              <BookOpen className="h-5 w-5" />
+                              User Guide
+                            </Button>
                           </div>
 
                           {/* Volunteer Login */}
@@ -1647,6 +1760,747 @@ export default function LandingPage() {
           </div>
         </div>
         </div>
+
+        {/* User Guide Dialog */}
+        <Dialog open={showGuideDialog} onOpenChange={setShowGuideDialog}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-bold flex items-center gap-2">
+                <BookOpen className="h-6 w-6 text-blue-600" />
+                User Guide
+              </DialogTitle>
+              <DialogDescription>
+                Learn how to use the Relief Connect platform
+              </DialogDescription>
+            </DialogHeader>
+
+            {/* Guide View Toggle */}
+            <div className="flex gap-2 mb-6 border-b">
+              <button
+                onClick={() => setGuideView('simple')}
+                className={`px-4 py-2 font-medium transition-colors ${
+                  guideView === 'simple'
+                    ? 'border-b-2 border-blue-600 text-blue-600'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Simple Guide
+              </button>
+              <button
+                onClick={() => setGuideView('detailed')}
+                className={`px-4 py-2 font-medium transition-colors ${
+                  guideView === 'detailed'
+                    ? 'border-b-2 border-blue-600 text-blue-600'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Detailed Guide
+              </button>
+              <button
+                onClick={() => setGuideView('volunteer')}
+                className={`px-4 py-2 font-medium transition-colors ${
+                  guideView === 'volunteer'
+                    ? 'border-b-2 border-green-600 text-green-600'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Volunteer Guide
+              </button>
+            </div>
+
+            {/* Simple Guide */}
+            {guideView === 'simple' && (
+              <div className="space-y-6">
+                <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg">
+                  <h3 className="font-bold text-lg mb-2 flex items-center gap-2">
+                    <Info className="h-5 w-5 text-blue-600" />
+                    Quick Start
+                  </h3>
+                  <ol className="list-decimal list-inside space-y-2 text-gray-700">
+                    <li>Enter your email or phone number to get started</li>
+                    <li>Choose &quot;I Need Help&quot; to request assistance</li>
+                    <li>Choose &quot;I Can Help&quot; to view and help others</li>
+                    <li>Use filters to find specific requests</li>
+                    <li>Click on any request to see details and help</li>
+                  </ol>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-4">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <HelpCircle className="h-5 w-5 text-red-600" />
+                        I Need Help
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      <p className="text-sm text-gray-600">
+                        If you need assistance with food, medical supplies, rescue, or shelter:
+                      </p>
+                      <ol className="list-decimal list-inside space-y-1 text-sm text-gray-700">
+                        <li>Click &quot;I Need Help&quot; button</li>
+                        <li>Fill in your details and needs</li>
+                        <li>Submit your request</li>
+                        <li>Wait for volunteers to contact you</li>
+                      </ol>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <HandHeart className="h-5 w-5 text-green-600" />
+                        I Can Help
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      <p className="text-sm text-gray-600">
+                        If you want to help others in need:
+                      </p>
+                      <ol className="list-decimal list-inside space-y-1 text-sm text-gray-700">
+                        <li>Click &quot;I Can Help&quot; button</li>
+                        <li>Browse available requests</li>
+                        <li>Use filters to find specific needs</li>
+                        <li>Contact the requester to provide help</li>
+                      </ol>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded-r-lg">
+                  <h3 className="font-bold text-lg mb-2 flex items-center gap-2">
+                    <MapPin className="h-5 w-5 text-green-600" />
+                    Tips
+                  </h3>
+                  <ul className="list-disc list-inside space-y-1 text-gray-700">
+                    <li>Use the map view to see requests by location</li>
+                    <li>Filter by urgency level (High, Medium) to prioritize</li>
+                    <li>Check &quot;View My Requests&quot; to see your submitted requests</li>
+                    <li>You can help volunteer camps by clicking &quot;Help Volunteers&quot;</li>
+                  </ul>
+                </div>
+              </div>
+            )}
+
+            {/* Detailed Guide */}
+            {guideView === 'detailed' && (
+              <div className="space-y-6">
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="font-bold text-lg mb-3 flex items-center gap-2">
+                      <User className="h-5 w-5 text-blue-600" />
+                      Getting Started
+                    </h3>
+                    <div className="space-y-3 text-gray-700">
+                      <p>
+                        <strong>Step 1: Login/Register</strong>
+                        <br />
+                        When you first visit the platform, you&apos;ll be prompted to enter your email address or phone number. This serves as your unique identifier. Simply enter your contact information and click &quot;Continue&quot; to proceed.
+                      </p>
+                      <p>
+                        <strong>Step 2: Choose Your Path</strong>
+                        <br />
+                        After logging in, you&apos;ll see three main options:
+                      </p>
+                      <ul className="list-disc list-inside ml-4 space-y-1">
+                        <li><strong>I Need Help:</strong> Request assistance for yourself or your family</li>
+                        <li><strong>I Can Help:</strong> Browse and respond to requests from others</li>
+                        <li><strong>Help Volunteers:</strong> Support volunteer camps and their efforts</li>
+                      </ul>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="font-bold text-lg mb-3 flex items-center gap-2">
+                      <HelpCircle className="h-5 w-5 text-red-600" />
+                      Requesting Help (I Need Help)
+                    </h3>
+                    <div className="space-y-3 text-gray-700">
+                      <p>
+                        <strong>Creating a Help Request:</strong>
+                      </p>
+                      <ol className="list-decimal list-inside ml-4 space-y-2">
+                        <li>Click the &quot;I Need Help&quot; card or button</li>
+                        <li>Fill out the emergency request form with:
+                          <ul className="list-disc list-inside ml-6 mt-1 space-y-1">
+                            <li>Your name and contact information</li>
+                            <li>Your location (address or use map picker)</li>
+                            <li>Number of people needing help (adults, children, elders)</li>
+                            <li>Urgency level (High or Medium priority)</li>
+                            <li>Items needed (food, water, medical supplies, etc.)</li>
+                            <li>Any additional notes or special requirements</li>
+                          </ul>
+                        </li>
+                        <li>Review your information and submit the request</li>
+                        <li>Your request will appear on the platform for volunteers to see</li>
+                        <li>Volunteers can contact you directly using your provided contact information</li>
+                      </ol>
+                      <p>
+                        <strong>Managing Your Requests:</strong>
+                        <br />
+                        Click &quot;View My Requests&quot; in the top navigation to see all your submitted requests, their status, and any updates.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="font-bold text-lg mb-3 flex items-center gap-2">
+                      <HandHeart className="h-5 w-5 text-green-600" />
+                      Providing Help (I Can Help)
+                    </h3>
+                    <div className="space-y-3 text-gray-700">
+                      <p>
+                        <strong>Browsing Requests:</strong>
+                      </p>
+                      <ol className="list-decimal list-inside ml-4 space-y-2">
+                        <li>Click &quot;I Can Help&quot; to view all available requests</li>
+                        <li>Use the filters to narrow down requests:
+                          <ul className="list-disc list-inside ml-6 mt-1 space-y-1">
+                            <li><strong>Urgency Level:</strong> Filter by High or Medium priority</li>
+                            <li><strong>My Location:</strong> Sort requests by distance from you</li>
+                          </ul>
+                        </li>
+                        <li>View the analytics cards to see:
+                          <ul className="list-disc list-inside ml-6 mt-1 space-y-1">
+                            <li>Total requests</li>
+                            <li>Total people needing help</li>
+                            <li>Number of children and elders</li>
+                            <li>Priority breakdown</li>
+                            <li>Items requested</li>
+                          </ul>
+                        </li>
+                        <li>Click on any request card to see full details</li>
+                        <li>Contact the requester using the provided contact information</li>
+                        <li>Coordinate delivery or assistance directly with them</li>
+                      </ol>
+                      <p>
+                        <strong>Viewing on Map:</strong>
+                        <br />
+                        Click &quot;View on Map&quot; to see all requests plotted on an interactive map. This helps you visualize locations and plan your assistance routes.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="font-bold text-lg mb-3 flex items-center gap-2">
+                      <Users className="h-5 w-5 text-blue-600" />
+                      Helping Volunteer Camps
+                    </h3>
+                    <div className="space-y-3 text-gray-700">
+                      <p>
+                        Volunteer camps are organized groups working to help communities. You can:
+                      </p>
+                      <ol className="list-decimal list-inside ml-4 space-y-1">
+                        <li>Click &quot;Help Volunteers&quot; to find active camps</li>
+                        <li>Browse available campaigns and their needs</li>
+                        <li>See drop-off locations for donations</li>
+                        <li>Contact camps directly to coordinate donations or volunteer work</li>
+                      </ol>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="font-bold text-lg mb-3 flex items-center gap-2">
+                      <Map className="h-5 w-5 text-orange-600" />
+                      Using the Map View
+                    </h3>
+                    <div className="space-y-3 text-gray-700">
+                      <p>
+                        The map view provides a visual representation of all help requests:
+                      </p>
+                      <ul className="list-disc list-inside ml-4 space-y-1">
+                        <li>Click &quot;View Map&quot; or &quot;View on Map&quot; to open the map</li>
+                        <li>See markers for each request location</li>
+                        <li>Click on markers to see request details</li>
+                        <li>Use map controls to zoom and navigate</li>
+                        <li>Plan efficient routes to help multiple people</li>
+                      </ul>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="font-bold text-lg mb-3 flex items-center gap-2">
+                      <Filter className="h-5 w-5 text-purple-600" />
+                      Using Filters and Search
+                    </h3>
+                    <div className="space-y-3 text-gray-700">
+                      <p>
+                        <strong>Urgency Filter:</strong> Select &quot;All Levels&quot;, &quot;High&quot;, or &quot;Medium&quot; to filter requests by priority level.
+                      </p>
+                      <p>
+                        <strong>Location Sorting:</strong> Click &quot;My Location&quot; to allow the browser to access your location. Requests will then be sorted by distance, with the nearest requests appearing first.
+                      </p>
+                      <p>
+                        <strong>Pagination:</strong> If there are many requests, use the &quot;See More&quot; button to load additional requests.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded-r-lg">
+                    <h3 className="font-bold text-lg mb-2 flex items-center gap-2">
+                      <AlertCircle className="h-5 w-5 text-yellow-600" />
+                      Important Notes
+                    </h3>
+                    <ul className="list-disc list-inside space-y-1 text-gray-700">
+                      <li>Always verify contact information before providing assistance</li>
+                      <li>Coordinate delivery times and locations directly with requesters</li>
+                      <li>Update your requests if your situation changes</li>
+                      <li>Be respectful and patient when communicating with others</li>
+                      <li>Report any issues or concerns through appropriate channels</li>
+                      <li>Your contact information is only visible to logged-in users</li>
+                    </ul>
+                  </div>
+
+                  <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg">
+                    <h3 className="font-bold text-lg mb-2 flex items-center gap-2">
+                      <Phone className="h-5 w-5 text-blue-600" />
+                      Getting Support
+                    </h3>
+                    <p className="text-gray-700">
+                      If you need help using the platform or have questions, you can:
+                    </p>
+                    <ul className="list-disc list-inside space-y-1 text-gray-700 mt-2">
+                      <li>Review this guide anytime by clicking the &quot;Guide&quot; button</li>
+                      <li>Contact volunteer camps for assistance</li>
+                      <li>Check the &quot;View My Requests&quot; page for your request status</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Volunteer Guide */}
+            {guideView === 'volunteer' && (
+              <div className="space-y-6">
+                <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded-r-lg mb-6">
+                  <h3 className="font-bold text-lg mb-2 flex items-center gap-2">
+                    <Users className="h-5 w-5 text-green-600" />
+                    Welcome, Volunteer!
+                  </h3>
+                  <p className="text-gray-700">
+                    This comprehensive guide covers all features available to volunteer clubs in the Relief Connect platform. Learn how to manage your organization, camps, members, and help coordinate relief efforts.
+                  </p>
+                </div>
+
+                <div className="space-y-6">
+                  {/* Login & Access */}
+                  <div>
+                    <h3 className="font-bold text-lg mb-3 flex items-center gap-2">
+                      <User className="h-5 w-5 text-blue-600" />
+                      Getting Started: Login & Access
+                    </h3>
+                    <div className="space-y-3 text-gray-700">
+                      <p>
+                        <strong>Step 1: Access Volunteer Login</strong>
+                        <br />
+                        Click the &quot;Volunteer Login&quot; button in the top navigation bar (desktop) or mobile menu. This will take you to the volunteer login page.
+                      </p>
+                      <p>
+                        <strong>Step 2: Login Credentials</strong>
+                        <br />
+                        Use your volunteer club credentials (username and password) that were provided when your club was registered and approved by the system administrator.
+                      </p>
+                      <p>
+                        <strong>Step 3: Dashboard Access</strong>
+                        <br />
+                        After successful login, you&apos;ll be automatically redirected to your Volunteer Club Dashboard, which is your central command center for all operations.
+                      </p>
+                      <div className="bg-yellow-50 border-l-4 border-yellow-500 p-3 rounded-r-lg mt-3">
+                        <p className="text-sm text-gray-700">
+                          <strong>Note:</strong> Only approved volunteer clubs can access the dashboard. If you haven&apos;t registered yet, contact the system administrator.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Dashboard Overview */}
+                  <div>
+                    <h3 className="font-bold text-lg mb-3 flex items-center gap-2">
+                      <Home className="h-5 w-5 text-purple-600" />
+                      Dashboard Overview
+                    </h3>
+                    <div className="space-y-3 text-gray-700">
+                      <p>
+                        The Volunteer Club Dashboard provides a comprehensive view of all your activities and operations. The dashboard is organized into several main sections:
+                      </p>
+                      <div className="grid md:grid-cols-2 gap-4 mt-4">
+                        <Card>
+                          <CardHeader>
+                            <CardTitle className="text-base flex items-center gap-2">
+                              <LifeBuoy className="h-4 w-4 text-blue-600" />
+                              Help Requests
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <p className="text-sm text-gray-600">
+                              View all help requests from individuals and families in need. Browse, search, and filter requests to coordinate assistance.
+                            </p>
+                          </CardContent>
+                        </Card>
+                        <Card>
+                          <CardHeader>
+                            <CardTitle className="text-base flex items-center gap-2">
+                              <Tent className="h-4 w-4 text-green-600" />
+                              Camps
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <p className="text-sm text-gray-600">
+                              Manage all your relief camps. Create new camps, edit existing ones, track camp needs, and monitor donations.
+                            </p>
+                          </CardContent>
+                        </Card>
+                        <Card>
+                          <CardHeader>
+                            <CardTitle className="text-base flex items-center gap-2">
+                              <Users className="h-4 w-4 text-indigo-600" />
+                              Memberships
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <p className="text-sm text-gray-600">
+                              Review and manage membership requests. Approve or reject users who want to join your volunteer club.
+                            </p>
+                          </CardContent>
+                        </Card>
+                        <Card>
+                          <CardHeader>
+                            <CardTitle className="text-base flex items-center gap-2">
+                              <Gift className="h-4 w-4 text-orange-600" />
+                              Camp Donations
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <p className="text-sm text-gray-600">
+                              Track all donations made to your camps. Accept donations, view donor information, and manage donation status.
+                            </p>
+                          </CardContent>
+                        </Card>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Help Requests Management */}
+                  <div>
+                    <h3 className="font-bold text-lg mb-3 flex items-center gap-2">
+                      <LifeBuoy className="h-5 w-5 text-blue-600" />
+                      Managing Help Requests
+                    </h3>
+                    <div className="space-y-3 text-gray-700">
+                      <p>
+                        <strong>Viewing Help Requests</strong>
+                      </p>
+                      <ol className="list-decimal list-inside ml-4 space-y-2">
+                        <li>Click on &quot;Help Requests&quot; in the sidebar or dashboard</li>
+                        <li>You&apos;ll see a list of all help requests from individuals and families</li>
+                        <li>Each request card shows:
+                          <ul className="list-disc list-inside ml-6 mt-1 space-y-1">
+                            <li>Requester name and contact information</li>
+                            <li>Location and address</li>
+                            <li>Number of people (adults, children, elders)</li>
+                            <li>Urgency level (High, Medium)</li>
+                            <li>Items needed</li>
+                            <li>Request status</li>
+                          </ul>
+                        </li>
+                        <li>Use the search bar to find specific requests by name, location, or items</li>
+                        <li>Click on any request card to view full details</li>
+                      </ol>
+                      <p className="mt-4">
+                        <strong>Coordinating Assistance</strong>
+                      </p>
+                      <ul className="list-disc list-inside ml-4 space-y-1">
+                        <li>Review request details to understand the specific needs</li>
+                        <li>Contact the requester using the provided contact information</li>
+                        <li>Coordinate delivery or assistance directly with them</li>
+                        <li>Update request status if you&apos;re providing assistance</li>
+                        <li>Use the map view to plan efficient routes for multiple requests</li>
+                      </ul>
+                    </div>
+                  </div>
+
+                  {/* Camp Management */}
+                  <div>
+                    <h3 className="font-bold text-lg mb-3 flex items-center gap-2">
+                      <Tent className="h-5 w-5 text-green-600" />
+                      Camp Management
+                    </h3>
+                    <div className="space-y-3 text-gray-700">
+                      <p>
+                        <strong>Creating a New Camp</strong>
+                      </p>
+                      <ol className="list-decimal list-inside ml-4 space-y-2">
+                        <li>Click &quot;Create Camp&quot; in the sidebar or dashboard</li>
+                        <li>Fill out the camp creation form:
+                          <ul className="list-disc list-inside ml-6 mt-1 space-y-1">
+                            <li><strong>Camp Name:</strong> A descriptive name for your camp</li>
+                            <li><strong>Description:</strong> Details about the camp&apos;s purpose and activities</li>
+                            <li><strong>Location:</strong> Physical address or use the map picker</li>
+                            <li><strong>Contact Information:</strong> Phone and email for the camp</li>
+                            <li><strong>Drop-off Locations:</strong> Add multiple locations where donations can be dropped off</li>
+                            <li><strong>Needed Items:</strong> Specify what items the camp needs (food, water, medical supplies, etc.)</li>
+                            <li><strong>Status:</strong> Set camp status (ACTIVE, INACTIVE)</li>
+                          </ul>
+                        </li>
+                        <li>Review all information and click &quot;Create Camp&quot;</li>
+                        <li>The new camp will appear in your camps list</li>
+                      </ol>
+                      <p className="mt-4">
+                        <strong>Managing Existing Camps</strong>
+                      </p>
+                      <ul className="list-disc list-inside ml-4 space-y-1">
+                        <li>View all your camps in the &quot;Camps&quot; section</li>
+                        <li>Click on a camp to view detailed information</li>
+                        <li>Edit camp details, update needs, or change status</li>
+                        <li>View camp analytics including total donations received</li>
+                        <li>Manage drop-off locations for each camp</li>
+                        <li>Track which items are still needed vs. received</li>
+                      </ul>
+                      <p className="mt-4">
+                        <strong>Camp Donations</strong>
+                      </p>
+                      <ul className="list-disc list-inside ml-4 space-y-1">
+                        <li>View all donations made to your camps in the &quot;Camp Donations&quot; section</li>
+                        <li>See donor information and donation details</li>
+                        <li>Accept or acknowledge donations</li>
+                        <li>Track donation status (Created, Scheduled, Completed)</li>
+                        <li>Create donation records manually if needed</li>
+                      </ul>
+                    </div>
+                  </div>
+
+                  {/* Membership Management */}
+                  <div>
+                    <h3 className="font-bold text-lg mb-3 flex items-center gap-2">
+                      <Users className="h-5 w-5 text-indigo-600" />
+                      Membership Management
+                    </h3>
+                    <div className="space-y-3 text-gray-700">
+                      <p>
+                        <strong>Reviewing Membership Requests</strong>
+                      </p>
+                      <ol className="list-decimal list-inside ml-4 space-y-2">
+                        <li>Go to the &quot;Memberships&quot; section in your dashboard</li>
+                        <li>You&apos;ll see a list of all membership requests with their status:
+                          <ul className="list-disc list-inside ml-6 mt-1 space-y-1">
+                            <li><strong>PENDING:</strong> New requests awaiting your review</li>
+                            <li><strong>APPROVED:</strong> Memberships you&apos;ve approved</li>
+                            <li><strong>REJECTED:</strong> Memberships you&apos;ve declined</li>
+                          </ul>
+                        </li>
+                        <li>Click on a membership request to view applicant details</li>
+                        <li>Review the applicant&apos;s information and profile</li>
+                      </ol>
+                      <p className="mt-4">
+                        <strong>Approving or Rejecting Memberships</strong>
+                      </p>
+                      <ul className="list-disc list-inside ml-4 space-y-1">
+                        <li>For pending requests, you&apos;ll see &quot;Approve&quot; and &quot;Reject&quot; buttons</li>
+                        <li>Click &quot;Approve&quot; to grant membership to the applicant</li>
+                        <li>Click &quot;Reject&quot; to decline the membership request</li>
+                        <li>The applicant will be notified of your decision</li>
+                        <li>Approved members can then participate in your club&apos;s activities</li>
+                      </ul>
+                      <div className="bg-blue-50 border-l-4 border-blue-500 p-3 rounded-r-lg mt-3">
+                        <p className="text-sm text-gray-700">
+                          <strong>Tip:</strong> Review membership requests regularly to build your volunteer team and expand your capacity to help.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Club Profile */}
+                  <div>
+                    <h3 className="font-bold text-lg mb-3 flex items-center gap-2">
+                      <Building2 className="h-5 w-5 text-purple-600" />
+                      Club Profile Management
+                    </h3>
+                    <div className="space-y-3 text-gray-700">
+                      <p>
+                        <strong>Viewing and Editing Club Information</strong>
+                      </p>
+                      <ol className="list-decimal list-inside ml-4 space-y-2">
+                        <li>Click &quot;View Club Info&quot; in the sidebar</li>
+                        <li>View your club&apos;s current profile information:
+                          <ul className="list-disc list-inside ml-6 mt-1 space-y-1">
+                            <li>Club name and description</li>
+                            <li>Contact information (phone, email, address)</li>
+                            <li>Club status (ACTIVE, INACTIVE)</li>
+                            <li>Registration date and details</li>
+                          </ul>
+                        </li>
+                        <li>Edit any information that needs updating</li>
+                        <li>Save changes to update your club profile</li>
+                      </ol>
+                      <p className="mt-4">
+                        <strong>Club Status</strong>
+                      </p>
+                      <ul className="list-disc list-inside ml-4 space-y-1">
+                        <li><strong>ACTIVE:</strong> Your club is operational and visible to users</li>
+                        <li><strong>INACTIVE:</strong> Your club is temporarily inactive (contact admin to reactivate)</li>
+                      </ul>
+                    </div>
+                  </div>
+
+                  {/* Best Practices */}
+                  <div>
+                    <h3 className="font-bold text-lg mb-3 flex items-center gap-2">
+                      <Heart className="h-5 w-5 text-red-600" />
+                      Best Practices & Tips
+                    </h3>
+                    <div className="space-y-3">
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="text-base">Organizational Tips</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
+                            <li>Create separate camps for different locations or purposes</li>
+                            <li>Keep camp information updated with current needs</li>
+                            <li>Regularly review and respond to help requests</li>
+                            <li>Coordinate with other volunteer clubs when possible</li>
+                            <li>Update donation status promptly to maintain accurate records</li>
+                          </ul>
+                        </CardContent>
+                      </Card>
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="text-base">Communication</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
+                            <li>Respond to help requests in a timely manner</li>
+                            <li>Maintain clear communication with requesters</li>
+                            <li>Update request status when assistance is provided</li>
+                            <li>Keep contact information current in your club profile</li>
+                            <li>Use the search function to find specific requests or camps</li>
+                          </ul>
+                        </CardContent>
+                      </Card>
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="text-base">Efficiency Tips</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <ul className="list-disc list-inside space-y-1 text-sm text-gray-700">
+                            <li>Use filters and search to find specific requests</li>
+                            <li>Plan routes using the map view for multiple deliveries</li>
+                            <li>Prioritize high-urgency requests</li>
+                            <li>Track donations to avoid duplicate assistance</li>
+                            <li>Review membership requests regularly to grow your team</li>
+                          </ul>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </div>
+
+                  {/* System Features */}
+                  <div>
+                    <h3 className="font-bold text-lg mb-3 flex items-center gap-2">
+                      <Package className="h-5 w-5 text-orange-600" />
+                      System Features Overview
+                    </h3>
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="text-base flex items-center gap-2">
+                            <Search className="h-4 w-4 text-blue-600" />
+                            Search & Filter
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <p className="text-sm text-gray-600">
+                            Use the search bar to find specific requests, camps, or members. Filter by status, urgency, or location to focus on what matters most.
+                          </p>
+                        </CardContent>
+                      </Card>
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="text-base flex items-center gap-2">
+                            <MapPin className="h-4 w-4 text-green-600" />
+                            Location Services
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <p className="text-sm text-gray-600">
+                            View requests and camps on an interactive map. Plan efficient routes and see the geographic distribution of needs.
+                          </p>
+                        </CardContent>
+                      </Card>
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="text-base flex items-center gap-2">
+                            <FileText className="h-4 w-4 text-purple-600" />
+                            Analytics & Reports
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <p className="text-sm text-gray-600">
+                            View statistics about your club&apos;s activities, including total requests handled, donations received, and camp performance.
+                          </p>
+                        </CardContent>
+                      </Card>
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="text-base flex items-center gap-2">
+                            <AlertCircle className="h-4 w-4 text-red-600" />
+                            Status Tracking
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <p className="text-sm text-gray-600">
+                            Track the status of requests, donations, and memberships. Monitor progress and ensure nothing falls through the cracks.
+                          </p>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </div>
+
+                  {/* Important Notes */}
+                  <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded-r-lg">
+                    <h3 className="font-bold text-lg mb-2 flex items-center gap-2">
+                      <AlertCircle className="h-5 w-5 text-yellow-600" />
+                      Important Notes for Volunteers
+                    </h3>
+                    <ul className="list-disc list-inside space-y-1 text-gray-700">
+                      <li>Always verify request information before providing assistance</li>
+                      <li>Update request and donation status promptly for accurate tracking</li>
+                      <li>Maintain clear communication with requesters and donors</li>
+                      <li>Keep your club profile and camp information up to date</li>
+                      <li>Review membership requests in a timely manner</li>
+                      <li>Coordinate with other volunteer clubs when appropriate</li>
+                      <li>Report any issues or concerns to system administrators</li>
+                      <li>Respect privacy and handle contact information responsibly</li>
+                    </ul>
+                  </div>
+
+                  {/* Getting Help */}
+                  <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg">
+                    <h3 className="font-bold text-lg mb-2 flex items-center gap-2">
+                      <Phone className="h-5 w-5 text-blue-600" />
+                      Need Help?
+                    </h3>
+                    <p className="text-gray-700 mb-2">
+                      If you encounter any issues or have questions about using the volunteer dashboard:
+                    </p>
+                    <ul className="list-disc list-inside space-y-1 text-gray-700">
+                      <li>Review this guide for detailed instructions</li>
+                      <li>Contact your system administrator for technical support</li>
+                      <li>Check the dashboard help sections for context-specific guidance</li>
+                      <li>Refer to the user guide for general platform information</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="flex justify-end mt-6 pt-4 border-t">
+              <Button onClick={() => setShowGuideDialog(false)}>
+                Close
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     )
   }

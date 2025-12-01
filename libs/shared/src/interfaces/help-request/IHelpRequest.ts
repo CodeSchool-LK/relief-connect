@@ -1,4 +1,4 @@
-import { Urgency, ContactType, HelpRequestStatus } from '../../enums';
+import { Urgency, ContactType, HelpRequestStatus, Province, District } from '../../enums';
 
 /**
  * Help Request interface
@@ -21,6 +21,9 @@ export interface IHelpRequest {
   pets?: number; // Number of pets
   // Ration items
   rationItems?: string[]; // Array of selected ration item IDs (e.g., ['dry_rations', 'bottled_water'])
+  // Location details
+  province?: Province; // Sri Lanka province enum (optional in backend)
+  district?: District; // Sri Lanka district enum (optional in backend)
   status?: HelpRequestStatus;
   createdAt?: Date;
   updatedAt?: Date;

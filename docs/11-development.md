@@ -593,6 +593,45 @@ test: add unit tests for auth service
 
 ---
 
+## Testing Credentials (Development Environment)
+
+### Frontend (FE) URL
+
+- [https://dev-web.pasindusampath.com/](https://dev-web.pasindusampath.com/)
+
+### Backend (API) URL
+
+- [https://dev-api.pasindusampath.com/](https://dev-api.pasindusampath.com/)
+
+---
+
+### Admin Login (Dev Environment Only)
+
+- **Username:** `pasindusampath`
+- **Password:** `77889900`
+
+---
+
+### Volunteer Club Login
+
+- **Username:** `test-club`
+- **Password:** `123456789`
+
+---
+
+### Normal Users
+
+- No password required.
+- They can log in using **only their unique username**.
+
+---
+
+### Creating New Volunteer Accounts
+
+- You can create additional volunteer club accounts through the **Admin Panel**.
+
+---
+
 ## Resources
 
 ### Documentation

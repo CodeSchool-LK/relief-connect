@@ -275,7 +275,7 @@ export default function LandingPage() {
     return () => {
       isCancelled = true
     }
-  }, [selectedLevel, itemsPerPage]) // Remove currentPage from dependencies - only reload when filters change
+  }, [selectedLevel, itemsPerPage, userInfo]) // Reload when filters change or user logs in
 
   // Function to load more items (next page)
   const handleLoadMore = async () => {
@@ -356,7 +356,7 @@ export default function LandingPage() {
     return () => {
       isCancelled = true
     }
-  }, [])
+  }, [userInfo]) // Reload summary when user logs in
 
   // Use requests as-is (coordinates should come from API)
   // Note: Client-side location sorting is removed since we're using backend pagination
@@ -459,9 +459,12 @@ export default function LandingPage() {
         setShowIdentifierPrompt(false)
         setIdentifier('')
 
+        // Trigger data loading after successful login
+        // The useEffect will reload when userInfo changes
+        console.log('[LandingPage] Registration complete, user logged in')
+        
         // Clear any URL tokens
         router.replace('/', undefined, { shallow: true })
-        console.log('[LandingPage] Registration complete, redirecting...')
       } else {
         console.error('[LandingPage] Registration failed - response not successful:', response)
         // Handle validation errors
@@ -727,76 +730,87 @@ export default function LandingPage() {
     router.push('/map')
   }
 
-  // Show identifier prompt if not logged in
-  if (showIdentifierPrompt) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50 p-4">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <div className="mx-auto mb-4 w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center">
-              <User className="w-8 h-8 text-blue-600" />
-            </div>
-            <CardTitle className="text-2xl font-bold">{t('enterUniqueIdentifier')}</CardTitle>
-            <CardDescription className="text-base mt-2">{t('enterEmailOrPhone')}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleIdentifierSubmit} className="space-y-4">
-              {error && (
-                <div className="bg-red-50 border-l-4 border-red-500 text-red-700 px-4 py-3 rounded-r-lg flex items-start gap-3">
-                  <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5 text-red-600" />
-                  <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-sm mb-1">Error</div>
-                    <div className="text-sm break-words">{error}</div>
-                  </div>
-                  <button
-                    onClick={() => setError(null)}
-                    className="flex-shrink-0 text-red-600 hover:text-red-800 transition-colors p-1 rounded hover:bg-red-100"
-                    aria-label="Dismiss error"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                </div>
-              )}
-              <div className="space-y-2">
-                <Label htmlFor="identifier">{t('emailOrPhoneNumber')}</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <Input
-                    id="identifier"
-                    type="text"
-                    placeholder={t('enterYourEmailOrPhone')}
-                    value={identifier}
-                    onChange={(e) => {
-                      setIdentifier(e.target.value)
-                      setError(null)
-                    }}
-                    className="pl-10 h-12"
-                    required
-                    autoFocus
-                    disabled={loading}
-                  />
-                </div>
-                <p className="text-xs text-gray-500">{t('willBeUsedToIdentify')}</p>
-              </div>
-
-              <Button
-                type="submit"
-                className="w-full h-12 text-base font-semibold"
-                disabled={loading}
-              >
-                {loading ? t('processing') : t('continue')}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-      </div>
-    )
-  }
-
   // Initial view - Choose between "I Need Help" or "I Can Help"
   if (viewMode === 'initial') {
     return (
-      <div className="min-h-screen">
+      <div className="min-h-screen relative">
+        {/* Blur overlay when identifier prompt is shown */}
+        {showIdentifierPrompt && (
+          <>
+            {/* Blur overlay */}
+            <div className="fixed inset-0 z-50 backdrop-blur-md bg-black/30 transition-all duration-300" />
+            
+            {/* Identifier Card Modal */}
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+              <Card className="w-full max-w-md bg-white shadow-2xl animate-in fade-in zoom-in duration-300">
+                <CardHeader className="text-center">
+                  <div className="mx-auto mb-4 w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center">
+                    <User className="w-8 h-8 text-blue-600" />
+                  </div>
+                  <CardTitle className="text-2xl font-bold">{t('enterUniqueIdentifier')}</CardTitle>
+                  <CardDescription className="text-base mt-2">
+                    {t('enterEmailOrPhone')}
+                  </CardDescription>
+                  <CardDescription className="text-sm mt-2 text-gray-600">
+                    Enter your identifier to access the platform and see what&apos;s available
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handleIdentifierSubmit} className="space-y-4">
+                    {error && (
+                      <div className="bg-red-50 border-l-4 border-red-500 text-red-700 px-4 py-3 rounded-r-lg flex items-start gap-3">
+                        <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5 text-red-600" />
+                        <div className="flex-1 min-w-0">
+                          <div className="font-semibold text-sm mb-1">Error</div>
+                          <div className="text-sm break-words">{error}</div>
+                        </div>
+                        <button
+                          onClick={() => setError(null)}
+                          className="flex-shrink-0 text-red-600 hover:text-red-800 transition-colors p-1 rounded hover:bg-red-100"
+                          aria-label="Dismiss error"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    )}
+                    <div className="space-y-2">
+                      <Label htmlFor="identifier">{t('emailOrPhoneNumber')}</Label>
+                      <div className="relative">
+                        <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <Input
+                          id="identifier"
+                          type="text"
+                          placeholder={t('enterYourEmailOrPhone')}
+                          value={identifier}
+                          onChange={(e) => {
+                            setIdentifier(e.target.value)
+                            setError(null)
+                          }}
+                          className="pl-10 h-12"
+                          required
+                          autoFocus
+                          disabled={loading}
+                        />
+                      </div>
+                      <p className="text-xs text-gray-500">{t('willBeUsedToIdentify')}</p>
+                    </div>
+
+                    <Button
+                      type="submit"
+                      className="w-full h-12 text-base font-semibold"
+                      disabled={loading}
+                    >
+                      {loading ? t('processing') : t('continue')}
+                    </Button>
+                  </form>
+                </CardContent>
+              </Card>
+            </div>
+          </>
+        )}
+        
+        {/* Main Content - shown with blur when identifier prompt is active */}
+        <div className={`min-h-screen ${showIdentifierPrompt ? 'pointer-events-none' : ''}`}>
         {/* Hero Section with Background Image */}
         <div className="relative w-full min-h-[600px] sm:min-h-[700px] md:min-h-[800px] lg:min-h-[900px] overflow-hidden bg-gradient-to-br from-blue-600 via-purple-600 to-blue-800">
           {/* Top Bar with Profile */}
@@ -1631,6 +1645,7 @@ export default function LandingPage() {
               </>
             )}
           </div>
+        </div>
         </div>
       </div>
     )

@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { HelpRequestService } from '../services';
-import { CreateHelpRequestDto } from '@nx-mono-repo-deployment-test/shared/src/dtos';
+import { CreateHelpRequestDto, UpdateHelpRequestDto } from '@nx-mono-repo-deployment-test/shared/src/dtos';
 import { Urgency } from '@nx-mono-repo-deployment-test/shared/src/enums';
 import { IApiResponse } from '@nx-mono-repo-deployment-test/shared/src/interfaces';
 
@@ -164,6 +164,45 @@ class HelpRequestController {
         res.sendSuccess(result.data, result.message || 'Help request created successfully', 201);
       } else {
         res.sendError(result.error || 'Failed to create help request', 400);
+      }
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * PUT /api/help-requests/:id
+   * Update an existing help request (only accessible by admins or volunteer clubs)
+   * Note: Body validation is handled by middleware
+   */
+  updateHelpRequest = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      if (!req.user || !req.user.id) {
+        res.sendError('User not authenticated', 401);
+        return;
+      }
+
+      const helpRequestId = parseInt(req.params.id, 10);
+      if (isNaN(helpRequestId)) {
+        res.sendError('Invalid help request ID', 400);
+        return;
+      }
+
+      // Body is already validated and transformed to UpdateHelpRequestDto by middleware
+      const updateHelpRequestDto = req.body as UpdateHelpRequestDto;
+      const result = await this.helpRequestService.updateHelpRequest(
+        helpRequestId,
+        updateHelpRequestDto,
+        req.user.id,
+        req.user.role
+      );
+
+      if (result.success && result.data) {
+        res.sendSuccess(result.data, result.message || 'Help request updated successfully', 200);
+      } else {
+        const statusCode = result.error === 'Help request not found' ? 404 : 
+                          result.error?.includes('Access denied') ? 403 : 400;
+        res.sendError(result.error || 'Failed to update help request', statusCode);
       }
     } catch (error) {
       next(error);

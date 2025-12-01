@@ -21,9 +21,11 @@ const MapLocationPickerInternal: React.FC<MapLocationPickerProps> = ({
 }) => {
   // Default to Sri Lanka center for map view only, but don't set as selected location
   const defaultMapCenter: [number, number] = [7.8731, 80.7718]
-  const [selectedLocation, setSelectedLocation] = useState<[number, number]>(
-    initialLat && initialLng ? [initialLat, initialLng] : [0, 0]
-  )
+  const [selectedLocation, setSelectedLocation] = useState<[number, number]>(() => {
+    const lat = typeof initialLat === 'number' ? initialLat : (initialLat ? parseFloat(String(initialLat)) : 0);
+    const lng = typeof initialLng === 'number' ? initialLng : (initialLng ? parseFloat(String(initialLng)) : 0);
+    return (lat && lng && !isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) ? [lat, lng] : [0, 0];
+  })
   const [isGettingLocation, setIsGettingLocation] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [errorType, setErrorType] = useState<'permission' | 'unavailable' | 'timeout' | 'other' | null>(null)
@@ -81,14 +83,19 @@ const MapLocationPickerInternal: React.FC<MapLocationPickerProps> = ({
   // Only update if initialLat/initialLng are provided and valid (not 0,0)
   // But don't automatically call onLocationChange - let user explicitly select
   useEffect(() => {
+    const lat = typeof initialLat === 'number' ? initialLat : (initialLat ? parseFloat(String(initialLat)) : 0);
+    const lng = typeof initialLng === 'number' ? initialLng : (initialLng ? parseFloat(String(initialLng)) : 0);
+    
     if (
-      initialLat !== undefined && 
-      initialLng !== undefined && 
-      initialLat !== 0 && 
-      initialLng !== 0 && 
-      (initialLat !== selectedLocation[0] || initialLng !== selectedLocation[1])
+      lat !== undefined && 
+      lng !== undefined && 
+      !isNaN(lat) && 
+      !isNaN(lng) &&
+      lat !== 0 && 
+      lng !== 0 && 
+      (lat !== selectedLocation[0] || lng !== selectedLocation[1])
     ) {
-      setSelectedLocation([initialLat, initialLng])
+      setSelectedLocation([lat, lng])
       // Don't call onLocationChange here - only when user explicitly selects
     }
   }, [initialLat, initialLng, selectedLocation])
@@ -285,7 +292,7 @@ const MapLocationPickerInternal: React.FC<MapLocationPickerProps> = ({
             Click anywhere on the map to set your location
             {selectedLocation[0] !== 0 && selectedLocation[1] !== 0 && (
               <span className="ml-2 text-green-600">
-                ✓ Location: {selectedLocation[0].toFixed(4)}, {selectedLocation[1].toFixed(4)}
+                ✓ Location: {Number(selectedLocation[0]).toFixed(4)}, {Number(selectedLocation[1]).toFixed(4)}
               </span>
             )}
           </p>

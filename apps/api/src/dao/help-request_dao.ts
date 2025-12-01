@@ -155,6 +155,48 @@ class HelpRequestDao {
     }
   }
 
+  /**
+   * Update an existing help request
+   * @param id - Help request ID
+   * @param updateData - Partial help request data to update
+   */
+  public async update(id: number, updateData: Partial<IHelpRequest>): Promise<IHelpRequest | null> {
+    try {
+      const helpRequest = await HelpRequestModel.findByPk(id);
+      if (!helpRequest) {
+        return null;
+      }
+
+      const updateFields: any = {};
+      if (updateData.lat !== undefined) updateFields[HelpRequestModel.HELP_REQUEST_LAT] = updateData.lat;
+      if (updateData.lng !== undefined) updateFields[HelpRequestModel.HELP_REQUEST_LNG] = updateData.lng;
+      if (updateData.urgency !== undefined) updateFields[HelpRequestModel.HELP_REQUEST_URGENCY] = updateData.urgency;
+      if (updateData.shortNote !== undefined) updateFields[HelpRequestModel.HELP_REQUEST_SHORT_NOTE] = updateData.shortNote;
+      if (updateData.approxArea !== undefined) updateFields[HelpRequestModel.HELP_REQUEST_APPROX_AREA] = updateData.approxArea;
+      if (updateData.contactType !== undefined) updateFields[HelpRequestModel.HELP_REQUEST_CONTACT_TYPE] = updateData.contactType;
+      if (updateData.contact !== undefined) updateFields[HelpRequestModel.HELP_REQUEST_CONTACT] = updateData.contact;
+      if (updateData.name !== undefined) updateFields[HelpRequestModel.HELP_REQUEST_NAME] = updateData.name;
+      if (updateData.totalPeople !== undefined) updateFields[HelpRequestModel.HELP_REQUEST_TOTAL_PEOPLE] = updateData.totalPeople;
+      if (updateData.elders !== undefined) updateFields[HelpRequestModel.HELP_REQUEST_ELDERS] = updateData.elders;
+      if (updateData.children !== undefined) updateFields[HelpRequestModel.HELP_REQUEST_CHILDREN] = updateData.children;
+      if (updateData.pets !== undefined) updateFields[HelpRequestModel.HELP_REQUEST_PETS] = updateData.pets;
+      if (updateData.rationItems !== undefined) {
+        // Handle both array and object formats
+        const rationItemsArray = Array.isArray(updateData.rationItems) 
+          ? updateData.rationItems 
+          : Object.keys(updateData.rationItems);
+        updateFields[HelpRequestModel.HELP_REQUEST_RATION_ITEMS] = rationItemsArray;
+      }
+      if (updateData.status !== undefined) updateFields[HelpRequestModel.HELP_REQUEST_STATUS] = updateData.status;
+
+      await helpRequest.update(updateFields);
+      return helpRequest.toJSON() as IHelpRequest;
+    } catch (error) {
+      console.error(`Error in HelpRequestDao.update (${id}):`, error);
+      throw error;
+    }
+  }
+
   public async count(): Promise<number> {
     try {
       const thirtyDaysAgo = new Date();

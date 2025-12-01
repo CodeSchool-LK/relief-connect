@@ -451,10 +451,15 @@ export default function VolunteerClubDashboard() {
                                   </span>
                                 )}
                               </div>
-                              <div className="hidden sm:block flex-shrink-0">
+                              <div className="hidden sm:block flex-shrink-0 flex gap-2">
                                 <Link href={`/request/${hr.id}?from=dashboard`}>
                                   <Button variant="outline" size="sm" className="bg-transparent">
                                     View Details
+                                  </Button>
+                                </Link>
+                                <Link href={`/help-requests/${hr.id}/edit?from=dashboard`}>
+                                  <Button variant="outline" size="sm">
+                                    Edit
                                   </Button>
                                 </Link>
                               </div>
@@ -488,10 +493,15 @@ export default function VolunteerClubDashboard() {
                               )}
                             </div>
 
-                            <div className="sm:hidden mt-auto flex justify-start">
-                              <Link href={`/help-requests/${hr.id}`}>
+                            <div className="sm:hidden mt-auto flex justify-start gap-2">
+                              <Link href={`/request/${hr.id}?from=dashboard`}>
                                 <Button variant="outline" size="sm" className="bg-transparent">
                                   View Details
+                                </Button>
+                              </Link>
+                              <Link href={`/help-requests/${hr.id}/edit?from=dashboard`}>
+                                <Button variant="outline" size="sm">
+                                  Edit
                                 </Button>
                               </Link>
                             </div>

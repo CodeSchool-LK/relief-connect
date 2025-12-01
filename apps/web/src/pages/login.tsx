@@ -1,12 +1,23 @@
 import React, { useState } from 'react'
 import Head from 'next/head'
+import Link from 'next/link'
 import { useRouter } from 'next/router'
 import { serverSideTranslations } from 'next-i18next/serverSideTranslations'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { ArrowLeft, User, Lock } from 'lucide-react'
+import {
+  ArrowLeft,
+  User,
+  Lock,
+  Building2,
+  Users,
+  Package,
+  HandHeart,
+  CheckCircle,
+  BarChart3,
+} from 'lucide-react'
 import apiClient from '../services/api-client'
 import { useAuth } from '../hooks/useAuth'
 import { UserRole } from '../types/user'
@@ -147,7 +158,7 @@ export default function LoginPage() {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
       <div
-        className="min-h-screen flex items-center justify-center p-4 relative"
+        className="min-h-screen flex items-center justify-center p-4 py-8 sm:py-12 relative"
         style={{
           backgroundImage: `url('https://images.unsplash.com/photo-1593113598332-cd288d649433?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80')`,
           backgroundSize: 'cover',
@@ -160,7 +171,7 @@ export default function LoginPage() {
         {/* Pattern overlay */}
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTM2IDM0djJoLTJ2LTJoMnptMCA0djJoLTJ2LTJoMnptLTQtNHYyaC0ydi0yaDJ6bTAgNHYyaC0ydi0yaDJ6bTQtNHYyaC0ydi0yaDJ6bTAgNHYyaC0ydi0yaDJ6Ii8+PC9nPjwvZz48L3N2Zz4=')] opacity-20"></div>
 
-        <div className="w-full max-w-md relative z-10">
+        <div className="w-full max-w-4xl relative z-10">
           <Button
             variant="ghost"
             onClick={() => router.push('/')}
@@ -170,6 +181,74 @@ export default function LoginPage() {
             Back to Home
           </Button>
 
+          {/* Platform Context Section */}
+          <div className="mb-6 text-center">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-3 drop-shadow-lg">
+              Relief Connect
+            </h1>
+            <p className="text-lg sm:text-xl md:text-2xl text-white/95 mb-4 drop-shadow-md">
+              Connecting those in need with those who can help
+            </p>
+            <p className="text-base sm:text-lg text-white/80 max-w-2xl mx-auto drop-shadow-sm mb-4">
+              A crisis relief management platform designed to coordinate emergency assistance during natural disasters and crises.
+            </p>
+            <div className="bg-yellow-500/20 border border-yellow-400/50 text-white px-4 py-3 rounded-md text-sm backdrop-blur-sm max-w-2xl mx-auto">
+              <strong>Note:</strong> This login page is for <strong>Volunteer Organizations and Clubs</strong> only. Regular users can access all features directly from the <Link href="/" className="underline hover:text-yellow-400 font-semibold">home page</Link> without logging in.
+            </div>
+          </div>
+
+          {/* Volunteer Capabilities Section */}
+          <Card className="bg-white/10 backdrop-blur-md border-white/30 shadow-xl mb-6">
+            <CardHeader>
+              <CardTitle className="text-xl font-bold text-white text-center">
+                What Volunteer Organizations Can Do
+              </CardTitle>
+              <CardDescription className="text-white/90 text-center">
+                After logging in, your organization will have access to powerful tools to coordinate relief efforts
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="flex items-start gap-3 p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
+                  <Building2 className="h-5 w-5 text-yellow-400 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <h3 className="font-semibold text-white text-sm mb-1">Manage Relief Camps</h3>
+                    <p className="text-xs text-white/80">Create and manage multiple relief camps</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
+                  <HandHeart className="h-5 w-5 text-yellow-400 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <h3 className="font-semibold text-white text-sm mb-1">View Help Requests</h3>
+                    <p className="text-xs text-white/80">See all help requests and respond to needs</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
+                  <Users className="h-5 w-5 text-yellow-400 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <h3 className="font-semibold text-white text-sm mb-1">Manage Memberships</h3>
+                    <p className="text-xs text-white/80">Approve/reject membership requests</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
+                  <Package className="h-5 w-5 text-yellow-400 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <h3 className="font-semibold text-white text-sm mb-1">Track Donations</h3>
+                    <p className="text-xs text-white/80">View and manage donations to your camps</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors sm:col-span-2">
+                  <BarChart3 className="h-5 w-5 text-yellow-400 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <h3 className="font-semibold text-white text-sm mb-1">Club Dashboard</h3>
+                    <p className="text-xs text-white/80">Access comprehensive statistics and analytics</p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Login Card */}
           <Card className="bg-white/10 backdrop-blur-md border-white/30 shadow-xl">
             <CardHeader className="text-center">
               <div className="mx-auto mb-4 flex items-center justify-center">
@@ -184,9 +263,9 @@ export default function LoginPage() {
                   }}
                 />
               </div>
-              <CardTitle className="text-2xl font-bold text-white">Login as Volunteer</CardTitle>
+              <CardTitle className="text-2xl font-bold text-white">Volunteer Organization Login</CardTitle>
               <CardDescription className="text-base mt-2 text-white/90">
-                Enter your username, email, or phone number to login
+                This login is for <strong className="text-white">Volunteer Organizations and Clubs</strong> only. If you&apos;re a regular user looking for help or wanting to help, please go to the <Link href="/" className="underline hover:text-yellow-400">home page</Link> instead.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -249,9 +328,19 @@ export default function LoginPage() {
                   className="w-full h-12 text-base font-semibold bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white border-0 shadow-lg"
                   disabled={loading}
                 >
-                  {loading ? 'Logging in...' : 'Login as Volunteer'}
+                  {loading ? 'Logging in...' : 'Login to Volunteer Dashboard'}
                 </Button>
               </form>
+              <div className="mt-4 text-center">
+                <Button
+                  variant="ghost"
+                  onClick={() => router.push('/')}
+                  className="text-white/90 hover:text-white hover:bg-white/10 text-sm"
+                >
+                  Learn more about Relief Connect
+                  <ArrowLeft className="h-4 w-4 ml-2 rotate-180" />
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </div>

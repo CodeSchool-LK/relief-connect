@@ -23,7 +23,9 @@ import {
   Heart,
   User,
   CheckCircle,
+  Edit,
 } from 'lucide-react'
+import Link from 'next/link'
 import { HelpRequestResponseDto } from '@nx-mono-repo-deployment-test/shared/src/dtos/help-request/response/help_request_response_dto'
 import { HelpRequestWithOwnershipResponseDto } from '@nx-mono-repo-deployment-test/shared/src/dtos/help-request/response/help_request_with_ownership_response_dto'
 import { Urgency, HelpRequestCategory, ContactType } from '@nx-mono-repo-deployment-test/shared/src/enums'
@@ -31,6 +33,7 @@ import { helpRequestService, donationService } from '../../services'
 import { RATION_ITEMS } from '../../components/EmergencyRequestForm'
 import { DonationWithDonatorResponseDto } from '@nx-mono-repo-deployment-test/shared/src/dtos/donation/response/donation_with_donator_response_dto'
 import DonationInteractionModal from '../../components/DonationInteractionModal'
+import { useAuth } from '../../hooks/useAuth'
 
 interface DonationRequest {
   id: number
@@ -59,6 +62,7 @@ const dummyPhotos = [
 export default function RequestDetailsPage() {
   const router = useRouter()
   const { id, from } = router.query
+  const { isAdmin, isVolunteerClub } = useAuth()
   const [request, setRequest] = useState<HelpRequestWithOwnershipResponseDto | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -563,6 +567,17 @@ export default function RequestDetailsPage() {
                 <Heart className="h-5 w-5 mr-2" />
                 Donate
               </Button>
+            )}
+            {/* Show Edit button for admins and volunteer clubs */}
+            {(isAdmin() || isVolunteerClub()) && (
+              <Link href={`/help-requests/${id}/edit?from=detail`}>
+                <Button
+                  className="flex-1 h-12 text-base font-semibold bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white"
+                >
+                  <Edit className="h-5 w-5 mr-2" />
+                  Edit
+                </Button>
+              </Link>
             )}
             <Dialog>
               <DialogTrigger asChild>

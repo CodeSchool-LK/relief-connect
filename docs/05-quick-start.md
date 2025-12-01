@@ -195,6 +195,8 @@ curl -X POST http://localhost:3000/api/auth/register \
    - **VOLUNTEER_CLUB**: `/clubs/dashboard`
    - **ADMIN**: `/admin/dashboard`
 
+> **Note:** For testing credentials on the deployed development environment, see the [Testing Credentials section](11-development.md#testing-credentials-development-environment) in the Development Guide.
+
 ## Troubleshooting
 
 ### Port Already in Use

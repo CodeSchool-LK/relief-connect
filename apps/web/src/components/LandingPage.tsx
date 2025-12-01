@@ -211,17 +211,7 @@ export default function LandingPage() {
   }, [router.query])
 
   // Load requests from API with pagination and filters (async, non-blocking)
-  // Only load when user is logged in (showIdentifierPrompt is false)
   useEffect(() => {
-    // Don't load requests if user is not logged in
-    if (showIdentifierPrompt) {
-      setHelpRequests([])
-      setTotalCount(0)
-      setCurrentPage(1)
-      setLoadingRequests(false)
-      return
-    }
-
     let isCancelled = false
 
     const loadData = async () => {
@@ -278,14 +268,14 @@ export default function LandingPage() {
       }
     }
 
-    // Start loading only when user is logged in
+    // Start loading immediately, don't wait
     loadData()
 
     // Cleanup function to cancel if component unmounts or effect re-runs
     return () => {
       isCancelled = true
     }
-  }, [selectedLevel, itemsPerPage, userInfo, showIdentifierPrompt]) // Reload when filters change, user logs in, or login status changes
+  }, [selectedLevel, itemsPerPage, userInfo]) // Reload when filters change or user logs in
 
   // Function to load more items (next page)
   const handleLoadMore = async () => {
@@ -333,15 +323,7 @@ export default function LandingPage() {
   }
 
   // Load summary statistics from API (async, non-blocking, runs in parallel with requests)
-  // Only load when user is logged in (showIdentifierPrompt is false)
   useEffect(() => {
-    // Don't load summary if user is not logged in
-    if (showIdentifierPrompt) {
-      setSummary(null)
-      setSummaryLoading(false)
-      return
-    }
-
     let isCancelled = false
 
     const loadSummary = async () => {
@@ -367,14 +349,14 @@ export default function LandingPage() {
       }
     }
 
-    // Start loading only when user is logged in
+    // Start loading immediately in parallel with requests, don't wait
     loadSummary()
 
     // Cleanup function to cancel if component unmounts or effect re-runs
     return () => {
       isCancelled = true
     }
-  }, [userInfo, showIdentifierPrompt]) // Reload summary when user logs in or login status changes
+  }, [userInfo]) // Reload summary when user logs in
 
   // Use requests as-is (coordinates should come from API)
   // Note: Client-side location sorting is removed since we're using backend pagination
@@ -760,23 +742,23 @@ export default function LandingPage() {
             
             {/* Identifier Card Modal */}
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-              <Card className="w-full max-w-md bg-transparent backdrop-blur-xl border-2 border-white/40 rounded-2xl shadow-2xl animate-in fade-in zoom-in duration-300">
+              <Card className="w-full max-w-md bg-white shadow-2xl animate-in fade-in zoom-in duration-300">
                 <CardHeader className="text-center">
-                  <div className="mx-auto mb-4 w-16 h-16 rounded-full bg-blue-100/80 backdrop-blur-sm border border-blue-200/50 flex items-center justify-center shadow-lg">
+                  <div className="mx-auto mb-4 w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center">
                     <User className="w-8 h-8 text-blue-600" />
                   </div>
-                  <CardTitle className="text-2xl font-bold text-white drop-shadow-lg">{t('enterUniqueIdentifier')}</CardTitle>
-                  <CardDescription className="text-base mt-2 text-white/90 drop-shadow-md">
+                  <CardTitle className="text-2xl font-bold">{t('enterUniqueIdentifier')}</CardTitle>
+                  <CardDescription className="text-base mt-2">
                     {t('enterEmailOrPhone')}
                   </CardDescription>
-                  <CardDescription className="text-sm mt-2 text-white/80 drop-shadow-md">
+                  <CardDescription className="text-sm mt-2 text-gray-600">
                     Enter your identifier to access the platform and see what&apos;s available
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <form onSubmit={handleIdentifierSubmit} className="space-y-4">
                     {error && (
-                      <div className="bg-red-50/80 backdrop-blur-sm border-l-4 border-red-500 text-red-700 px-4 py-3 rounded-r-lg flex items-start gap-3 shadow-md">
+                      <div className="bg-red-50 border-l-4 border-red-500 text-red-700 px-4 py-3 rounded-r-lg flex items-start gap-3">
                         <AlertCircle className="h-5 w-5 flex-shrink-0 mt-0.5 text-red-600" />
                         <div className="flex-1 min-w-0">
                           <div className="font-semibold text-sm mb-1">Error</div>
@@ -784,7 +766,7 @@ export default function LandingPage() {
                         </div>
                         <button
                           onClick={() => setError(null)}
-                          className="flex-shrink-0 text-red-600 hover:text-red-800 transition-colors p-1 rounded hover:bg-red-100/80"
+                          className="flex-shrink-0 text-red-600 hover:text-red-800 transition-colors p-1 rounded hover:bg-red-100"
                           aria-label="Dismiss error"
                         >
                           <X className="h-4 w-4" />
@@ -792,9 +774,9 @@ export default function LandingPage() {
                       </div>
                     )}
                     <div className="space-y-2">
-                      <Label htmlFor="identifier" className="text-white drop-shadow-md">{t('emailOrPhoneNumber')}</Label>
+                      <Label htmlFor="identifier">{t('emailOrPhoneNumber')}</Label>
                       <div className="relative">
-                        <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/70" />
+                        <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                         <Input
                           id="identifier"
                           type="text"
@@ -804,18 +786,18 @@ export default function LandingPage() {
                             setIdentifier(e.target.value)
                             setError(null)
                           }}
-                          className="pl-10 h-12 bg-transparent border-0 border-b-2 border-black focus:border-black focus:ring-0 focus:ring-offset-0 rounded-none text-white placeholder:text-white transition-all"
+                          className="pl-10 h-12"
                           required
                           autoFocus
                           disabled={loading}
                         />
                       </div>
-                      <p className="text-xs text-white/70 drop-shadow-sm">{t('willBeUsedToIdentify')}</p>
+                      <p className="text-xs text-gray-500">{t('willBeUsedToIdentify')}</p>
                     </div>
 
                     <Button
                       type="submit"
-                      className="w-full h-12 text-base font-semibold bg-transparent border-2 border-blue-500 text-blue-500 hover:bg-transparent hover:border-blue-600 hover:text-blue-600 transition-all"
+                      className="w-full h-12 text-base font-semibold"
                       disabled={loading}
                     >
                       {loading ? t('processing') : t('continue')}

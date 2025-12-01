@@ -1428,38 +1428,43 @@ export default function LandingPage() {
                                 </div>
                               </div>
 
-                              {/* Location (single clickable link to Google Maps) */}
-                              {request.lat != null && request.lng != null ? (
-                                <a
-                                  href={`https://www.google.com/maps?q=${encodeURIComponent(
-                                    `${Number(request.lat)},${Number(request.lng)}`
-                                  )}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  onClick={(e) => e.stopPropagation()}
-                                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-colors duration-200 text-gray-900 hover:text-gray-950"
-                                  style={{ backgroundColor: '#92eb34' }}
-                                  onMouseEnter={(e) => {
-                                    e.currentTarget.style.backgroundColor = '#7dd321'
-                                  }}
-                                  onMouseLeave={(e) => {
-                                    e.currentTarget.style.backgroundColor = '#92eb34'
-                                  }}
-                                >
-                                  <MapPin className="h-3.5 w-3.5" />
-                                  Click on map
-                                </a>
-                              ) : (
-                                <div className="flex items-center gap-2 text-sm text-gray-600">
-                                  <MapPin className="h-4 w-4 text-gray-400" />
-                                  <span className="font-medium truncate">
-                                    {request.approxArea &&
-                                    !request.approxArea.match(/^-?\d+\.\d+,\s*-?\d+\.\d+/)
-                                      ? request.approxArea
-                                      : 'Unknown location'}
-                                  </span>
-                                </div>
-                              )}
+                              {/* Address and Location */}
+                              <div className="space-y-2">
+                                {/* Address */}
+                                {request.approxArea && 
+                                !request.approxArea.match(/^-?\d+\.\d+,\s*-?\d+\.\d+$/) && (
+                                  <div className="flex items-start gap-2 text-sm text-gray-700">
+                                    <MapPin className="h-4 w-4 text-gray-400 flex-shrink-0 mt-0.5" />
+                                    <div className="flex-1">
+                                      <span className="font-semibold text-gray-700">Address: </span>
+                                      <span className="text-gray-600 break-words">{request.approxArea}</span>
+                                    </div>
+                                  </div>
+                                )}
+                                
+                                {/* Map Link */}
+                                {request.lat != null && request.lng != null && (
+                                  <a
+                                    href={`https://www.google.com/maps?q=${encodeURIComponent(
+                                      `${Number(request.lat)},${Number(request.lng)}`
+                                    )}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-colors duration-200 text-gray-900 hover:text-gray-950"
+                                    style={{ backgroundColor: '#92eb34' }}
+                                    onMouseEnter={(e) => {
+                                      e.currentTarget.style.backgroundColor = '#7dd321'
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      e.currentTarget.style.backgroundColor = '#92eb34'
+                                    }}
+                                  >
+                                    <MapPin className="h-3.5 w-3.5" />
+                                    View on map
+                                  </a>
+                                )}
+                              </div>
 
                               {/* People Details */}
                               <div className="grid grid-cols-3 gap-2">

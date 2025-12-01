@@ -927,6 +927,12 @@ export default function VolunteerClubDashboard() {
                                               {donation.donatorName}
                                             </div>
                                           )}
+                                          {donation.donatorMobileNumber && (
+                                            <div className="break-words">
+                                              <span className="font-medium">Contact:</span>{' '}
+                                              {donation.donatorMobileNumber}
+                                            </div>
+                                          )}
                                           {donation.createdAt && (
                                             <div>
                                               <span className="font-medium">Created:</span>{' '}

@@ -31,8 +31,9 @@ export class DonationWithDonatorResponseDto {
     this.donatorId = donation.donatorId;
     this.donatorName = donation.donatorName; // Always include name
     //this.donatorUsername = donation.donator?.username; // Include username as fallback
-    // Show mobile number only if requester is owner or donator
-    if (showContactInfo) {
+    // Show mobile number if requester is owner or donator
+    // For camp donations, the mobile number is stored directly in the donation record, so always include it
+    if (showContactInfo || donation.campId) {
       this.donatorMobileNumber = donation.donatorMobileNumber;
     }
     this.rationItems = donation.rationItems;

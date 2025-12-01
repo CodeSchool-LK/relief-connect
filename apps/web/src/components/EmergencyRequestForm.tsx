@@ -36,6 +36,7 @@ interface FormData {
   children: number
   pets: number
   gpsLocation: { lat: number; lng: number }
+  address: string
   notes: string
   rationItems: Record<string, number> // Changed from boolean to number (0 = not selected, >0 = quantity)
   specialNeeds: string
@@ -78,6 +79,7 @@ export default function EmergencyRequestForm({
     children: 0,
     pets: 0,
     gpsLocation: { lat: 7.8731, lng: 80.7718 },
+    address: '',
     notes: '',
     rationItems: {},
     specialNeeds: '',
@@ -125,6 +127,10 @@ export default function EmergencyRequestForm({
       }
       if (!formData.gpsLocation.lat || !formData.gpsLocation.lng) {
         setError(t('gpsLocationIsRequired'))
+        return
+      }
+      if (!formData.address.trim()) {
+        setError('Address is required')
         return
       }
     }
@@ -202,7 +208,7 @@ export default function EmergencyRequestForm({
         lng: formData.gpsLocation.lng,
         urgency: formData.urgent ? Urgency.HIGH : Urgency.MEDIUM,
         shortNote,
-        approxArea: `${formData.gpsLocation.lat}, ${formData.gpsLocation.lng}`,
+        approxArea: formData.address.trim() || `${formData.gpsLocation.lat}, ${formData.gpsLocation.lng}`,
         contactType: ContactType.PHONE,
         contact: formData.contactNumber,
         // Team/People data as separate fields
@@ -423,6 +429,23 @@ export default function EmergencyRequestForm({
                   initialLng={formData.gpsLocation.lng || 0}
                   height="350px"
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="address">
+                  {t('address')} *
+                </Label>
+                <Input
+                  id="address"
+                  value={formData.address}
+                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                  placeholder="Enter your address (e.g., street, city, district)"
+                  className="w-full"
+                  required
+                />
+                {!formData.address.trim() && (
+                  <p className="text-sm text-red-600">Address is required</p>
+                )}
               </div>
 
               <div className="space-y-2">

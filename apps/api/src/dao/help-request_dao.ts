@@ -146,6 +146,8 @@ class HelpRequestDao {
         [HelpRequestModel.HELP_REQUEST_CHILDREN]: createHelpRequestDto.children,
         [HelpRequestModel.HELP_REQUEST_PETS]: createHelpRequestDto.pets,
         [HelpRequestModel.HELP_REQUEST_RATION_ITEMS]: rationItemsArray,
+        [HelpRequestModel.HELP_REQUEST_PROVINCE]: createHelpRequestDto.province,
+        [HelpRequestModel.HELP_REQUEST_DISTRICT]: createHelpRequestDto.district,
         [HelpRequestModel.HELP_REQUEST_STATUS]: HelpRequestStatus.OPEN,
       });
       return helpRequest.toJSON() as IHelpRequest;
@@ -187,6 +189,8 @@ class HelpRequestDao {
           : Object.keys(updateData.rationItems);
         updateFields[HelpRequestModel.HELP_REQUEST_RATION_ITEMS] = rationItemsArray;
       }
+      if (updateData.province !== undefined) updateFields[HelpRequestModel.HELP_REQUEST_PROVINCE] = updateData.province;
+      if (updateData.district !== undefined) updateFields[HelpRequestModel.HELP_REQUEST_DISTRICT] = updateData.district;
       if (updateData.status !== undefined) updateFields[HelpRequestModel.HELP_REQUEST_STATUS] = updateData.status;
 
       await helpRequest.update(updateFields);

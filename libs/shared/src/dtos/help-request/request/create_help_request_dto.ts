@@ -2,7 +2,7 @@ import { IsNumber, IsString, IsNotEmpty, IsOptional, IsEnum, Length, Min, Max, I
 import { BaseDto } from '../../common/base_dto';
 import { IBodyDto } from '../../../interfaces';
 import { ICreateHelpRequest } from '../../../interfaces/help-request/ICreateHelpRequest';
-import { Urgency, ContactType } from '../../../enums';
+import { Urgency, ContactType, Province, District } from '../../../enums';
 
 /**
  * DTO for creating a new help request
@@ -72,6 +72,14 @@ export class CreateHelpRequestDto extends BaseDto implements IBodyDto, ICreateHe
   @IsOptional()
   rationItems?: Record<string, number>;
 
+  @IsEnum(Province, { message: 'Province must be a valid province enum value' })
+  @IsOptional()
+  province?: Province;
+
+  @IsEnum(District, { message: 'District must be a valid district enum value' })
+  @IsOptional()
+  district?: District;
+
   constructor(data?: Partial<ICreateHelpRequest>) {
     super();
     if (data) {
@@ -88,6 +96,8 @@ export class CreateHelpRequestDto extends BaseDto implements IBodyDto, ICreateHe
       this.children = data.children;
       this.pets = data.pets;
       this.rationItems = data.rationItems;
+      this.province = data.province;
+      this.district = data.district;
     }
   }
 }

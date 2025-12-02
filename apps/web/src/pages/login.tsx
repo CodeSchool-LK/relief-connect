@@ -343,6 +343,30 @@ export default function LoginPage() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Video Guide Section */}
+          <Card className="bg-white/10 backdrop-blur-md border-white/30 shadow-xl mt-6">
+            <CardHeader>
+              <CardTitle className="text-xl font-bold text-white text-center">
+                How to Use the System
+              </CardTitle>
+              <CardDescription className="text-white/90 text-center">
+                Watch this video guide to learn how to use the Relief Connect platform
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
+                <iframe
+                  className="absolute top-0 left-0 w-full h-full rounded-lg"
+                  src="https://www.youtube.com/embed/w5lv7wHYfOE"
+                  title="Relief Connect System Guide"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                  style={{ border: 'none' }}
+                />
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </>

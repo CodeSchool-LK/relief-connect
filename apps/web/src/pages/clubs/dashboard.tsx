@@ -39,7 +39,7 @@ import CreateCampDialog from "../../components/CreateCampDialog"
 
 export default function VolunteerClubDashboard() {
   const router = useRouter()
-  const { isAuthenticated, isVolunteerClub, user, loading: authLoading } = useAuth()
+  const { isAuthenticated, isVolunteerClub, user, loading: authLoading, logout } = useAuth()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [club, setClub] = useState<IVolunteerClub | null>(null)
@@ -224,6 +224,7 @@ export default function VolunteerClubDashboard() {
 
   const handleLogout = async () => {
     try {
+      logout()
       await router.push("/login")
     } catch (err) {
       console.error("Logout error:", err)

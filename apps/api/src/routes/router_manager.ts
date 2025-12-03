@@ -8,6 +8,9 @@ import { AuthRouter } from './auth/auth_router';
 import { VolunteerClubRouter } from './volunteer-club/volunteer-club_router';
 import { MembershipRouter } from './membership/membership_router';
 import { AdminRouter } from './admin/admin_router';
+import { AdminManagementRouter } from './admin/admin-management_router';
+import { SystemSettingsRouter } from './admin/system-settings_router';
+import { AuditLogsRouter } from './admin/audit-logs_router';
 
 // Interface for router-like objects
 interface RouterLike {
@@ -45,6 +48,9 @@ export class RouterManager {
   private volunteerClubRouter: VolunteerClubRouter;
   private membershipRouter: MembershipRouter;
   private adminRouter: AdminRouter;
+  private adminManagementRouter: AdminManagementRouter;
+  private systemSettingsRouter: SystemSettingsRouter;
+  private auditLogsRouter: AuditLogsRouter;
 
   private constructor() {
     this.mainRouter = Router();
@@ -57,6 +63,9 @@ export class RouterManager {
     this.volunteerClubRouter = new VolunteerClubRouter();
     this.membershipRouter = new MembershipRouter();
     this.adminRouter = new AdminRouter();
+    this.adminManagementRouter = new AdminManagementRouter();
+    this.systemSettingsRouter = new SystemSettingsRouter();
+    this.auditLogsRouter = new AuditLogsRouter();
     this.configureRoutes();
   }
 
@@ -94,6 +103,9 @@ export class RouterManager {
     this.mainRouter.use(`${API_PREFIX}${this.volunteerClubRouter.getBasePath()}`, this.volunteerClubRouter.getRouter());
     this.mainRouter.use(`${API_PREFIX}${this.membershipRouter.getBasePath()}`, this.membershipRouter.getRouter());
     this.mainRouter.use(`${API_PREFIX}${this.adminRouter.getBasePath()}`, this.adminRouter.getRouter());
+    this.mainRouter.use(`${API_PREFIX}${this.adminManagementRouter.getBasePath()}`, this.adminManagementRouter.getRouter());
+    this.mainRouter.use(`${API_PREFIX}${this.systemSettingsRouter.getBasePath()}`, this.systemSettingsRouter.getRouter());
+    this.mainRouter.use(`${API_PREFIX}${this.auditLogsRouter.getBasePath()}`, this.auditLogsRouter.getRouter());
   }
 
   /**

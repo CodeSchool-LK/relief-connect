@@ -30,9 +30,12 @@ export * from './inventory';
 export * from './volunteer-club';
 export * from './membership';
 export * from './admin';
+export * from './system-settings';
+export * from './audit-log';
 
 // Re-export commonly used types for convenience
 export { BaseDto, ValidationFailedError } from './common/base_dto';
+export { PaginationDto } from './common/pagination.dto';
 export { IdParamDto } from './params';
 export { CreateItemDto, UpdateItemDto, ItemResponseDto } from './item';
 export { CreateHelpRequestDto, HelpRequestResponseDto } from './help-request';

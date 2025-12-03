@@ -7,7 +7,9 @@ import { useAuth } from '../../hooks/useAuth';
 import { volunteerClubService, membershipService, userService } from '../../services';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
-import { Users, Building2, UserCheck, ArrowRight, Loader2 } from 'lucide-react';
+import { Users, Building2, UserCheck, ArrowRight, Loader2, Shield, Settings, FileText } from 'lucide-react';
+import { PermissionGuard } from '../../components/admin/PermissionGuard';
+import { Permission } from '@nx-mono-repo-deployment-test/shared/src/enums';
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -140,6 +142,38 @@ export default function AdminDashboard() {
                 </Link>
               </CardContent>
             </Card>
+
+            <PermissionGuard permission={Permission.MANAGE_ADMINS}>
+              <Card>
+                <CardHeader>
+                  <CardTitle>System Administration</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <Link href="/admin/system-administrators">
+                    <Button className="w-full justify-start" variant="outline">
+                      <Shield className="w-4 h-4 mr-2" />
+                      Manage System Administrators
+                    </Button>
+                  </Link>
+                  <PermissionGuard permission={Permission.MANAGE_SYSTEM_SETTINGS}>
+                    <Link href="/admin/system-settings">
+                      <Button className="w-full justify-start" variant="outline">
+                        <Settings className="w-4 h-4 mr-2" />
+                        System Settings
+                      </Button>
+                    </Link>
+                  </PermissionGuard>
+                  <PermissionGuard permission={Permission.VIEW_AUDIT_LOGS}>
+                    <Link href="/admin/audit-logs">
+                      <Button className="w-full justify-start" variant="outline">
+                        <FileText className="w-4 h-4 mr-2" />
+                        Audit Logs
+                      </Button>
+                    </Link>
+                  </PermissionGuard>
+                </CardContent>
+              </Card>
+            </PermissionGuard>
           </div>
         </div>
       </div>

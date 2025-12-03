@@ -1,6 +1,6 @@
 import { Table, Column, Model, DataType, CreatedAt, UpdatedAt, PrimaryKey, AutoIncrement, Unique } from 'sequelize-typescript';
 import { IUser } from '@nx-mono-repo-deployment-test/shared/src/interfaces/user/IUser';
-import { UserRole, UserStatus } from '@nx-mono-repo-deployment-test/shared/src/enums';
+import { UserRole, UserStatus, Permission } from '@nx-mono-repo-deployment-test/shared/src/enums';
 
 @Table({
   tableName: UserModel.TABLE_NAME,
@@ -15,6 +15,7 @@ export default class UserModel extends Model<IUser> implements IUser {
   public static readonly USER_CONTACT_NUMBER = 'contactNumber';
   public static readonly USER_ROLE = 'role';
   public static readonly USER_STATUS = 'status';
+  public static readonly USER_PERMISSIONS = 'permissions';
   public static readonly USER_CREATED_AT = 'createdAt';
   public static readonly USER_UPDATED_AT = 'updatedAt';
 
@@ -70,6 +71,14 @@ export default class UserModel extends Model<IUser> implements IUser {
     field: UserModel.USER_STATUS,
   })
   status!: UserStatus;
+
+  @Column({
+    type: DataType.JSON,
+    allowNull: true,
+    defaultValue: null,
+    field: UserModel.USER_PERMISSIONS,
+  })
+  permissions?: Permission[];
 
   @CreatedAt
   @Column({

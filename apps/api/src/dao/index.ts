@@ -13,4 +13,6 @@ export { default as RefreshTokenDao } from './refresh-token_dao';
 export { default as DonationDao } from './donation_dao';
 export { default as VolunteerClubDao } from './volunteer-club_dao';
 export { default as MembershipDao } from './membership_dao';
+export { default as SystemSettingDao } from './system-setting_dao';
+export { default as AuditLogDao } from './audit-log_dao';
 

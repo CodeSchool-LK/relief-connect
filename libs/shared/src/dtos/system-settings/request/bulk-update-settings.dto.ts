@@ -1,4 +1,4 @@
-import { IsArray, ValidateNested, ArrayNotEmpty } from 'class-validator';
+import { IsArray, ValidateNested, ArrayMinSize, IsString } from 'class-validator';
 import { Type } from 'class-transformer';
 import { BaseDto } from '../../common/base_dto';
 import { IBodyDto } from '../../../interfaces';
@@ -17,7 +17,7 @@ class SettingUpdate {
  */
 export class BulkUpdateSettingsDto extends BaseDto implements IBodyDto {
   @IsArray()
-  @ArrayNotEmpty()
+  @ArrayMinSize(1, { message: 'Settings array cannot be empty' })
   @ValidateNested({ each: true })
   @Type(() => SettingUpdate)
   settings!: SettingUpdate[];

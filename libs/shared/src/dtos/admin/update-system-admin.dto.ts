@@ -1,7 +1,7 @@
 import { IsString, IsOptional, MinLength, MaxLength, Matches, IsEnum } from 'class-validator';
 import { BaseDto } from '../common/base_dto';
 import { IBodyDto } from '../../interfaces';
-import { UserStatus } from '@nx-mono-repo-deployment-test/shared/enums';
+import { UserStatus } from '../../enums';
 
 /**
  * DTO for updating system administrator details

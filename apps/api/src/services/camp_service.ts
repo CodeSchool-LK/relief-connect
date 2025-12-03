@@ -87,33 +87,9 @@ class CampService {
         };
       }
 
-      // Authorization check: Only admins, club owners, or approved members can view the camp
-      if (userId && userRole) {
-        const isAdmin = userRole === UserRole.SYSTEM_ADMINISTRATOR || userRole === UserRole.ADMIN;
-        
-        if (!isAdmin) {
-          // Check if user is the owner of the camp's volunteer club
-          const volunteerClubDao = VolunteerClubDao.getInstance();
-          const volunteerClub = await volunteerClubDao.findByUserId(userId);
-          const isClubOwner = volunteerClub && volunteerClub.id === camp.volunteerClubId;
-          
-          // If not club owner, allow authenticated users to view camps (for donation requests)
-          // No membership check needed - any authenticated user can view camps
-          if (!isClubOwner && camp.volunteerClubId) {
-            // Allow authenticated users to view camps even if not members (for donation requests)
-            // No error, just continue - users can view camps to make donation requests
-          } else if (!isClubOwner && !camp.volunteerClubId) {
-            // Camp has no volunteer club associated - still allow authenticated users to view
-            // No error, just continue
-          }
-        }
-      } else {
-        // If no user info provided, deny access (requires authentication)
-        return {
-          success: false,
-          error: 'Authentication required',
-        };
-      }
+      // Allow public access to view camps
+      // Authorization checks only apply for editing/managing camps, not viewing
+      // If user is authenticated, we can use their info for additional features, but viewing is public
 
       // Fetch associated items, drop-off locations, help requests, and donations
       const campItemDao = CampItemDao.getInstance();

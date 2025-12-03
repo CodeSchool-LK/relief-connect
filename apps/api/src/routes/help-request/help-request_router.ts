@@ -2,7 +2,8 @@ import { BaseRouter } from '../common/base_router';
 import { HelpRequestController, DonationController } from '../../controllers';
 import { HelpRequestService, DonationService } from '../../services';
 import { ValidationMiddleware, authenticate } from '../../middleware';
-import { CreateHelpRequestDto } from '@nx-mono-repo-deployment-test/shared/src/dtos/help-request/request';
+import { requireAdminOrVolunteerClub } from '../../middleware/authorization';
+import { CreateHelpRequestDto, UpdateHelpRequestDto } from '@nx-mono-repo-deployment-test/shared/src/dtos/help-request/request';
 import { CreateDonationDto } from '@nx-mono-repo-deployment-test/shared/src/dtos/donation/request';
 
 // Route path constants
@@ -100,6 +101,15 @@ export class HelpRequestRouter extends BaseRouter {
       controller.createHelpRequest
     );
 
+    // PUT /api/help-requests/:id - Update an existing help request (requires authentication - only accessible by admins or volunteer clubs)
+    this.router.put(
+      '/:id',
+      authenticate,
+      requireAdminOrVolunteerClub(),
+      ValidationMiddleware.body(UpdateHelpRequestDto),
+      controller.updateHelpRequest
+    );
+
     // Donation routes (nested under help requests)
     // GET /api/help-requests/my/donations - Get authenticated user's donations (must come before /:helpRequestId/donations)
     this.router.get(
@@ -162,7 +172,7 @@ export class HelpRequestRouter extends BaseRouter {
     return [
       { path: `${HELP_REQUEST_BASE_PATH}/summary`, methods: ['GET'] },
       { path: HELP_REQUEST_BASE_PATH, methods: ['GET', 'POST'] },
-      { path: `${HELP_REQUEST_BASE_PATH}/:id`, methods: ['GET'] },
+      { path: `${HELP_REQUEST_BASE_PATH}/:id`, methods: ['GET', 'PUT'] },
       { path: `${HELP_REQUEST_BASE_PATH}/:id/inventory`, methods: ['GET'] },
       { path: `${HELP_REQUEST_BASE_PATH}/:helpRequestId/donations`, methods: ['GET', 'POST'] },
       { path: `${HELP_REQUEST_BASE_PATH}/:helpRequestId/donations/:donationId/schedule`, methods: ['PATCH'] },

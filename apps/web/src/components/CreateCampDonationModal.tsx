@@ -20,7 +20,7 @@ interface CreateCampDonationModalProps {
 }
 
 export default function CreateCampDonationModal({
-  camps,
+  camps = [],
   isOpen,
   onClose,
   currentUserId,

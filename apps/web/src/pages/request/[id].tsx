@@ -23,7 +23,9 @@ import {
   Heart,
   User,
   CheckCircle,
+  Edit,
 } from 'lucide-react'
+import Link from 'next/link'
 import { HelpRequestResponseDto } from '@nx-mono-repo-deployment-test/shared/src/dtos/help-request/response/help_request_response_dto'
 import { HelpRequestWithOwnershipResponseDto } from '@nx-mono-repo-deployment-test/shared/src/dtos/help-request/response/help_request_with_ownership_response_dto'
 import { Urgency, HelpRequestCategory, ContactType } from '@nx-mono-repo-deployment-test/shared/src/enums'
@@ -31,6 +33,7 @@ import { helpRequestService, donationService } from '../../services'
 import { RATION_ITEMS } from '../../components/EmergencyRequestForm'
 import { DonationWithDonatorResponseDto } from '@nx-mono-repo-deployment-test/shared/src/dtos/donation/response/donation_with_donator_response_dto'
 import DonationInteractionModal from '../../components/DonationInteractionModal'
+import { useAuth } from '../../hooks/useAuth'
 
 interface DonationRequest {
   id: number
@@ -58,7 +61,8 @@ const dummyPhotos = [
 
 export default function RequestDetailsPage() {
   const router = useRouter()
-  const { id } = router.query
+  const { id, from } = router.query
+  const { isAdmin, isVolunteerClub } = useAuth()
   const [request, setRequest] = useState<HelpRequestWithOwnershipResponseDto | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -67,6 +71,14 @@ export default function RequestDetailsPage() {
   const [donationRequests, setDonationRequests] = useState<DonationRequest[]>([])
   const [loadingDonations, setLoadingDonations] = useState(false)
   const [showDonationModal, setShowDonationModal] = useState(false)
+
+  const handleBack = () => {
+    if (from === 'dashboard') {
+      router.push('/clubs/dashboard')
+    } else {
+      router.back()
+    }
+  }
 
   // Load donations from API
   useEffect(() => {
@@ -342,7 +354,7 @@ export default function RequestDetailsPage() {
         <div className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-200/50 shadow-sm">
           <div className="container mx-auto px-4 py-4">
             <div className="flex items-center justify-between">
-              <Button variant="ghost" size="sm" onClick={() => router.back()}>
+              <Button variant="ghost" size="sm" onClick={handleBack}>
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back
               </Button>
@@ -476,37 +488,45 @@ export default function RequestDetailsPage() {
                 </div>
               ) : null}
 
-              {/* Location */}
-              {request.lat != null && request.lng != null ? (
-                <a
-                  href={`https://www.google.com/maps?q=${encodeURIComponent(
-                    `${Number(request.lat)},${Number(request.lng)}`
-                  )}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={(e) => e.stopPropagation()}
-                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-colors duration-200 text-gray-900 hover:text-gray-950"
-                  style={{ backgroundColor: '#92eb34' }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = '#7dd321'
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = '#92eb34'
-                  }}
-                >
-                  <MapPin className="h-3.5 w-3.5" />
-                  Click on map
-                </a>
-              ) : (
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <MapPin className="h-4 w-4 text-gray-400" />
-                  <span className="font-medium">
-                    {request.approxArea && !request.approxArea.match(/^-?\d+\.\d+,\s*-?\d+\.\d+/)
-                      ? request.approxArea
-                      : 'Unknown location'}
-                  </span>
-                </div>
-              )}
+              {/* Address and Location */}
+              <div className="space-y-3">
+                {/* Address */}
+                {request.approxArea && 
+                !request.approxArea.match(/^-?\d+\.\d+,\s*-?\d+\.\d+$/) && (
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <MapPin className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                      <span className="font-semibold">Address:</span>
+                    </div>
+                    <div className="ml-6 text-sm text-gray-700 break-words">
+                      {request.approxArea}
+                    </div>
+                  </div>
+                )}
+                
+                {/* Map Link */}
+                {request.lat != null && request.lng != null && (
+                  <a
+                    href={`https://www.google.com/maps?q=${encodeURIComponent(
+                      `${Number(request.lat)},${Number(request.lng)}`
+                    )}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-colors duration-200 text-gray-900 hover:text-gray-950"
+                    style={{ backgroundColor: '#92eb34' }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = '#7dd321'
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = '#92eb34'
+                    }}
+                  >
+                    <MapPin className="h-3.5 w-3.5" />
+                    View on map
+                  </a>
+                )}
+              </div>
 
               {/* Contact Info */}
               <div className="flex items-center gap-2 pt-2 border-t border-gray-200">
@@ -547,6 +567,17 @@ export default function RequestDetailsPage() {
                 <Heart className="h-5 w-5 mr-2" />
                 Donate
               </Button>
+            )}
+            {/* Show Edit button for admins and volunteer clubs */}
+            {(isAdmin() || isVolunteerClub()) && (
+              <Link href={`/help-requests/${id}/edit?from=detail`}>
+                <Button
+                  className="flex-1 h-12 text-base font-semibold bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white"
+                >
+                  <Edit className="h-5 w-5 mr-2" />
+                  Edit
+                </Button>
+              </Link>
             )}
             <Dialog>
               <DialogTrigger asChild>

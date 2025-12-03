@@ -8,7 +8,7 @@
 ![Express](https://img.shields.io/badge/Express.js-404D59?style=for-the-badge&logo=express)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)
 
-**A comprehensive crisis relief management platform connecting people in need with volunteers, donors, and relief organizations in Sri Lanka.**
+**An open-source crisis relief management platform connecting people in need with volunteers, donors, and relief organizations.**
 
 [Quick Start](#-quick-start) • [Documentation](#-documentation) • [Contributing](#-contributing)
 
@@ -22,6 +22,7 @@
 - [Features](#-features)
 - [Technology Stack](#-technology-stack)
 - [Quick Start](#-quick-start)
+- [Testing Credentials](#-testing-credentials-development-environment)
 - [Documentation](#-documentation)
 - [Project Structure](#-project-structure)
 - [Contributing](#-contributing)
@@ -91,7 +92,7 @@ Built with modern technologies and best practices, Relief Connect provides a sca
 ### Prerequisites
 
 - Node.js 18.x or higher
-- PostgreSQL 14.x or higher
+- PostgreSQL 14.x or higher (only if running backend locally)
 - Yarn 4.x (via Corepack)
 
 ### Installation
@@ -109,11 +110,57 @@ yarn install
 
 # Build shared library
 yarn shared:build
+```
 
-# Set up environment variables (see docs)
-# Create .env files in apps/api and apps/web
+### Quick Start Options
 
-# Start development servers
+#### Option 1: Frontend Only (Recommended for Quick Testing)
+
+Use the deployed development API - **no backend setup required!**
+
+1. **Set up Frontend Environment** (`apps/web/.env.local`):
+```env
+# Use the deployed dev API
+NEXT_PUBLIC_API_URL=https://dev-api.pasindusampath.com
+
+# Map Configuration
+NEXT_PUBLIC_MAP_TILE_URL=https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png
+```
+
+2. **Start Frontend Only**:
+```bash
+yarn web:dev    # Frontend on port 3001
+```
+
+Access the application:
+- **Frontend**: http://localhost:3001
+- **API**: Uses https://dev-api.pasindusampath.com (no local backend needed)
+
+#### Option 2: Full Local Development
+
+Run both frontend and backend locally:
+
+1. **Set up Backend Environment** (`apps/api/.env`):
+   - Copy `apps/api/env.example` to `apps/api/.env`
+   - Configure PostgreSQL credentials as shown in `env.example`:
+     - `DB_HOST=localhost`
+     - `DB_PORT=5432`
+     - `DB_NAME=nx_monorepo_dev`
+     - `DB_USER=postgres`
+     - `DB_PASSWORD=postgres` (or your PostgreSQL password)
+   - Set JWT secrets and other required variables
+
+2. **Set up Frontend Environment** (`apps/web/.env.local`):
+```env
+# Use local API
+NEXT_PUBLIC_API_URL=http://localhost:3000
+
+# Map Configuration
+NEXT_PUBLIC_MAP_TILE_URL=https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png
+```
+
+3. **Start Development Servers**:
+```bash
 yarn api:dev    # Terminal 1 - Backend on port 3000
 yarn web:dev    # Terminal 2 - Frontend on port 3001
 ```
@@ -123,6 +170,36 @@ Access the application:
 - **API**: http://localhost:3000
 
 📖 **[Read Full Quick Start Guide →](docs/05-quick-start.md)**
+
+---
+
+## 🧪 Testing Credentials (Development Environment)
+
+### Development URLs
+
+- **Frontend**: [https://dev-web.pasindusampath.com/](https://dev-web.pasindusampath.com/)
+- **Backend API**: [https://dev-api.pasindusampath.com/](https://dev-api.pasindusampath.com/)
+
+### Admin Login (Dev Environment Only)
+
+- **Username:** `pasindusampath`
+- **Password:** `77889900`
+
+### Volunteer Club Login
+
+- **Username:** `test-club`
+- **Password:** `123456789`
+
+### Normal Users
+
+- No password required
+- Users can log in using **only their unique username**
+
+### Creating New Volunteer Accounts
+
+- You can create additional volunteer club accounts through the **Admin Panel**
+
+> **Tip:** To test the application without running a local backend, set `NEXT_PUBLIC_API_URL=https://dev-api.pasindusampath.com` in your `apps/web/.env.local` file and run only the frontend with `yarn web:dev`.
 
 ---
 
@@ -168,7 +245,8 @@ relief-connect/
 ## 🔌 API Reference
 
 ### Base URL
-- **Development**: `http://localhost:3000`
+- **Local Development**: `http://localhost:3000`
+- **Dev Environment**: `https://dev-api.pasindusampath.com`
 - **Production**: `https://api.yourdomain.com`
 
 ### Key Endpoints

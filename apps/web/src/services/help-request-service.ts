@@ -165,6 +165,52 @@ class HelpRequestService {
       };
     }
   }
+
+  /**
+   * Update an existing help request
+   */
+  public async updateHelpRequest(
+    id: number,
+    updateHelpRequestDto: Partial<ICreateHelpRequest>
+  ): Promise<IApiResponse<HelpRequestResponseDto>> {
+    try {
+      const response = await apiClient.put<IApiResponse<HelpRequestResponseDto>>(
+        `${this.basePath}/${id}`,
+        updateHelpRequestDto
+      );
+      return response;
+    } catch (error) {
+      console.error('Error in HelpRequestService.updateHelpRequest:', error);
+
+      // Try to extract validation error details from API client error
+      if (error instanceof Error) {
+        const anyErr = error as Error & { details?: unknown };
+        let message = error.message || 'Failed to update help request';
+
+        if (anyErr.details && Array.isArray(anyErr.details)) {
+          // Backend validation middleware sends an array of { field, constraints }
+          const first = anyErr.details[0] as {
+            field?: string;
+            constraints?: Record<string, string>;
+          };
+          const constraintMessages = first?.constraints ? Object.values(first.constraints) : [];
+          if (constraintMessages.length > 0) {
+            message = constraintMessages[0];
+          }
+        }
+
+        return {
+          success: false,
+          error: message,
+        };
+      }
+
+      return {
+        success: false,
+        error: 'Failed to update help request',
+      };
+    }
+  }
 }
 
 // Export singleton instance

@@ -1,4 +1,4 @@
-import { Urgency, ContactType } from '../../enums';
+import { Urgency, ContactType, Province, District } from '../../enums';
 
 /**
  * Frontend interface for creating a new help request
@@ -20,5 +20,8 @@ export interface ICreateHelpRequest {
   pets?: number; // Number of pets
   // Ration items with quantities
   rationItems?: Record<string, number>; // Map of item codes to quantities (e.g., { 'dry_rations': 5, 'bottled_water': 10 })
+  // Location details (mandatory in frontend, optional in backend)
+  province?: Province; // Sri Lanka province enum
+  district?: District; // Sri Lanka district enum
 }
 

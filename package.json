@@ -10,10 +10,13 @@
     "web:dev": "corepack yarn workspace web dev",
     "web:build": "corepack yarn workspace web build",
     "web:start": "corepack yarn workspace web start",
+    "client:dev": "corepack yarn workspace client dev",
+    "client:build": "corepack yarn workspace client build",
+    "client:start": "corepack yarn workspace client start",
     "shared:build": "corepack yarn workspace @nx-mono-repo-deployment-test/shared build",
-    "build:all": "corepack yarn shared:build && corepack yarn api:build && corepack yarn web:build",
+    "build:all": "corepack yarn shared:build && corepack yarn api:build && corepack yarn web:build && corepack yarn client:build",
     "install:all": "corepack yarn install",
-    "type-check": "corepack yarn workspace api lint && corepack yarn workspace web type-check",
+    "type-check": "corepack yarn workspace api lint && corepack yarn workspace web type-check && corepack yarn workspace client type-check",
     "docker:build": "docker-compose build",
     "docker:up": "docker-compose up -d",
     "docker:down": "docker-compose down",
@@ -26,7 +29,8 @@
   "workspaces": [
     "apps/api",
     "apps/web",
-    "libs/shared"
+    "libs/shared",
+    "apps/client"
   ],
   "devDependencies": {
     "@nx/js": "21.6.5",

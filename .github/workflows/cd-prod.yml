@@ -70,7 +70,6 @@ jobs:
               echo "Initializing /opt/rebuildsl_prod..."
               sudo rm -rf /opt/rebuildsl_prod
               sudo mkdir -p /opt/rebuildsl_prod
-              sudo chown -R $USER:$USER /opt/rebuildsl_prod
               cd /opt/rebuildsl_prod
               # Add to Git safe directory to avoid ownership issues
               git config --global --add safe.directory /opt/rebuildsl_prod

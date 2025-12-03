@@ -38,7 +38,7 @@ export { BaseDto, ValidationFailedError } from './common/base_dto';
 export { PaginationDto } from './common/pagination.dto';
 export { IdParamDto } from './params';
 export { CreateItemDto, UpdateItemDto, ItemResponseDto } from './item';
-export { CreateHelpRequestDto, HelpRequestResponseDto } from './help-request';
+export { CreateHelpRequestDto, UpdateHelpRequestDto, HelpRequestResponseDto } from './help-request';
 export { CreateCampDto, CampResponseDto } from './camp';
 export { CreateUserDto, UserResponseDto } from './user';
 export { LoginDto, LoginResponseDto, RefreshTokenDto } from './auth';

@@ -1,5 +1,5 @@
 import { IHelpRequest } from '../../../interfaces/help-request/IHelpRequest';
-import { HelpRequestStatus, Urgency, ContactType } from '../../../enums';
+import { HelpRequestStatus, Urgency, ContactType, Province, District } from '../../../enums';
 
 /**
  * DTO for help request response
@@ -20,6 +20,8 @@ export class HelpRequestResponseDto implements IHelpRequest {
   children?: number;
   pets?: number;
   rationItems?: string[];
+  province?: Province;
+  district?: District;
   status?: HelpRequestStatus;
   createdAt?: Date;
   updatedAt?: Date;
@@ -40,6 +42,8 @@ export class HelpRequestResponseDto implements IHelpRequest {
     this.children = helpRequest.children;
     this.pets = helpRequest.pets;
     this.rationItems = helpRequest.rationItems;
+    this.province = helpRequest.province;
+    this.district = helpRequest.district;
     this.status = helpRequest.status || HelpRequestStatus.OPEN;
     this.createdAt = helpRequest.createdAt;
     this.updatedAt = helpRequest.updatedAt;

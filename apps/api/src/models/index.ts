@@ -19,6 +19,8 @@ import CampItemModel from './camp-item.model';
 import CampHelpRequestModel from './camp-help-request.model';
 import CampDonationModel from './camp-donation.model';
 import CampInventoryItemModel from './camp-inventory-item.model';
+import SystemSettingModel from './system-setting.model';
+import AuditLogModel from './audit-log.model';
 
 /**
  * Initialize model associations here
@@ -172,6 +174,8 @@ export { default as CampItemModel } from './camp-item.model';
 export { default as CampHelpRequestModel } from './camp-help-request.model';
 export { default as CampDonationModel } from './camp-donation.model';
 export { default as CampInventoryItemModel } from './camp-inventory-item.model';
+export { default as SystemSettingModel } from './system-setting.model';
+export { default as AuditLogModel } from './audit-log.model';
 
 // Export sequelize instance
 export { sequelize };
@@ -192,6 +196,8 @@ export const models = {
   CampHelpRequest: CampHelpRequestModel,
   CampDonation: CampDonationModel,
   CampInventoryItem: CampInventoryItemModel,
+  SystemSetting: SystemSettingModel,
+  AuditLog: AuditLogModel,
 };
 
 export default models;

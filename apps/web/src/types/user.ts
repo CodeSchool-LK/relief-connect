@@ -2,6 +2,8 @@
  * User Types
  */
 
+import { Permission } from '@nx-mono-repo-deployment-test/shared/src/enums';
+
 export type UserRole = 'ADMIN' | 'USER' | 'SYSTEM_ADMINISTRATOR' | 'VOLUNTEER_CLUB';
 export type UserStatus = 'ACTIVE' | 'INACTIVE' | 'DISABLED';
 
@@ -11,6 +13,7 @@ export interface IUser {
   contactNumber?: string;
   role: UserRole;
   status: UserStatus;
+  permissions?: Permission[];
   createdAt?: string;
   updatedAt?: string;
 }

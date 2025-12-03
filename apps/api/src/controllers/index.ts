@@ -10,4 +10,7 @@ export { default as AuthController } from './auth_controller';
 export { default as DonationController } from './donation_controller';
 export { default as VolunteerClubController } from './volunteer-club_controller';
 export { default as MembershipController } from './membership_controller';
+export { default as AdminManagementController } from './admin_management_controller';
+export { default as SystemSettingsController } from './system_settings_controller';
+export { default as AuditLogController } from './audit_log_controller';
 

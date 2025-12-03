@@ -9,4 +9,7 @@ export { default as AuthService } from './auth_service';
 export { default as DonationService } from './donation_service';
 export { default as VolunteerClubService } from './volunteer-club_service';
 export { default as MembershipService } from './membership_service';
+export { default as AdminManagementService } from './admin_management_service';
+export { default as SystemSettingsService } from './system_settings_service';
+export { default as AuditLogService } from './audit_log_service';
 

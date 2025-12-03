@@ -106,13 +106,13 @@ class UserService {
         // Role is always set to USER - never accept role from frontend for security
         const role = UserRole.USER;
 
-        // Business logic: Create trimmed DTO
-        const trimmedDto = new CreateUserDto({
+        // Business logic: Create user data
+        const userData: Partial<IUser> & { username: string } = {
           username: trimmedUsername,
           password: createUserDto.password,
-        });
+        };
 
-        user = await this.userDao.create(trimmedDto, role);
+        user = await this.userDao.create(userData, role);
       }
 
       // Generate access and refresh tokens (same as login)
@@ -346,12 +346,12 @@ class UserService {
       }
 
       // Create admin user with SYSTEM_ADMINISTRATOR role
-      const createUserDto = new CreateUserDto({
+      const userData: Partial<IUser> & { username: string } = {
         username: trimmedUsername,
         password: createAdminDto.password,
-      });
+      };
 
-      const user = await this.userDao.create(createUserDto, UserRole.SYSTEM_ADMINISTRATOR);
+      const user = await this.userDao.create(userData, UserRole.SYSTEM_ADMINISTRATOR);
 
       return {
         success: true,
@@ -399,13 +399,13 @@ class UserService {
       }
 
       // Create user with VOLUNTEER_CLUB role
-      const createUserDto = new CreateUserDto({
+      const userData: Partial<IUser> & { username: string } = {
         username: trimmedUsername,
         password: password,
         contactNumber: createDto.contactNumber,
-      });
+      };
 
-      const user = await this.userDao.create(createUserDto, UserRole.VOLUNTEER_CLUB);
+      const user = await this.userDao.create(userData, UserRole.VOLUNTEER_CLUB);
 
       // Create volunteer club entity and associate it with the user
       const volunteerClubService = VolunteerClubService.getInstance();

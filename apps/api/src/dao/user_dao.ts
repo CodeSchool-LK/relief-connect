@@ -1,7 +1,6 @@
 import UserModel from '../models/user.model';
 import { 
   IUser, 
-  CreateUserDto,
   UserRole,
   UserStatus
 } from '@nx-mono-repo-deployment-test/shared';
@@ -51,23 +50,33 @@ class UserDao {
 
   /**
    * Create a new user
-   * @param createUserDto - User creation data (username, optional password)
-   * @param role - User role (defaults to USER, set by service layer for security)
+   * @param userData - User creation data (Partial<IUser> with username required, optional password, contactNumber, role, status, permissions)
+   * @param role - User role (defaults to USER, set by service layer for security) - overrides userData.role if provided
    */
-  public async create(createUserDto: CreateUserDto, role: UserRole = UserRole.USER): Promise<IUser> {
+  public async create(userData: Partial<IUser> & { username: string }, role?: UserRole): Promise<IUser> {
     try {
-      // Hash password if provided
-      let hashedPassword: string | undefined;
-      if (createUserDto.password) {
-        hashedPassword = await PasswordUtil.hashPassword(createUserDto.password);
+      if (!userData.username) {
+        throw new Error('Username is required');
       }
 
+      // Hash password if provided
+      let hashedPassword: string | undefined;
+      if (userData.password) {
+        hashedPassword = await PasswordUtil.hashPassword(userData.password);
+      }
+
+      // Use provided role or fall back to userData.role or default to USER
+      const userRole = role || userData.role || UserRole.USER;
+      // Use provided status or default to ACTIVE
+      const userStatus = userData.status || UserStatus.ACTIVE;
+
       const user = await UserModel.create({
-        [UserModel.USER_USERNAME]: createUserDto.username,
+        [UserModel.USER_USERNAME]: userData.username,
         [UserModel.USER_PASSWORD]: hashedPassword,
-        [UserModel.USER_CONTACT_NUMBER]: createUserDto.contactNumber?.trim(),
-        [UserModel.USER_ROLE]: role,
-        [UserModel.USER_STATUS]: UserStatus.ACTIVE,
+        [UserModel.USER_CONTACT_NUMBER]: userData.contactNumber?.trim(),
+        [UserModel.USER_ROLE]: userRole,
+        [UserModel.USER_STATUS]: userStatus,
+        [UserModel.USER_PERMISSIONS]: userData.permissions || [],
       });
       return user.toJSON() as IUser;
     } catch (error) {
@@ -104,6 +113,45 @@ class UserDao {
       return users.map(user => user.toJSON() as IUser);
     } catch (error) {
       console.error('Error in UserDao.findAll:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Find system administrators with pagination
+   * @param page - Page number (default: 1)
+   * @param limit - Items per page (default: 10)
+   * @returns Object with data array and total count
+   */
+  public async findSystemAdministrators(
+    page: number = 1,
+    limit: number = 10
+  ): Promise<{ data: IUser[]; total: number }> {
+    try {
+      const whereClause = {
+        [UserModel.USER_ROLE]: UserRole.SYSTEM_ADMINISTRATOR,
+      };
+
+      // Get total count
+      const total = await UserModel.count({ where: whereClause });
+
+      // Calculate offset
+      const offset = (page - 1) * limit;
+
+      // Fetch paginated results
+      const users = await UserModel.findAll({
+        where: whereClause,
+        order: [['createdAt', 'DESC']],
+        limit,
+        offset,
+      });
+
+      return {
+        data: users.map(user => user.toJSON() as IUser),
+        total,
+      };
+    } catch (error) {
+      console.error('Error in UserDao.findSystemAdministrators:', error);
       throw error;
     }
   }

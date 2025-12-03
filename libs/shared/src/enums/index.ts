@@ -14,4 +14,7 @@ export * from './user.enum';
 export * from './ration-item.enum';
 export * from './membership-status.enum';
 export * from './location.enum';
+export * from './permission.enum';
+export * from './audit-action.enum';
+export * from './system-setting-type.enum';
 
